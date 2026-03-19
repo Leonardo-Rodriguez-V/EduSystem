@@ -26,20 +26,43 @@ function Dashboard() {
     fetchCursos();
   }, []);
 
+  // Configuración de contenido por rol
+  const configPorRol = {
+    director: {
+      titulo: 'Panel de Administración Global',
+      subtitulo: 'Gestión integral del establecimiento y personal.',
+      statLabel: 'Cursos Globales'
+    },
+    profesor: {
+      titulo: 'Mis Cursos y Asistencia',
+      subtitulo: 'Control de clases, alumnos y evaluaciones asignadas.',
+      statLabel: 'Mis Cursos Jefes'
+    },
+    apoderado: {
+      titulo: 'Portal para Apoderados',
+      subtitulo: 'Seguimiento académico y comunicación del alumno.',
+      statLabel: 'Cursos del Alumno'
+    }
+  };
+
+  const currentConfig = configPorRol[usuario.rol] || configPorRol.profesor;
+
   return (
     <div className="p-8 font-sans">
       {/* Encabezado de Bienvenida */}
       <header className="mb-10">
         <h1 className="text-4xl font-extrabold text-slate-800">
-          Bienvenido, <span className="text-blue-600">{usuario.nombre_completo}</span>
+          {currentConfig.titulo}
         </h1>
-        <p className="text-slate-500 text-lg mt-1 capitalize">Rol: {usuario.rol}</p>
+        <p className="text-slate-500 text-lg mt-1">
+          {currentConfig.subtitulo} | <span className="text-blue-600 font-bold capitalize">{usuario.nombre_completo}</span>
+        </p>
       </header>
 
       {/* Grid de Estadísticas Rápidas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-          <p className="text-slate-400 text-sm font-bold uppercase tracking-wider">Mis Cursos registrados</p>
+          <p className="text-slate-400 text-sm font-bold uppercase tracking-wider">{currentConfig.statLabel}</p>
           <p className="text-3xl font-black text-slate-800">{cursos.length}</p>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">

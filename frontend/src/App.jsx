@@ -31,7 +31,13 @@ function App() {
                   ) : (
                     <>
                       <Link to="/dashboard" className="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium">Dashboard</Link>
-                      <Link to="/usuarios" className="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium">Usuarios</Link>
+                      {/* SOLO EL DIRECTOR VE USUARIOS Y REGISTRO */}
+                      {usuarioGuardado.rol === 'director' && (
+                        <>
+                          <Link to="/usuarios" className="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium">Usuarios</Link>
+                          <Link to="/registro" className="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium">Nuevo Usuario</Link>
+                        </>
+                      )}
                     </>
                   )}
                 </div>
@@ -39,21 +45,22 @@ function App() {
 
               {usuarioGuardado && (
                 <div className="flex items-center space-x-4">
-                  <span className="text-sm font-medium text-slate-700">
-                    Hola, <span className="text-blue-600 font-bold">{usuarioGuardado.nombre_completo}</span>
-                  </span>
+                  <div className="text-right mr-2">
+                    <p className="text-sm font-bold text-slate-800 leading-tight">{usuarioGuardado.nombre_completo}</p>
+                    <p className="text-xs font-medium text-blue-600 capitalize">{usuarioGuardado.rol}</p>
+                  </div>
                   <button 
                     onClick={handleLogout}
                     className="bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 px-4 py-2 rounded-lg text-sm font-bold transition-all border border-transparent hover:border-rose-200"
                   >
-                    Cerrar Sesión
+                    Salir
                   </button>
                 </div>
               )}
             </div>
           </div>
           
-          {/* Navegación móvil (visible en pantallas pequeñas) */}
+          {/* Navegación móvil */}
           <div className="md:hidden flex justify-around p-2 bg-slate-50 border-t border-slate-100">
             {!usuarioGuardado ? (
               <>
@@ -63,7 +70,9 @@ function App() {
             ) : (
               <>
                 <Link to="/dashboard" className="text-xs font-bold text-slate-500 uppercase">Dashboard</Link>
-                <Link to="/usuarios" className="text-xs font-bold text-slate-500 uppercase">Usuarios</Link>
+                {usuarioGuardado.rol === 'director' && (
+                  <Link to="/usuarios" className="text-xs font-bold text-slate-500 uppercase">Usuarios</Link>
+                )}
                 <button onClick={handleLogout} className="text-xs font-bold text-rose-500 uppercase">Salir</button>
               </>
             )}
@@ -74,7 +83,13 @@ function App() {
         <main className="flex-grow max-w-7xl mx-auto w-full">
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route path="/registro" element={<Registro />} />
+            
+            {/* Registro protegido solo para directores */}
+            <Route path="/registro" element={
+              <ProtectedRoute allowedRoles={['director']}>
+                <Registro />
+              </ProtectedRoute>
+            } />
             
             <Route path="/dashboard" element={
               <ProtectedRoute>
@@ -83,12 +98,12 @@ function App() {
             } />
             
             <Route path="/usuarios" element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['director']}>
                 <Usuarios />
               </ProtectedRoute>
             } />
 
-            {/* Ruta por defecto redirige a login */}
+            {/* Ruta por defecto redirige a login o dashboard */}
             <Route path="/" element={<Navigate to={usuarioGuardado ? "/dashboard" : "/login"} replace />} />
           </Routes>
         </main>
