@@ -11,11 +11,11 @@ const obtenerUsuarios = async (req, res) => {
 };
 
 const crearUsuario = async (req, res) => {
-  const { nombre_completo, correo, rol } = req.body;
+  const { nombre_completo, correo, rol, contraseña } = req.body;
   console.log('Intentando crear usuario con datos:', { nombre_completo, correo, rol });
   try {
-    const consulta = 'INSERT INTO usuarios (nombre_completo, correo, rol) VALUES ($1, $2, $3) RETURNING *';
-    const valores = [nombre_completo, correo, rol];
+    const consulta = 'INSERT INTO usuarios (nombre_completo, correo, rol, contraseña) VALUES ($1, $2, $3, $4) RETURNING *';
+    const valores = [nombre_completo, correo, rol, contraseña];
     const respuesta = await pool.query(consulta, valores);
     res.status(201).json(respuesta.rows[0]);
   } catch (error) {

@@ -4,6 +4,7 @@ function Registro() {
   const [formData, setFormData] = useState({
     nombre_completo: '',
     correo: '',
+    contraseña: '',
     rol: 'profesor' // Valor inicial por defecto
   });
   const [mensaje, setMensaje] = useState({ texto: '', tipo: '' });
@@ -32,7 +33,7 @@ function Registro() {
 
       if (respuesta.status === 201) {
         setMensaje({ texto: '¡Usuario registrado con éxito! 🎉', tipo: 'exito' });
-        setFormData({ nombre_completo: '', correo: '', rol: 'profesor' });
+        setFormData({ nombre_completo: '', correo: '', contraseña: '', rol: 'profesor' });
       } else {
         setMensaje({ 
           texto: `Error: ${datos.detail || 'No se pudo registrar el usuario'}`, 
@@ -84,6 +85,19 @@ function Registro() {
               required
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
               placeholder="ana@edusync.com"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">Contraseña</label>
+            <input
+              type="password"
+              name="contraseña"
+              value={formData.contraseña}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+              placeholder="******"
             />
           </div>
 
