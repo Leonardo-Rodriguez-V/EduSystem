@@ -1,10 +1,18 @@
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Usuarios from './pages/Usuarios';
 import Registro from './pages/Registro';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
+  const usuarioGuardado = JSON.parse(localStorage.getItem('usuario'));
+
+  const handleLogout = () => {
+    localStorage.removeItem('usuario');
+    window.location.href = '/login'; // Recargar para limpiar estados de React si los hubiera
+  };
+
   return (
     <Router>
       <div className="min-h-screen bg-slate-100 flex flex-col">
@@ -15,20 +23,50 @@ function App() {
               <div className="flex items-center">
                 <span className="text-2xl font-black text-blue-700 mr-8">EduSync</span>
                 <div className="hidden md:flex space-x-8">
-                  <Link to="/login" className="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium">Login</Link>
-                  <Link to="/registro" className="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium">Registro</Link>
-                  <Link to="/dashboard" className="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium">Dashboard</Link>
-                  <Link to="/usuarios" className="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium">Usuarios</Link>
+                  {!usuarioGuardado ? (
+                    <>
+                      <Link to="/login" className="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium">Login</Link>
+                      <Link to="/registro" className="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium">Registro</Link>
+                    </>
+                  ) : (
+                    <>
+                      <Link to="/dashboard" className="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium">Dashboard</Link>
+                      <Link to="/usuarios" className="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium">Usuarios</Link>
+                    </>
+                  )}
                 </div>
               </div>
+
+              {usuarioGuardado && (
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm font-medium text-slate-700">
+                    Hola, <span className="text-blue-600 font-bold">{usuarioGuardado.nombre_completo}</span>
+                  </span>
+                  <button 
+                    onClick={handleLogout}
+                    className="bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 px-4 py-2 rounded-lg text-sm font-bold transition-all border border-transparent hover:border-rose-200"
+                  >
+                    Cerrar Sesión
+                  </button>
+                </div>
+              )}
             </div>
           </div>
+          
           {/* Navegación móvil (visible en pantallas pequeñas) */}
           <div className="md:hidden flex justify-around p-2 bg-slate-50 border-t border-slate-100">
-            <Link to="/login" className="text-xs font-bold text-slate-500 uppercase">Login</Link>
-            <Link to="/registro" className="text-xs font-bold text-slate-500 uppercase">Registro</Link>
-            <Link to="/dashboard" className="text-xs font-bold text-slate-500 uppercase">Dashboard</Link>
-            <Link to="/usuarios" className="text-xs font-bold text-slate-500 uppercase">Usuarios</Link>
+            {!usuarioGuardado ? (
+              <>
+                <Link to="/login" className="text-xs font-bold text-slate-500 uppercase">Login</Link>
+                <Link to="/registro" className="text-xs font-bold text-slate-500 uppercase">Registro</Link>
+              </>
+            ) : (
+              <>
+                <Link to="/dashboard" className="text-xs font-bold text-slate-500 uppercase">Dashboard</Link>
+                <Link to="/usuarios" className="text-xs font-bold text-slate-500 uppercase">Usuarios</Link>
+                <button onClick={handleLogout} className="text-xs font-bold text-rose-500 uppercase">Salir</button>
+              </>
+            )}
           </div>
         </nav>
 
@@ -37,10 +75,21 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/registro" element={<Registro />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/usuarios" element={<Usuarios />} />
+            
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/usuarios" element={
+              <ProtectedRoute>
+                <Usuarios />
+              </ProtectedRoute>
+            } />
+
             {/* Ruta por defecto redirige a login */}
-            <Route path="/" element={<Login />} />
+            <Route path="/" element={<Navigate to={usuarioGuardado ? "/dashboard" : "/login"} replace />} />
           </Routes>
         </main>
 
