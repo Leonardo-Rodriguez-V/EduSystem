@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduSync – Apoderado</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #F5F6FA; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+  /* TOP BAR */
+  .topbar {
+    background: #fff; height: 54px; display: flex; align-items: center;
+    justify-content: space-between; padding: 0 24px;
+    border-bottom: 1px solid #E8E8E8; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    flex-shrink: 0;
+  }
+  .topbar-logo { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 700; color: #1A237E; }
+  .topbar-logo span { font-size: 22px; }
+  .topbar-right { display: flex; align-items: center; gap: 14px; font-size: 13px; color: #555; }
+  .topbar-right strong { color: #1A237E; }
+  .btn-logout {
+    padding: 6px 14px; border: 1.5px solid #DDD; border-radius: 8px;
+    background: #fff; font-size: 12px; cursor: pointer; color: #555;
+  }
+
+  .layout { display: flex; flex: 1; overflow: hidden; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 180px; background: #fff; border-right: 1px solid #E8E8E8;
+    padding: 20px 0; flex-shrink: 0;
+  }
+  .sidebar-section-title {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1.2px; color: #AAA; padding: 0 18px; margin-bottom: 8px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 18px; font-size: 13px; color: #555;
+    cursor: pointer; transition: all 0.15s; border-left: 3px solid transparent;
+  }
+  .nav-item:hover { background: #F5F6FA; color: #1A237E; }
+  .nav-item.active { background: #EEF2FF; color: #1A237E; font-weight: 600; border-left-color: #1A237E; }
+  .nav-icon { font-size: 16px; width: 18px; text-align: center; }
+
+  /* CONTENT */
+  .content-area { flex: 1; overflow-y: auto; padding: 28px 30px; }
+
+  /* PAGE TITLE */
+  .page-title { font-size: 22px; font-weight: 700; color: #333; margin-bottom: 20px; }
+
+  /* INFO CARD */
+  .info-card {
+    background: #fff; border-radius: 12px; border: 1px solid #E8E8E8;
+    padding: 18px 24px; margin-bottom: 22px;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+  }
+  .info-field-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #AAA; margin-bottom: 4px; }
+  .info-field-value { font-size: 15px; font-weight: 600; color: #333; }
+
+  /* TABS */
+  .tab-row { display: flex; border-bottom: 2px solid #E8E8E8; margin-bottom: 22px; }
+  .tab {
+    padding: 10px 18px; font-size: 14px; font-weight: 600; color: #888;
+    cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px;
+    transition: all 0.15s; display: flex; align-items: center; gap: 6px;
+  }
+  .tab:hover { color: #1A237E; }
+  .tab.active { color: #1A237E; border-bottom-color: #1A237E; }
+
+  /* TAB CONTENT */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ASISTENCIA TAB */
+  .attend-stat {
+    display: flex; align-items: flex-end; gap: 10px; margin-bottom: 18px;
+  }
+  .attend-pct { font-size: 42px; font-weight: 700; color: #2E7D32; }
+  .attend-pct-label { font-size: 15px; font-weight: 600; color: #333; }
+  .attend-pct-sub { font-size: 12px; color: #888; }
+
+  /* CALENDAR */
+  .calendar-header { font-size: 13px; font-weight: 600; color: #888; margin-bottom: 10px; }
+  .cal-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+  .cal-day-header {
+    text-align: center; font-size: 11px; font-weight: 700;
+    color: #AAA; padding: 4px 0;
+  }
+  .cal-day {
+    aspect-ratio: 1; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600;
+  }
+  .cal-day.P { background: #C8E6C9; color: #1B5E20; }
+  .cal-day.A { background: #FFCDD2; color: #B71C1C; }
+  .cal-day.T { background: #FFF9C4; color: #E65100; }
+  .cal-day.empty { background: transparent; color: #DDD; font-weight: 400; }
+  .cal-day.weekend { background: #F5F5F5; color: #CCC; font-weight: 400; }
+
+  .cal-legend { display: flex; gap: 18px; margin-top: 14px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #666; }
+  .legend-dot { width: 14px; height: 14px; border-radius: 4px; }
+
+  /* CALIFICACIONES TAB */
+  .subject-list { display: flex; flex-direction: column; gap: 10px; }
+  .subject-row {
+    background: #fff; border-radius: 10px; padding: 14px 18px;
+    display: flex; align-items: center; gap: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .subject-name { flex: 1; font-size: 14px; font-weight: 600; color: #333; }
+  .subject-nota { font-size: 22px; font-weight: 700; min-width: 50px; text-align: center; }
+  .subject-nota.ok { color: #2E7D32; }
+  .subject-nota.warn { color: #F57F17; }
+  .subject-nota.bad { color: #C62828; }
+  .subject-bar-wrap { flex: 1; }
+  .subject-bar-bg { background: #EEE; height: 8px; border-radius: 4px; }
+  .subject-bar-fill { height: 8px; border-radius: 4px; }
+  .subject-info { font-size: 11px; color: #AAA; }
+  .prom-global-card {
+    background: #EEF2FF; border-radius: 12px; padding: 16px 20px;
+    display: flex; align-items: center; gap: 14px; margin-bottom: 18px;
+    border: 1.5px solid #C5CAE9;
+  }
+  .prom-val { font-size: 36px; font-weight: 700; color: #1A237E; }
+  .prom-label { font-size: 13px; font-weight: 600; color: #333; }
+  .prom-sub { font-size: 11px; color: #888; }
+
+  /* AVISOS TAB */
+  .aviso-list { display: flex; flex-direction: column; gap: 10px; }
+  .aviso-item {
+    background: #fff; border-radius: 10px; padding: 14px 18px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    display: flex; align-items: flex-start; gap: 14px;
+  }
+  .aviso-icon { font-size: 22px; flex-shrink: 0; }
+  .aviso-title { font-size: 14px; font-weight: 600; color: #333; }
+  .aviso-desc { font-size: 12px; color: #888; margin-top: 3px; }
+  .aviso-date { font-size: 11px; color: #BBB; margin-top: 4px; }
+
+  /* FOOTER */
+  .footer-note { text-align: center; font-size: 11px; color: #CCC; margin-top: 30px; padding-top: 16px; border-top: 1px solid #F0F0F0; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo"><span>📚</span>EduSync</div>
+  <div class="topbar-right">
+    Apoderado: <strong>Fernando González Morales</strong>
+    <button class="btn-logout" onclick="window.location='Login.html'">Cerrar Sesión</button>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section-title">Menú Principal</div>
+    <div class="nav-item active" onclick="setNav(this)"><span class="nav-icon">🏠</span>Inicio</div>
+    <div class="nav-item" onclick="setNav(this)"><span class="nav-icon">✅</span>Asistencia</div>
+    <div class="nav-item" onclick="setNav(this)"><span class="nav-icon">📝</span>Calificaciones</div>
+    <div class="nav-item" onclick="setNav(this)"><span class="nav-icon">🔔</span>Avisos</div>
+    <div class="nav-item" onclick="setNav(this)"><span class="nav-icon">👤</span>Mis Datos</div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content-area">
+    <div class="page-title">Portal Apoderado – Pupilo: Lucas González González</div>
+
+    <!-- INFO CARD -->
+    <div class="info-card">
+      <div>
+        <div class="info-field-label">Nombre Alumno</div>
+        <div class="info-field-value">Lucas González González</div>
+      </div>
+      <div>
+        <div class="info-field-label">Curso</div>
+        <div class="info-field-value">4° Básico A</div>
+      </div>
+      <div>
+        <div class="info-field-label">RUT</div>
+        <div class="info-field-value">24.567.123-8</div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tab-row">
+      <div class="tab active" onclick="showTab('asistencia', this)">
+        ✅ Asistencia
+      </div>
+      <div class="tab" onclick="showTab('calificaciones', this)">
+        📝 Calificaciones
+      </div>
+      <div class="tab" onclick="showTab('avisos', this)">
+        🔔 Avisos
+      </div>
+    </div>
+
+    <!-- TAB: ASISTENCIA -->
+    <div class="tab-content active" id="tab-asistencia">
+      <div class="attend-stat">
+        <div class="attend-pct">90%</div>
+        <div>
+          <div class="attend-pct-label">Asistencia del mes</div>
+          <div class="attend-pct-sub">18 de 20 días lectivos</div>
+        </div>
+      </div>
+
+      <div class="calendar-header">Marzo 2026</div>
+      <div class="cal-grid">
+        <!-- Headers -->
+        <div class="cal-day-header">LUN</div>
+        <div class="cal-day-header">MAR</div>
+        <div class="cal-day-header">MIÉ</div>
+        <div class="cal-day-header">JUE</div>
+        <div class="cal-day-header">VIE</div>
+        <div class="cal-day-header">SÁB</div>
+        <div class="cal-day-header">DOM</div>
+
+        <!-- Week 1 -->
+        <div class="cal-day empty"></div>
+        <div class="cal-day empty"></div>
+        <div class="cal-day empty"></div>
+        <div class="cal-day empty"></div>
+        <div class="cal-day empty"></div>
+        <div class="cal-day weekend">1</div>
+        <div class="cal-day weekend">2</div>
+
+        <!-- Week 2 -->
+        <div class="cal-day P">3</div>
+        <div class="cal-day P">4</div>
+        <div class="cal-day P">5</div>
+        <div class="cal-day T">6</div>
+        <div class="cal-day P">7</div>
+        <div class="cal-day weekend">8</div>
+        <div class="cal-day weekend">9</div>
+
+        <!-- Week 3 -->
+        <div class="cal-day P">10</div>
+        <div class="cal-day P">11</div>
+        <div class="cal-day P">12</div>
+        <div class="cal-day P">13</div>
+        <div class="cal-day P">14</div>
+        <div class="cal-day weekend">15</div>
+        <div class="cal-day weekend">16</div>
+
+        <!-- Week 4 -->
+        <div class="cal-day P">17</div>
+        <div class="cal-day P">18</div>
+        <div class="cal-day P">19</div>
+        <div class="cal-day A">20</div>
+        <div class="cal-day P">21</div>
+        <div class="cal-day weekend">22</div>
+        <div class="cal-day weekend">23</div>
+
+        <!-- Week 5 -->
+        <div class="cal-day P">24</div>
+        <div class="cal-day P">25</div>
+        <div class="cal-day P">26</div>
+        <div class="cal-day P">27</div>
+        <div class="cal-day P">28</div>
+        <div class="cal-day weekend">29</div>
+        <div class="cal-day weekend">30</div>
+      </div>
+
+      <div class="cal-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#C8E6C9"></div>Presente</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#FFCDD2"></div>Ausente</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#FFF9C4"></div>Tardanza</div>
+      </div>
+    </div>
+
+    <!-- TAB: CALIFICACIONES -->
+    <div class="tab-content" id="tab-calificaciones">
+      <div class="prom-global-card">
+        <div class="prom-val">5.6</div>
+        <div>
+          <div class="prom-label">Promedio General</div>
+          <div class="prom-sub">Lucas González · 4° Básico A · 2026</div>
+        </div>
+      </div>
+      <div class="subject-list">
+        <div class="subject-row">
+          <div class="subject-name">Matemáticas</div>
+          <div class="subject-nota ok">6.2</div>
+          <div class="subject-bar-wrap">
+            <div class="subject-bar-bg"><div class="subject-bar-fill" style="width:83%;background:#2E7D32"></div></div>
+          </div>
+          <div class="subject-info">Última: 6.5 · 15 Mar</div>
+        </div>
+        <div class="subject-row">
+          <div class="subject-name">Lenguaje y Comunicación</div>
+          <div class="subject-nota ok">5.8</div>
+          <div class="subject-bar-wrap">
+            <div class="subject-bar-bg"><div class="subject-bar-fill" style="width:76%;background:#2E7D32"></div></div>
+          </div>
+          <div class="subject-info">Última: 5.5 · 12 Mar</div>
+        </div>
+        <div class="subject-row">
+          <div class="subject-name">Ciencias Naturales</div>
+          <div class="subject-nota ok">6.0</div>
+          <div class="subject-bar-wrap">
+            <div class="subject-bar-bg"><div class="subject-bar-fill" style="width:80%;background:#2E7D32"></div></div>
+          </div>
+          <div class="subject-info">Última: 6.2 · 18 Mar</div>
+        </div>
+        <div class="subject-row">
+          <div class="subject-name">Historia, Geografía y Cs. Sociales</div>
+          <div class="subject-nota warn">4.9</div>
+          <div class="subject-bar-wrap">
+            <div class="subject-bar-bg"><div class="subject-bar-fill" style="width:62%;background:#F57F17"></div></div>
+          </div>
+          <div class="subject-info">Última: 4.5 · 10 Mar</div>
+        </div>
+        <div class="subject-row">
+          <div class="subject-name">Inglés</div>
+          <div class="subject-nota bad">3.8</div>
+          <div class="subject-bar-wrap">
+            <div class="subject-bar-bg"><div class="subject-bar-fill" style="width:44%;background:#C62828"></div></div>
+          </div>
+          <div class="subject-info">Última: 3.5 · 14 Mar ⚠️</div>
+        </div>
+        <div class="subject-row">
+          <div class="subject-name">Educación Física</div>
+          <div class="subject-nota ok">6.8</div>
+          <div class="subject-bar-wrap">
+            <div class="subject-bar-bg"><div class="subject-bar-fill" style="width:92%;background:#2E7D32"></div></div>
+          </div>
+          <div class="subject-info">Última: 7.0 · 08 Mar</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: AVISOS -->
+    <div class="tab-content" id="tab-avisos">
+      <div class="aviso-list">
+        <div class="aviso-item" style="border-left:4px solid #C62828">
+          <div class="aviso-icon">⚠️</div>
+          <div>
+            <div class="aviso-title">Nota bajo el mínimo — Inglés (3.8)</div>
+            <div class="aviso-desc">Lucas obtuvo una nota de 3.8 en la última evaluación de Inglés, por debajo del mínimo de aprobación (4.0). Se recomienda tomar acción.</div>
+            <div class="aviso-date">20 Mar 2026 · 10:15 hrs</div>
+          </div>
+        </div>
+        <div class="aviso-item" style="border-left:4px solid #F57F17">
+          <div class="aviso-icon">📅</div>
+          <div>
+            <div class="aviso-title">Reunión de Apoderados — 28 de Marzo</div>
+            <div class="aviso-desc">Se informa que habrá reunión de apoderados del 4° Básico A el día 28 de marzo a las 19:00 hrs en la Sala A-203.</div>
+            <div class="aviso-date">18 Mar 2026 · 14:00 hrs</div>
+          </div>
+        </div>
+        <div class="aviso-item" style="border-left:4px solid #1565C0">
+          <div class="aviso-icon">📄</div>
+          <div>
+            <div class="aviso-title">Circular N°4 – Acto 18 de Abril</div>
+            <div class="aviso-desc">Se adjunta circular con los detalles del acto de conmemoración del 18 de abril. La participación de los alumnos es obligatoria.</div>
+            <div class="aviso-date">15 Mar 2026 · 09:00 hrs</div>
+          </div>
+        </div>
+        <div class="aviso-item" style="border-left:4px solid #2E7D32">
+          <div class="aviso-icon">✅</div>
+          <div>
+            <div class="aviso-title">Matrícula 2026 confirmada</div>
+            <div class="aviso-desc">La matrícula de Lucas González González para el año 2026 ha sido confirmada exitosamente. Bienvenido al año escolar.</div>
+            <div class="aviso-date">05 Ene 2026 · 08:30 hrs</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      EduSync © 2026 | Taller Aplicado de Programación<br>
+      Vista de referencia — Implementación real en React.js + Tailwind CSS
+    </div>
+  </div>
+</div>
+
+<script>
+  function showTab(tab, el) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    el.classList.add('active');
+  }
+
+  function setNav(el) {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    el.classList.add('active');
+  }
+</script>
+</body>
+</html>

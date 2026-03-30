@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduSync – Iniciar Sesión</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; }
+
+  /* LEFT PANEL */
+  .left-panel {
+    width: 48%; background: linear-gradient(145deg, #1A237E 0%, #283593 60%, #1565C0 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 48px; position: relative; overflow: hidden;
+  }
+  .left-panel::before {
+    content: ''; position: absolute; width: 420px; height: 420px;
+    border-radius: 50%; background: rgba(255,255,255,0.05);
+    top: -100px; left: -80px;
+  }
+  .left-panel::after {
+    content: ''; position: absolute; width: 280px; height: 280px;
+    border-radius: 50%; background: rgba(255,255,255,0.05);
+    bottom: 60px; right: -60px;
+  }
+  .brand { text-align: center; z-index: 1; }
+  .brand-logo {
+    display: flex; align-items: center; gap: 14px; justify-content: center;
+    margin-bottom: 20px;
+  }
+  .logo-icon {
+    width: 56px; height: 56px; background: rgba(255,255,255,0.15);
+    border-radius: 14px; display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+  }
+  .brand-name { font-size: 40px; font-weight: 700; color: #fff; letter-spacing: -1px; }
+  .brand-sub { font-size: 15px; color: rgba(255,255,255,0.7); margin-top: 6px; letter-spacing: 0.3px; }
+  .brand-features { margin-top: 40px; display: flex; flex-direction: column; gap: 14px; }
+  .feature-item {
+    display: flex; align-items: center; gap: 12px;
+    color: rgba(255,255,255,0.8); font-size: 14px;
+  }
+  .feature-icon {
+    width: 34px; height: 34px; background: rgba(255,255,255,0.12);
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+
+  /* RIGHT PANEL */
+  .right-panel {
+    flex: 1; background: #F8F9FA; display: flex; align-items: center; justify-content: center;
+    padding: 40px;
+  }
+  .login-box { width: 100%; max-width: 420px; }
+  .login-title { font-size: 28px; font-weight: 700; color: #1A237E; margin-bottom: 6px; }
+  .login-sub { font-size: 14px; color: #888; margin-bottom: 32px; }
+
+  .form-group { margin-bottom: 18px; }
+  .form-label { display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 6px; }
+  .form-input {
+    width: 100%; padding: 12px 14px;
+    border: 1.5px solid #DDD; border-radius: 10px;
+    font-size: 14px; font-family: inherit; background: #fff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  .form-input:focus { border-color: #1565C0; box-shadow: 0 0 0 3px rgba(21,101,192,0.1); }
+
+  .checkbox-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 24px;
+    font-size: 13px; color: #666;
+  }
+  .checkbox-row input { width: 16px; height: 16px; cursor: pointer; accent-color: #1565C0; }
+
+  .btn-login {
+    width: 100%; padding: 13px;
+    background: #1A237E; color: #fff; border: none; border-radius: 10px;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    transition: background 0.2s; letter-spacing: 0.3px;
+  }
+  .btn-login:hover { background: #283593; }
+
+  .divider {
+    text-align: center; margin: 24px 0 16px; position: relative;
+    font-size: 11px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 1px;
+  }
+  .divider::before, .divider::after {
+    content: ''; position: absolute; top: 50%;
+    width: 38%; height: 1px; background: #E0E0E0;
+  }
+  .divider::before { left: 0; }
+  .divider::after { right: 0; }
+
+  /* ROLE SELECTOR */
+  .role-title {
+    font-size: 11px; font-weight: 700; color: #aaa;
+    text-transform: uppercase; letter-spacing: 1px;
+    text-align: center; margin-bottom: 12px;
+  }
+  .role-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .role-card {
+    border: 1.5px solid #E0E0E0; border-radius: 12px;
+    padding: 14px 8px; text-align: center; cursor: pointer;
+    background: #fff; transition: all 0.2s;
+  }
+  .role-card:hover { border-color: #1565C0; background: #EEF2FF; }
+  .role-card.selected { border-color: #1565C0; background: #EEF2FF; }
+  .role-icon { font-size: 28px; margin-bottom: 6px; }
+  .role-name { font-size: 13px; font-weight: 600; color: #333; }
+
+  .footer-note {
+    margin-top: 30px; text-align: center; font-size: 11px; color: #bbb;
+  }
+  .logo-bar { display: flex; align-items: center; gap: 6px; justify-content: center; margin-bottom: 6px; }
+  .logo-bar span { font-size: 18px; }
+  .logo-bar b { font-size: 14px; color: #1A237E; }
+</style>
+</head>
+<body>
+
+<!-- LEFT PANEL -->
+<div class="left-panel">
+  <div class="brand">
+    <div class="brand-logo">
+      <div class="logo-icon">📚</div>
+      <div class="brand-name">EduSync</div>
+    </div>
+    <div class="brand-sub">Sistema de Gestión Escolar Digital</div>
+    <div class="brand-features">
+      <div class="feature-item">
+        <div class="feature-icon">✅</div>
+        Registro de asistencia en tiempo real
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">📊</div>
+        Seguimiento de calificaciones por curso
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🔔</div>
+        Notificaciones automáticas a apoderados
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🤖</div>
+        Asistente IA para profesores
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="right-panel">
+  <div class="login-box">
+    <div class="logo-bar"><span>📚</span><b>EduSync</b></div>
+    <div class="login-title">Iniciar Sesión</div>
+    <div class="login-sub">Bienvenido a EduSync</div>
+
+    <div class="form-group">
+      <label class="form-label">Correo Electrónico</label>
+      <input type="email" class="form-input" value="maria.gonzalez@colegio.cl" placeholder="correo@colegio.cl">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Contraseña</label>
+      <input type="password" class="form-input" value="password123" placeholder="••••••••••••">
+    </div>
+
+    <div class="checkbox-row">
+      <input type="checkbox" id="remember">
+      <label for="remember">Recuérdame en este dispositivo</label>
+    </div>
+
+    <button class="btn-login" onclick="handleLogin()">Iniciar Sesión</button>
+
+    <div class="divider">Selecciona tu Rol</div>
+
+    <div class="role-cards">
+      <div class="role-card" onclick="selectRole('Profesor', this)">
+        <div class="role-icon">🎓</div>
+        <div class="role-name">Profesor</div>
+      </div>
+      <div class="role-card selected" onclick="selectRole('Director', this)">
+        <div class="role-icon">💼</div>
+        <div class="role-name">Director</div>
+      </div>
+      <div class="role-card" onclick="selectRole('Apoderado', this)">
+        <div class="role-icon">👨‍👩‍👧</div>
+        <div class="role-name">Apoderado</div>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      EduSync © 2026 | Taller Aplicado de Programación<br>
+      Vista de referencia — Implementación real en React.js + Tailwind CSS
+    </div>
+  </div>
+</div>
+
+<script>
+  let selectedRole = 'Director';
+
+  function selectRole(role, el) {
+    selectedRole = role;
+    document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  function handleLogin() {
+    const pages = { Director: 'Director.html', Profesor: 'Profesor.html', Apoderado: 'Apoderado.html' };
+    const dest = pages[selectedRole];
+    if (dest) {
+      alert('Iniciando sesión como ' + selectedRole + '...\nRedirigiendo a ' + dest);
+    }
+  }
+</script>
+</body>
+</html>

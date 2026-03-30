@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduSync – Director</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #F5F6FA; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+  /* TOP BAR */
+  .topbar {
+    background: #fff; height: 54px; display: flex; align-items: center;
+    justify-content: space-between; padding: 0 24px;
+    border-bottom: 1px solid #E8E8E8;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    flex-shrink: 0;
+  }
+  .topbar-logo { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 700; color: #1A237E; }
+  .topbar-logo span { font-size: 22px; }
+  .topbar-right { display: flex; align-items: center; gap: 14px; font-size: 13px; color: #555; }
+  .topbar-right strong { color: #1A237E; }
+  .btn-logout {
+    padding: 6px 14px; border: 1.5px solid #DDD; border-radius: 8px;
+    background: #fff; font-size: 12px; cursor: pointer; color: #555;
+    transition: all 0.2s;
+  }
+  .btn-logout:hover { border-color: #999; }
+
+  .layout { display: flex; flex: 1; overflow: hidden; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 180px; background: #fff; border-right: 1px solid #E8E8E8;
+    padding: 20px 0; flex-shrink: 0;
+  }
+  .sidebar-section-title {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1.2px; color: #AAA; padding: 0 18px; margin-bottom: 8px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 18px; font-size: 13px; color: #555;
+    cursor: pointer; transition: all 0.15s; border-left: 3px solid transparent;
+  }
+  .nav-item:hover { background: #F5F6FA; color: #1A237E; }
+  .nav-item.active { background: #EEF2FF; color: #1A237E; font-weight: 600; border-left-color: #1A237E; }
+  .nav-icon { font-size: 16px; width: 18px; text-align: center; }
+
+  /* CONTENT */
+  .content { flex: 1; overflow-y: auto; padding: 28px 30px; }
+  .page-title { font-size: 22px; font-weight: 700; color: #1A237E; margin-bottom: 22px; }
+
+  /* KPI CARDS */
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .kpi-card {
+    background: #fff; border-radius: 12px; padding: 18px 20px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+  }
+  .kpi-icon { font-size: 24px; margin-bottom: 8px; }
+  .kpi-value { font-size: 30px; font-weight: 700; color: #1A237E; line-height: 1; }
+  .kpi-label { font-size: 12px; color: #888; margin-top: 4px; }
+  .kpi-sub { font-size: 11px; color: #AAA; margin-top: 2px; }
+
+  /* CHART */
+  .chart-section {
+    background: #fff; border-radius: 12px; padding: 22px 24px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.07); margin-bottom: 24px;
+  }
+  .section-title { font-size: 15px; font-weight: 700; color: #333; margin-bottom: 18px; }
+  .chart-area { display: flex; align-items: flex-end; gap: 14px; height: 160px; padding-bottom: 8px; }
+  .chart-bar-group { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; }
+  .chart-bar {
+    width: 100%; border-radius: 6px 6px 0 0;
+    transition: opacity 0.2s; cursor: pointer;
+  }
+  .chart-bar:hover { opacity: 0.8; }
+  .chart-label { font-size: 11px; color: #888; text-align: center; }
+  .chart-y-axis { display: flex; flex-direction: column; justify-content: space-between; height: 160px; padding-bottom: 24px; }
+  .chart-y-label { font-size: 10px; color: #CCC; }
+  .chart-wrapper { display: flex; gap: 10px; align-items: flex-end; }
+
+  /* TABLE */
+  .table-section {
+    background: #fff; border-radius: 12px; padding: 22px 24px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+  }
+  .table-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .btn-export {
+    padding: 8px 16px; background: #1A237E; color: #fff;
+    border: none; border-radius: 8px; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .btn-export:hover { background: #283593; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left; padding: 10px 14px; font-size: 12px; font-weight: 700;
+    color: #888; border-bottom: 1px solid #F0F0F0; background: #FAFAFA;
+  }
+  tbody td { padding: 12px 14px; font-size: 13px; color: #333; border-bottom: 1px solid #F8F8F8; }
+  tbody tr:hover { background: #FAFBFF; }
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 12px;
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+  }
+  .badge-critico { background: #FFEBEE; color: #C62828; }
+  .badge-alerta { background: #FFF8E1; color: #F57F17; }
+
+  /* FOOTER */
+  .footer-note {
+    text-align: center; font-size: 11px; color: #CCC;
+    margin-top: 30px; padding-top: 16px; border-top: 1px solid #F0F0F0;
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo"><span>📚</span>EduSync</div>
+  <div class="topbar-right">
+    Director/a: <strong>Roberto Valenzuela Díaz</strong>
+    <button class="btn-logout" onclick="window.location='Login.html'">Cerrar Sesión</button>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section-title">Menú Principal</div>
+    <div class="nav-item active" onclick="setNav(this)"><span class="nav-icon">🏠</span>Inicio</div>
+    <div class="nav-item" onclick="setNav(this)"><span class="nav-icon">✅</span>Asistencia Global</div>
+    <div class="nav-item" onclick="setNav(this)"><span class="nav-icon">📊</span>Rendimiento</div>
+    <div class="nav-item" onclick="setNav(this)"><span class="nav-icon">👥</span>Gestión Usuarios</div>
+    <div class="nav-item" onclick="setNav(this)"><span class="nav-icon">📋</span>Reportes</div>
+    <div class="nav-item" onclick="setNav(this)"><span class="nav-icon">⚙️</span>Configuración</div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+    <div class="page-title">Panel de Control – Dirección</div>
+
+    <!-- KPIs -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-icon">📊</div>
+        <div class="kpi-value">88.3%</div>
+        <div class="kpi-label">Asistencia Promedio</div>
+        <div class="kpi-sub">Esta semana</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon">⚠️</div>
+        <div class="kpi-value">12</div>
+        <div class="kpi-label">Alumnos en Riesgo</div>
+        <div class="kpi-sub">Asistencia &lt; 75%</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon">📚</div>
+        <div class="kpi-value">8</div>
+        <div class="kpi-label">Cursos Activos</div>
+        <div class="kpi-sub">2025 – Semestre 1</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon">👨‍🏫</div>
+        <div class="kpi-value">6</div>
+        <div class="kpi-label">Docentes</div>
+        <div class="kpi-sub">Activos en el sistema</div>
+      </div>
+    </div>
+
+    <!-- CHART -->
+    <div class="chart-section">
+      <div class="section-title">Asistencia por Curso – Semana Actual</div>
+      <div class="chart-wrapper">
+        <div class="chart-y-axis">
+          <div class="chart-y-label">100%</div>
+          <div class="chart-y-label">80%</div>
+          <div class="chart-y-label">60%</div>
+          <div class="chart-y-label">40%</div>
+          <div class="chart-y-label">20%</div>
+          <div class="chart-y-label">0%</div>
+        </div>
+        <div class="chart-area" style="flex:1">
+          <div class="chart-bar-group">
+            <div class="chart-bar" style="height:145px;background:#1565C0" title="4°A: 91%"></div>
+            <div class="chart-label">4° A</div>
+          </div>
+          <div class="chart-bar-group">
+            <div class="chart-bar" style="height:138px;background:#1565C0" title="4°B: 86%"></div>
+            <div class="chart-label">4° B</div>
+          </div>
+          <div class="chart-bar-group">
+            <div class="chart-bar" style="height:100px;background:#E53935" title="5°A: 62%"></div>
+            <div class="chart-label">5° A</div>
+          </div>
+          <div class="chart-bar-group">
+            <div class="chart-bar" style="height:141px;background:#1565C0" title="6°A: 88%"></div>
+            <div class="chart-label">6° A</div>
+          </div>
+          <div class="chart-bar-group">
+            <div class="chart-bar" style="height:110px;background:#E53935" title="7°A: 69%"></div>
+            <div class="chart-label">7° A</div>
+          </div>
+          <div class="chart-bar-group">
+            <div class="chart-bar" style="height:148px;background:#1565C0" title="8°A: 93%"></div>
+            <div class="chart-label">8° A</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RISK TABLE -->
+    <div class="table-section">
+      <div class="table-header-row">
+        <div class="section-title" style="margin:0">Alumnos en Riesgo (Asistencia &lt; 75%)</div>
+        <button class="btn-export">Exportar Reporte</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre Alumno</th>
+            <th>Curso</th>
+            <th>% Asistencia</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Javier Pérez Martínez</td>
+            <td>7° Básico A</td>
+            <td>68%</td>
+            <td><span class="badge badge-critico">Crítico</span></td>
+          </tr>
+          <tr>
+            <td>Marcela Flores Acuña</td>
+            <td>5° Básico A</td>
+            <td>72%</td>
+            <td><span class="badge badge-critico">Crítico</span></td>
+          </tr>
+          <tr>
+            <td>Gonzalo Ruiz Soto</td>
+            <td>7° Básico A</td>
+            <td>70%</td>
+            <td><span class="badge badge-critico">Crítico</span></td>
+          </tr>
+          <tr>
+            <td>Tamara Morales Henríquez</td>
+            <td>5° Básico A</td>
+            <td>74%</td>
+            <td><span class="badge badge-alerta">Alerta</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="footer-note">
+      EduSync © 2026 | Taller Aplicado de Programación<br>
+      Vista de referencia — Implementación real en React.js + Tailwind CSS
+    </div>
+  </div>
+</div>
+
+<script>
+  function setNav(el) {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    el.classList.add('active');
+  }
+</script>
+</body>
+</html>

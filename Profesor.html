@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduSync – Profesor</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #F5F6FA; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+  /* TOP BAR */
+  .topbar {
+    background: #fff; height: 54px; display: flex; align-items: center;
+    justify-content: space-between; padding: 0 24px;
+    border-bottom: 1px solid #E8E8E8; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    flex-shrink: 0;
+  }
+  .topbar-logo { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 700; color: #1A237E; }
+  .topbar-logo span { font-size: 22px; }
+  .topbar-right { display: flex; align-items: center; gap: 14px; font-size: 13px; color: #555; }
+  .topbar-right strong { color: #1A237E; }
+  .btn-logout {
+    padding: 6px 14px; border: 1.5px solid #DDD; border-radius: 8px;
+    background: #fff; font-size: 12px; cursor: pointer; color: #555;
+  }
+
+  .layout { display: flex; flex: 1; overflow: hidden; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 180px; background: #fff; border-right: 1px solid #E8E8E8;
+    padding: 20px 0; flex-shrink: 0;
+  }
+  .sidebar-section-title {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1.2px; color: #AAA; padding: 0 18px; margin-bottom: 8px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 18px; font-size: 13px; color: #555;
+    cursor: pointer; transition: all 0.15s; border-left: 3px solid transparent;
+  }
+  .nav-item:hover { background: #F5F6FA; color: #1A237E; }
+  .nav-item.active { background: #EEF2FF; color: #1A237E; font-weight: 600; border-left-color: #1A237E; }
+  .nav-icon { font-size: 16px; width: 18px; text-align: center; }
+
+  /* CONTENT */
+  .content-area { flex: 1; overflow-y: auto; padding: 28px 24px; }
+
+  /* HEADER */
+  .welcome-title { font-size: 22px; font-weight: 700; color: #333; }
+  .welcome-sub { font-size: 13px; color: #888; margin-bottom: 22px; margin-top: 4px; }
+
+  /* KPI CARDS */
+  .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+  .kpi-card {
+    background: #fff; border-radius: 12px; padding: 18px 20px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+  }
+  .kpi-label { font-size: 12px; color: #888; margin-bottom: 4px; }
+  .kpi-value { font-size: 30px; font-weight: 700; color: #333; }
+  .kpi-sub { font-size: 11px; color: #AAA; margin-top: 3px; }
+
+  /* MAIN GRID */
+  .main-grid { display: grid; grid-template-columns: 1fr 280px; gap: 20px; }
+
+  /* ATTENDANCE TABLE */
+  .attend-card {
+    background: #fff; border-radius: 12px; padding: 22px 24px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+  }
+  .attend-title { font-size: 15px; font-weight: 700; color: #333; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left; padding: 10px 12px; font-size: 12px; font-weight: 700;
+    color: #888; border-bottom: 1px solid #F0F0F0; background: #FAFAFA;
+  }
+  tbody td { padding: 11px 12px; font-size: 13px; color: #333; border-bottom: 1px solid #F8F8F8; }
+  tbody tr:hover { background: #FAFBFF; }
+  .attend-row { display: flex; align-items: center; gap: 8px; }
+  .radio-btn {
+    display: flex; align-items: center; gap: 4px;
+    padding: 4px 10px; border-radius: 16px; border: 1.5px solid #DDD;
+    cursor: pointer; font-size: 12px; font-weight: 600;
+    transition: all 0.15s; background: #fff;
+  }
+  .radio-btn:hover { border-color: #999; }
+  .radio-btn.P.checked { background: #E8F5E9; border-color: #2E7D32; color: #2E7D32; }
+  .radio-btn.A.checked { background: #FFEBEE; border-color: #C62828; color: #C62828; }
+  .radio-btn.T.checked { background: #FFF8E1; border-color: #F57F17; color: #F57F17; }
+  .obs-input {
+    width: 100%; padding: 6px 10px; border: 1px solid #EEE;
+    border-radius: 6px; font-size: 12px; color: #666;
+    font-family: inherit; outline: none;
+  }
+  .obs-input:focus { border-color: #1A237E; }
+  .btn-row { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+  .btn {
+    padding: 9px 20px; border-radius: 8px; font-size: 13px;
+    font-weight: 600; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-cancel { background: #fff; border: 1.5px solid #DDD; color: #666; }
+  .btn-save { background: #1A237E; border: none; color: #fff; }
+  .btn-save:hover { background: #283593; }
+
+  /* AI ASSISTANT */
+  .ai-card {
+    background: linear-gradient(135deg, #3F51B5 0%, #1A237E 100%);
+    border-radius: 12px; padding: 22px 20px;
+    box-shadow: 0 2px 12px rgba(26,35,126,0.3);
+    color: #fff;
+  }
+  .ai-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .ai-icon { font-size: 22px; }
+  .ai-title { font-size: 15px; font-weight: 700; }
+  .ai-bubble {
+    background: rgba(255,255,255,0.12); border-radius: 10px;
+    padding: 14px; font-size: 13px; line-height: 1.6;
+    color: rgba(255,255,255,0.9); margin-bottom: 14px;
+  }
+  .ai-chip {
+    display: inline-block; padding: 5px 12px; background: rgba(255,255,255,0.15);
+    border-radius: 16px; font-size: 11px; cursor: pointer; margin: 3px 2px;
+    transition: background 0.2s;
+  }
+  .ai-chip:hover { background: rgba(255,255,255,0.25); }
+  .ai-input-row { display: flex; gap: 8px; margin-top: 14px; }
+  .ai-input {
+    flex: 1; padding: 9px 12px; border-radius: 8px; border: none;
+    font-size: 13px; font-family: inherit;
+    background: rgba(255,255,255,0.15); color: #fff;
+    outline: none;
+  }
+  .ai-input::placeholder { color: rgba(255,255,255,0.5); }
+  .ai-send {
+    padding: 9px 14px; background: rgba(255,255,255,0.2); border: none;
+    border-radius: 8px; color: #fff; cursor: pointer; font-size: 14px;
+    transition: background 0.2s;
+  }
+  .ai-send:hover { background: rgba(255,255,255,0.3); }
+
+  /* FOOTER */
+  .footer-note { text-align: center; font-size: 11px; color: #CCC; margin-top: 28px; padding-top: 16px; border-top: 1px solid #F0F0F0; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo"><span>📚</span>EduSync</div>
+  <div class="topbar-right">
+    Profesor: <strong>Catalina Rivera</strong>
+    <button class="btn-logout" onclick="window.location='Login.html'">Cerrar Sesión</button>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section-title">Menú Principal</div>
+    <div class="nav-item active" onclick="setNav(this)"><span class="nav-icon">🏠</span>Inicio</div>
+    <div class="nav-item" onclick="setNav(this)"><span class="nav-icon">✅</span>Asistencia</div>
+    <div class="nav-item" onclick="setNav(this)"><span class="nav-icon">📝</span>Calificaciones</div>
+    <div class="nav-item" onclick="setNav(this)"><span class="nav-icon">🔔</span>Avisos</div>
+    <div class="nav-item" onclick="setNav(this)"><span class="nav-icon">🤖</span>Asistente IA</div>
+    <div class="nav-item" onclick="setNav(this)"><span class="nav-icon">👤</span>Mi Perfil</div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content-area">
+    <div class="welcome-title">Bienvenida, Profesora Catalina</div>
+    <div class="welcome-sub">Hoy es 20 de marzo de 2026</div>
+
+    <!-- KPIs -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-label">Alumnos en Curso</div>
+        <div class="kpi-value">32</div>
+        <div class="kpi-sub">4° Básico A</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Asistencia Hoy</div>
+        <div class="kpi-value">28/32</div>
+        <div class="kpi-sub">87.5% de asistencia</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Notas Pendientes</div>
+        <div class="kpi-value">5</div>
+        <div class="kpi-sub">Por ingresar esta semana</div>
+      </div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="main-grid">
+
+      <!-- ATTENDANCE TABLE -->
+      <div class="attend-card">
+        <div class="attend-title">Registro de Asistencia — 4° Básico A — 20 de Marzo</div>
+        <table>
+          <thead>
+            <tr>
+              <th>N°</th>
+              <th>Nombre Alumno</th>
+              <th>RUT</th>
+              <th>Asistencia</th>
+              <th>Observación</th>
+            </tr>
+          </thead>
+          <tbody id="attend-body">
+          </tbody>
+        </table>
+        <div class="btn-row">
+          <button class="btn btn-cancel">Cancelar</button>
+          <button class="btn btn-save" onclick="saveAttendance()">Guardar Asistencia</button>
+        </div>
+      </div>
+
+      <!-- AI ASSISTANT -->
+      <div class="ai-card">
+        <div class="ai-header">
+          <span class="ai-icon">🤖</span>
+          <div class="ai-title">Asistente IA</div>
+        </div>
+        <div class="ai-bubble">
+          Sugerencia: Para mañana podrías iniciar la clase con una actividad de calentamiento sobre fracciones. Veo que algunos estudiantes necesitan refuerzo en este tema.
+        </div>
+        <div>
+          <span class="ai-chip">📊 Ver análisis</span>
+          <span class="ai-chip">📅 Planificar</span>
+          <span class="ai-chip">✉️ Notificar</span>
+        </div>
+        <div class="ai-input-row">
+          <input class="ai-input" placeholder="Pregunta algo al asistente...">
+          <button class="ai-send">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      EduSync © 2026 | Taller Aplicado de Programación<br>
+      Vista de referencia — Implementación real en React.js + Tailwind CSS
+    </div>
+  </div>
+</div>
+
+<script>
+  const students = [
+    { n: 1, name: 'María González López', rut: '24.123.456-7', status: 'P', obs: '' },
+    { n: 2, name: 'Carlos Ramírez Fuentes', rut: '24.098.765-4', status: 'P', obs: '' },
+    { n: 3, name: 'Andrea Martínez Soto', rut: '24.654.321-2', status: 'A', obs: 'Enfermedad' },
+    { n: 4, name: 'Diego Hernández Gómez', rut: '24.567.890-1', status: 'P', obs: '' },
+    { n: 5, name: 'Francisca Flores Rodríguez', rut: '24.432.123-5', status: 'T', obs: 'Llegó tarde a clase' },
+    { n: 6, name: 'Roberto Sandoval Valenzuela', rut: '24.876.543-9', status: 'P', obs: '' },
+  ];
+
+  function renderTable() {
+    const tbody = document.getElementById('attend-body');
+    tbody.innerHTML = '';
+    students.forEach((s, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${s.n}</td>
+        <td>${s.name}</td>
+        <td style="color:#888;font-size:12px">${s.rut}</td>
+        <td>
+          <div class="attend-row">
+            ${['P','A','T'].map(opt => `
+              <button class="radio-btn ${opt} ${s.status===opt?'checked':''}"
+                onclick="setStatus(${i},'${opt}',this)">
+                ${opt}
+              </button>
+            `).join('')}
+          </div>
+        </td>
+        <td>
+          <input class="obs-input" value="${s.obs}" placeholder="..."
+            oninput="students[${i}].obs=this.value">
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function setStatus(idx, status, el) {
+    students[idx].status = status;
+    // Reset all buttons in this row
+    const row = el.closest('tr');
+    row.querySelectorAll('.radio-btn').forEach(b => {
+      b.classList.remove('checked');
+    });
+    el.classList.add('checked');
+  }
+
+  function saveAttendance() {
+    const p = students.filter(s => s.status === 'P').length;
+    const a = students.filter(s => s.status === 'A').length;
+    const t = students.filter(s => s.status === 'T').length;
+    alert(`✅ Asistencia guardada exitosamente\n\nPresentes: ${p}\nAusentes: ${a}\nTardanzas: ${t}`);
+  }
+
+  function setNav(el) {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  renderTable();
+</script>
+</body>
+</html>
