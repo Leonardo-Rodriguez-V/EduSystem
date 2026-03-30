@@ -20,6 +20,11 @@ function Registro() {
     e.preventDefault();
     setMensaje({ texto: '', tipo: '' });
 
+    if (formData.contraseña.length < 8 || !/\d/.test(formData.contraseña)) {
+      setMensaje({ texto: 'La contraseña debe tener al menos 8 caracteres y un número', tipo: 'error' });
+      return;
+    }
+
     try {
       const respuesta = await fetch('http://localhost:3000/api/usuarios', {
         method: 'POST',
@@ -96,8 +101,9 @@ function Registro() {
               value={formData.contraseña}
               onChange={handleChange}
               required
+              minLength={8}
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-              placeholder="******"
+              placeholder="Mínimo 8 caracteres y un número"
             />
           </div>
 

@@ -1,19 +1,18 @@
 import { Navigate } from 'react-router-dom';
 
-/**
- * Componente para proteger rutas privadas y restringir por roles.
- * @param {Array} allowedRoles - Lista de roles permitidos (opcional)
- */
 function ProtectedRoute({ children, allowedRoles }) {
   const usuarioRaw = localStorage.getItem('usuario');
-  
-  if (!usuarioRaw) {
+  const token = localStorage.getItem('token');
+
+  // Si falta cualquiera de los dos, sesión inválida
+  if (!usuarioRaw || !token) {
+    localStorage.removeItem('usuario');
+    localStorage.removeItem('token');
     return <Navigate to="/login" replace />;
   }
 
   const usuario = JSON.parse(usuarioRaw);
 
-  // Si se especifican roles permitidos y el rol del usuario no está incluido
   if (allowedRoles && !allowedRoles.includes(usuario.rol)) {
     console.warn(`Acceso denegado para el rol: ${usuario.rol}`);
     return <Navigate to="/dashboard" replace />;

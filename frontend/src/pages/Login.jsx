@@ -29,9 +29,11 @@ function Login() {
       const datos = await respuesta.json();
 
       if (respuesta.ok) {
-        // Guardar sesión en el navegador
+        // Guardar sesión y token en el navegador
         localStorage.setItem('usuario', JSON.stringify(datos.usuario));
-        // Redirigir al panel principal
+        localStorage.setItem('token', datos.token);
+        // Disparar evento para que App.jsx actualice el navbar sin reload
+        window.dispatchEvent(new Event('storage'));
         navigate('/dashboard');
       } else {
         setError(datos.error || 'Error al iniciar sesión');

@@ -15,6 +15,9 @@ app.use(express.json());
 const usuarioRoutes = require('./routes/usuarioRoutes');
 const authRoutes = require('./routes/authRoutes');
 const cursoRoutes = require('./routes/cursoRoutes');
+const alumnoRoutes = require('./routes/alumnoRoutes');
+const asistenciaRoutes = require('./routes/asistenciaRoutes');
+const calificacionRoutes = require('./routes/calificacionRoutes');
 
 app.get('/', (req, res) => {
   res.json({ mensaje: 'API de EduSync funcionando en el puerto 3000' });
@@ -23,6 +26,9 @@ app.get('/', (req, res) => {
 app.use('/api/usuarios', usuarioRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/cursos', cursoRoutes);
+app.use('/api/alumnos', alumnoRoutes);
+app.use('/api/asistencia', asistenciaRoutes);
+app.use('/api/notas', calificacionRoutes);
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);

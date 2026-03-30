@@ -1,16 +1,31 @@
+import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Usuarios from './pages/Usuarios';
 import Registro from './pages/Registro';
+import Asistencia from './pages/Asistencia';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
-  const usuarioGuardado = JSON.parse(localStorage.getItem('usuario'));
+  const [usuarioGuardado, setUsuarioGuardado] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('usuario')); } catch { return null; }
+  });
+
+  // Escucha cambios en localStorage (login/logout desde cualquier tab)
+  useEffect(() => {
+    const sincronizar = () => {
+      try { setUsuarioGuardado(JSON.parse(localStorage.getItem('usuario'))); } catch { setUsuarioGuardado(null); }
+    };
+    window.addEventListener('storage', sincronizar);
+    return () => window.removeEventListener('storage', sincronizar);
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('usuario');
-    window.location.href = '/login'; // Recargar para limpiar estados de React si los hubiera
+    localStorage.removeItem('token');
+    setUsuarioGuardado(null);
+    window.location.href = '/login';
   };
 
   return (
@@ -31,6 +46,10 @@ function App() {
                   ) : (
                     <>
                       <Link to="/dashboard" className="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium">Dashboard</Link>
+                      {/* PROFESOR Y DIRECTOR VEN ASISTENCIA */}
+                      {(usuarioGuardado.rol === 'profesor' || usuarioGuardado.rol === 'director') && (
+                        <Link to="/asistencia" className="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium">Asistencia</Link>
+                      )}
                       {/* SOLO EL DIRECTOR VE USUARIOS Y REGISTRO */}
                       {usuarioGuardado.rol === 'director' && (
                         <>
@@ -97,6 +116,12 @@ function App() {
               </ProtectedRoute>
             } />
             
+            <Route path="/asistencia" element={
+              <ProtectedRoute allowedRoles={['director', 'profesor']}>
+                <Asistencia />
+              </ProtectedRoute>
+            } />
+
             <Route path="/usuarios" element={
               <ProtectedRoute allowedRoles={['director']}>
                 <Usuarios />

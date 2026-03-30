@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const bcrypt = require('bcryptjs');
 
 const obtenerUsuarios = async (req, res) => {
   try {
@@ -12,12 +13,17 @@ const obtenerUsuarios = async (req, res) => {
 
 const crearUsuario = async (req, res) => {
   const { nombre_completo, correo, rol, contraseña } = req.body;
-  console.log('Intentando crear usuario con datos:', { nombre_completo, correo, rol });
+
+  if (!contraseña || contraseña.length < 8 || !/\d/.test(contraseña)) {
+    return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres y un número' });
+  }
+
   try {
+    const hash = await bcrypt.hash(contraseña, 10);
     const consulta = 'INSERT INTO usuarios (nombre_completo, correo, rol, contraseña) VALUES ($1, $2, $3, $4) RETURNING *';
-    const valores = [nombre_completo, correo, rol, contraseña];
-    const respuesta = await pool.query(consulta, valores);
-    res.status(201).json(respuesta.rows[0]);
+    const respuesta = await pool.query(consulta, [nombre_completo, correo, rol, hash]);
+    const { contraseña: _, ...datosUsuario } = respuesta.rows[0];
+    res.status(201).json(datosUsuario);
   } catch (error) {
     console.error('Error detallado al crear el usuario:', error);
     res.status(500).json({ error: 'Error del servidor al crear usuario', detail: error.message });

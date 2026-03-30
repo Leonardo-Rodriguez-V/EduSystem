@@ -1,25 +1,11 @@
 {
-  "name": "edusystem",
+  "name": "edusystem-root",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Root for EduSystem project",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon src/index.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "@tailwindcss/vite": "^4.2.1",
-    "cors": "^2.8.6",
-    "dotenv": "^17.3.1",
-    "express": "^5.2.1",
-    "pg": "^8.20.0",
-    "postgres": "^3.4.8"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.14"
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev": "npm run dev:backend & npm run dev:frontend"
   }
 }
