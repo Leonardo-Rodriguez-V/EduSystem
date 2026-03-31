@@ -65,14 +65,24 @@ const crearAlumno = async (req, res) => {
 // PUT /api/alumnos/:id
 const actualizarAlumno = async (req, res) => {
   const { id } = req.params;
-  const { nombre_completo, rut, fecha_nacimiento, id_curso } = req.body;
+  const { nombre_completo, rut, fecha_nacimiento, id_curso, id_apoderado } = req.body;
   try {
+    // Build dynamic SET clause for partial updates
+    const sets = [];
+    const valores = [];
+    let idx = 1;
+    if (nombre_completo !== undefined) { sets.push(`nombre_completo = $${idx++}`); valores.push(nombre_completo); }
+    if (rut !== undefined)             { sets.push(`rut = $${idx++}`);              valores.push(rut); }
+    if (fecha_nacimiento !== undefined){ sets.push(`fecha_nacimiento = $${idx++}`); valores.push(fecha_nacimiento); }
+    if (id_curso !== undefined)        { sets.push(`id_curso = $${idx++}`);         valores.push(id_curso); }
+    if (id_apoderado !== undefined)    { sets.push(`id_apoderado = $${idx++}`);     valores.push(id_apoderado || null); }
+
+    if (sets.length === 0) return res.status(400).json({ error: 'No hay campos para actualizar' });
+
+    valores.push(id);
     const respuesta = await pool.query(
-      `UPDATE alumnos
-       SET nombre_completo = $1, rut = $2, fecha_nacimiento = $3, id_curso = $4
-       WHERE id = $5
-       RETURNING *`,
-      [nombre_completo, rut, fecha_nacimiento, id_curso, id]
+      `UPDATE alumnos SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`,
+      valores
     );
     if (respuesta.rows.length === 0) {
       return res.status(404).json({ error: 'Alumno no encontrado' });

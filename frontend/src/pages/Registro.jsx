@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import apiFetch from '../utils/api';
 
 function Registro() {
   const [formData, setFormData] = useState({
@@ -26,11 +27,8 @@ function Registro() {
     }
 
     try {
-      const respuesta = await fetch('http://localhost:3000/api/usuarios', {
+      const respuesta = await apiFetch('/usuarios', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(formData),
       });
 

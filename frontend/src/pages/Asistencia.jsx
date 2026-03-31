@@ -129,7 +129,7 @@ function Asistencia() {
   };
 
   return (
-    <div className="p-6 md:p-8 font-sans">
+    <div className="font-sans">
       {/* Encabezado */}
       <header className="mb-6">
         <h1 className="text-3xl font-extrabold text-slate-800">Pasar Lista</h1>

@@ -191,7 +191,7 @@ export default function PortalApoderado() {
                 <div style={{ fontSize: '12px', color: '#90A4AE', margin: '3px 0 8px' }}>
                   {a.nombre_autor} · {new Date(a.creado_en).toLocaleDateString('es-CL')}
                 </div>
-                <div style={{ fontSize: '13px', color: '#455A64', lineHeight: '1.5' }}>{a.contenido}</div>
+                <div style={{ fontSize: '13px', color: '#455A64', lineHeight: '1.5' }}>{a.mensaje}</div>
               </div>
             ))}
           </div>

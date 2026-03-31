@@ -29,8 +29,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     Promise.all([
-      apiFetch('/cursos').catch(() => []),
-      apiFetch('/alumnos').catch(() => []),
+      apiFetch('/cursos').then(r => r?.json()).catch(() => []),
+      apiFetch('/alumnos').then(r => r?.json()).catch(() => []),
     ]).then(([c, a]) => {
       setCursos(Array.isArray(c) ? c : []);
       setAlumnos(Array.isArray(a) ? a : []);
