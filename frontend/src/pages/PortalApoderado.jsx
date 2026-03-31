@@ -189,7 +189,7 @@ export default function PortalApoderado() {
               <div key={a.id} style={{ padding: '14px', background: '#F5F7FA', borderRadius: '10px', borderLeft: '3px solid #1565C0' }}>
                 <div style={{ fontWeight: 600, color: '#1A2B4A', fontSize: '14px' }}>{a.titulo}</div>
                 <div style={{ fontSize: '12px', color: '#90A4AE', margin: '3px 0 8px' }}>
-                  {a.nombre_autor} · {new Date(a.creado_en).toLocaleDateString('es-CL')}
+                  {a.creado_en ? new Date(a.creado_en).toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}
                 </div>
                 <div style={{ fontSize: '13px', color: '#455A64', lineHeight: '1.5' }}>{a.mensaje}</div>
               </div>
