@@ -2,33 +2,33 @@ import { useEffect, useState } from 'react';
 import apiFetch from '../utils/api';
 
 function Asistencia() {
-  const usuario = JSON.parse(localStorage.getItem('usuario'));
+  const usuario = JSON.parse(localStorage.getItem('usuario')) || {};
+  const esDirector = usuario.rol === 'director';
 
-  const [curso, setCurso] = useState(null);
-  const [alumnos, setAlumnos] = useState([]);
-  const [asistencia, setAsistencia] = useState({}); // { id_alumno: 'presente' | 'ausente' | 'tardanza' }
-  const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
-  const [cargando, setCargando] = useState(true);
+  const [curso,     setCurso]     = useState(null);
+  const [cursos,    setCursos]    = useState([]);
+  const [alumnos,   setAlumnos]   = useState([]);
+  const [asistencia, setAsistencia] = useState({});
+  const [fecha,     setFecha]     = useState(new Date().toISOString().split('T')[0]);
+  const [cargando,  setCargando]  = useState(true);
   const [guardando, setGuardando] = useState(false);
-  const [mensaje, setMensaje] = useState({ texto: '', tipo: '' });
+  const [mensaje,   setMensaje]   = useState({ texto: '', tipo: '' });
 
-  // 1. Cargar el curso del profesor
+  // 1. Cargar cursos
   useEffect(() => {
     const cargarCurso = async () => {
       setCargando(true);
       try {
-        const res = await apiFetch('/cursos');
-        const cursos = await res.json();
-
-        // El profesor ve el curso donde es profesor jefe
-        // El director ve todos, tomamos el primero por ahora
-        const miCurso = cursos.find(c => c.id_profesor_jefe === usuario.id) || cursos[0];
-
-        if (!miCurso) {
+        const res  = await apiFetch('/cursos');
+        const data = await res.json();
+        if (!Array.isArray(data) || data.length === 0) {
           setMensaje({ texto: 'No hay cursos registrados en el sistema.', tipo: 'error' });
           setCargando(false);
           return;
         }
+        setCursos(data);
+        // Profesor → su curso; Director → primer curso
+        const miCurso = data.find(c => c.id_profesor_jefe === usuario.id) || data[0];
         setCurso(miCurso);
       } catch {
         setMensaje({ texto: 'Error al cargar el curso.', tipo: 'error' });
@@ -138,8 +138,20 @@ function Asistencia() {
         </p>
       </header>
 
-      {/* Selector de fecha */}
+      {/* Selector de fecha (+ selector de curso para Director) */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-6 flex flex-wrap items-center gap-4">
+        {esDirector && cursos.length > 0 && (
+          <>
+            <label className="text-sm font-bold text-slate-600">Curso:</label>
+            <select
+              value={curso?.id || ''}
+              onChange={e => setCurso(cursos.find(c => String(c.id) === e.target.value))}
+              className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            >
+              {cursos.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+            </select>
+          </>
+        )}
         <label className="text-sm font-bold text-slate-600">Fecha:</label>
         <input
           type="date"
@@ -175,16 +187,6 @@ function Asistencia() {
         </div>
       )}
 
-      {/* Mensaje */}
-      {mensaje.texto && (
-        <div className={`mb-4 p-4 rounded-xl text-sm font-medium border ${
-          mensaje.tipo === 'exito'
-            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-            : 'bg-rose-50 text-rose-800 border-rose-200'
-        }`}>
-          {mensaje.texto}
-        </div>
-      )}
 
       {/* Lista de alumnos */}
       {cargando ? (
@@ -224,9 +226,18 @@ function Asistencia() {
         </div>
       )}
 
-      {/* Botón guardar */}
+      {/* Botón guardar + mensaje */}
       {alumnos.length > 0 && (
-        <div className="flex justify-end">
+        <div className="flex flex-col items-end gap-3">
+          {mensaje.texto && (
+            <div className={`w-full p-4 rounded-xl text-sm font-medium border ${
+              mensaje.tipo === 'exito'
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                : 'bg-rose-50 text-rose-800 border-rose-200'
+            }`}>
+              {mensaje.texto}
+            </div>
+          )}
           <button
             onClick={guardar}
             disabled={guardando}
