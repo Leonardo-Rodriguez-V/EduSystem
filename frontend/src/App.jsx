@@ -1,142 +1,70 @@
-import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
+import { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Usuarios from './pages/Usuarios';
 import Registro from './pages/Registro';
 import Asistencia from './pages/Asistencia';
+import Notas from './pages/Notas';
+import MuroAvisos from './pages/MuroAvisos';
+import PortalApoderado from './pages/PortalApoderado';
 import ProtectedRoute from './components/ProtectedRoute';
+import Layout from './components/Layout';
 
 function App() {
-  const [usuarioGuardado, setUsuarioGuardado] = useState(() => {
+  const [usuarioGuardado] = useState(() => {
     try { return JSON.parse(localStorage.getItem('usuario')); } catch { return null; }
   });
 
-  // Escucha cambios en localStorage (login/logout desde cualquier tab)
-  useEffect(() => {
-    const sincronizar = () => {
-      try { setUsuarioGuardado(JSON.parse(localStorage.getItem('usuario'))); } catch { setUsuarioGuardado(null); }
-    };
-    window.addEventListener('storage', sincronizar);
-    return () => window.removeEventListener('storage', sincronizar);
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem('usuario');
-    localStorage.removeItem('token');
-    setUsuarioGuardado(null);
-    window.location.href = '/login';
-  };
-
   return (
     <Router>
-      <div className="min-h-screen bg-slate-100 flex flex-col">
-        {/* Barra de Navegación Simple */}
-        <nav className="bg-white shadow-sm border-b border-slate-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between h-16">
-              <div className="flex items-center">
-                <span className="text-2xl font-black text-blue-700 mr-8">EduSync</span>
-                <div className="hidden md:flex space-x-8">
-                  {!usuarioGuardado ? (
-                    <>
-                      <Link to="/login" className="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium">Login</Link>
-                      <Link to="/registro" className="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium">Registro</Link>
-                    </>
-                  ) : (
-                    <>
-                      <Link to="/dashboard" className="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium">Dashboard</Link>
-                      {/* PROFESOR Y DIRECTOR VEN ASISTENCIA */}
-                      {(usuarioGuardado.rol === 'profesor' || usuarioGuardado.rol === 'director') && (
-                        <Link to="/asistencia" className="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium">Asistencia</Link>
-                      )}
-                      {/* SOLO EL DIRECTOR VE USUARIOS Y REGISTRO */}
-                      {usuarioGuardado.rol === 'director' && (
-                        <>
-                          <Link to="/usuarios" className="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium">Usuarios</Link>
-                          <Link to="/registro" className="text-slate-600 hover:text-blue-600 px-3 py-2 text-sm font-medium">Nuevo Usuario</Link>
-                        </>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
+      <Routes>
+        {/* Rutas públicas */}
+        <Route path="/login" element={<Login />} />
 
-              {usuarioGuardado && (
-                <div className="flex items-center space-x-4">
-                  <div className="text-right mr-2">
-                    <p className="text-sm font-bold text-slate-800 leading-tight">{usuarioGuardado.nombre_completo}</p>
-                    <p className="text-xs font-medium text-blue-600 capitalize">{usuarioGuardado.rol}</p>
-                  </div>
-                  <button 
-                    onClick={handleLogout}
-                    className="bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 px-4 py-2 rounded-lg text-sm font-bold transition-all border border-transparent hover:border-rose-200"
-                  >
-                    Salir
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          {/* Navegación móvil */}
-          <div className="md:hidden flex justify-around p-2 bg-slate-50 border-t border-slate-100">
-            {!usuarioGuardado ? (
-              <>
-                <Link to="/login" className="text-xs font-bold text-slate-500 uppercase">Login</Link>
-                <Link to="/registro" className="text-xs font-bold text-slate-500 uppercase">Registro</Link>
-              </>
-            ) : (
-              <>
-                <Link to="/dashboard" className="text-xs font-bold text-slate-500 uppercase">Dashboard</Link>
-                {usuarioGuardado.rol === 'director' && (
-                  <Link to="/usuarios" className="text-xs font-bold text-slate-500 uppercase">Usuarios</Link>
-                )}
-                <button onClick={handleLogout} className="text-xs font-bold text-rose-500 uppercase">Salir</button>
-              </>
-            )}
-          </div>
-        </nav>
+        {/* Rutas protegidas con sidebar */}
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <Layout><Dashboard /></Layout>
+          </ProtectedRoute>
+        } />
 
-        {/* Contenido de las Páginas */}
-        <main className="flex-grow max-w-7xl mx-auto w-full">
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            
-            {/* Registro protegido solo para directores */}
-            <Route path="/registro" element={
-              <ProtectedRoute allowedRoles={['director']}>
-                <Registro />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/asistencia" element={
-              <ProtectedRoute allowedRoles={['director', 'profesor']}>
-                <Asistencia />
-              </ProtectedRoute>
-            } />
+        <Route path="/asistencia" element={
+          <ProtectedRoute allowedRoles={['director', 'profesor']}>
+            <Layout><Asistencia /></Layout>
+          </ProtectedRoute>
+        } />
 
-            <Route path="/usuarios" element={
-              <ProtectedRoute allowedRoles={['director']}>
-                <Usuarios />
-              </ProtectedRoute>
-            } />
+        <Route path="/notas" element={
+          <ProtectedRoute allowedRoles={['director', 'profesor', 'apoderado']}>
+            <Layout>
+              {usuarioGuardado?.rol === 'apoderado' ? <PortalApoderado /> : <Notas />}
+            </Layout>
+          </ProtectedRoute>
+        } />
 
-            {/* Ruta por defecto redirige a login o dashboard */}
-            <Route path="/" element={<Navigate to={usuarioGuardado ? "/dashboard" : "/login"} replace />} />
-          </Routes>
-        </main>
+        <Route path="/muro-avisos" element={
+          <ProtectedRoute allowedRoles={['director', 'profesor', 'apoderado']}>
+            <Layout><MuroAvisos /></Layout>
+          </ProtectedRoute>
+        } />
 
-        <footer className="bg-white border-t border-slate-200 p-4 text-center text-slate-400 text-sm">
-          &copy; 2024 EduSync - Sistema de Gestión Escolar
-        </footer>
-      </div>
+        <Route path="/usuarios" element={
+          <ProtectedRoute allowedRoles={['director']}>
+            <Layout><Usuarios /></Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/registro" element={
+          <ProtectedRoute allowedRoles={['director']}>
+            <Layout><Registro /></Layout>
+          </ProtectedRoute>
+        } />
+
+        {/* Ruta raíz */}
+        <Route path="/" element={<Navigate to={usuarioGuardado ? '/dashboard' : '/login'} replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </Router>
   );
 }

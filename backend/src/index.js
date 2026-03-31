@@ -18,6 +18,7 @@ const cursoRoutes = require('./routes/cursoRoutes');
 const alumnoRoutes = require('./routes/alumnoRoutes');
 const asistenciaRoutes = require('./routes/asistenciaRoutes');
 const calificacionRoutes = require('./routes/calificacionRoutes');
+const muroAvisosRoutes = require('./routes/muroAvisosRoutes');
 
 app.get('/', (req, res) => {
   res.json({ mensaje: 'API de EduSync funcionando en el puerto 3000' });
@@ -29,6 +30,7 @@ app.use('/api/cursos', cursoRoutes);
 app.use('/api/alumnos', alumnoRoutes);
 app.use('/api/asistencia', asistenciaRoutes);
 app.use('/api/notas', calificacionRoutes);
+app.use('/api/avisos', muroAvisosRoutes);
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
