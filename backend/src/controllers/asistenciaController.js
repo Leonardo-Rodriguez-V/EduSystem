@@ -48,22 +48,25 @@ const obtenerAsistenciaPorAlumno = async (req, res) => {
 };
 
 // POST /api/asistencia/guardar
-// Body: { id_curso, fecha, registros: [{ id_alumno, estado }] }
+// Body: { fecha, registros: [{ id_alumno, estado }] }
 const guardarAsistencia = async (req, res) => {
   const { fecha, registros } = req.body;
   if (!fecha || !Array.isArray(registros) || registros.length === 0) {
     return res.status(400).json({ error: 'Se requieren fecha y registros' });
   }
+  const ids = registros.map(r => r.id_alumno);
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    // Borrar registros existentes para esa fecha y esos alumnos
+    await client.query(
+      `DELETE FROM asistencia WHERE fecha = $1 AND id_alumno = ANY($2::int[])`,
+      [fecha, ids]
+    );
+    // Insertar todos de nuevo
     for (const reg of registros) {
-      // Si ya existe el registro para ese alumno y fecha, actualiza; si no, inserta
       await client.query(
-        `INSERT INTO asistencia (id_alumno, fecha, estado)
-         VALUES ($1, $2, $3)
-         ON CONFLICT (id_alumno, fecha)
-         DO UPDATE SET estado = EXCLUDED.estado`,
+        `INSERT INTO asistencia (id_alumno, fecha, estado) VALUES ($1, $2, $3)`,
         [reg.id_alumno, fecha, reg.estado]
       );
     }
