@@ -1,20 +1,29 @@
 const pool = require('../config/db');
 
-// GET /api/notas?id_alumno=1
+// GET /api/notas?id_alumno=1&id_asignatura=2
 const obtenerNotasPorAlumno = async (req, res) => {
-  const { id_alumno } = req.query;
+  const { id_alumno, id_asignatura } = req.query;
   if (!id_alumno) {
     return res.status(400).json({ error: 'Se requiere id_alumno' });
   }
   try {
-    const respuesta = await pool.query(
-      `SELECT n.*, al.nombre_completo AS nombre_alumno
-       FROM notas n
-       JOIN alumnos al ON n.id_alumno = al.id
-       WHERE n.id_alumno = $1
-       ORDER BY n.fecha DESC`,
-      [id_alumno]
-    );
+    let consulta = `
+      SELECT n.*, al.nombre_completo AS nombre_alumno, asig.nombre AS nombre_asignatura
+      FROM notas n
+      JOIN alumnos al ON n.id_alumno = al.id
+      LEFT JOIN asignaturas asig ON n.id_asignatura = asig.id
+      WHERE n.id_alumno = $1
+    `;
+    const valores = [id_alumno];
+
+    if (id_asignatura) {
+      consulta += ` AND n.id_asignatura = $2`;
+      valores.push(id_asignatura);
+    }
+
+    consulta += ` ORDER BY n.fecha DESC`;
+
+    const respuesta = await pool.query(consulta, valores);
     res.status(200).json(respuesta.rows);
   } catch (error) {
     console.error('Error al obtener notas:', error);
@@ -22,19 +31,28 @@ const obtenerNotasPorAlumno = async (req, res) => {
   }
 };
 
-// GET /api/notas/curso/:id_curso
-// Todas las notas de los alumnos de un curso
+// GET /api/notas/curso/:id_curso?id_asignatura=2
 const obtenerNotasPorCurso = async (req, res) => {
   const { id_curso } = req.params;
+  const { id_asignatura } = req.query;
   try {
-    const respuesta = await pool.query(
-      `SELECT n.*, al.nombre_completo AS nombre_alumno, al.rut
-       FROM notas n
-       JOIN alumnos al ON n.id_alumno = al.id
-       WHERE al.id_curso = $1
-       ORDER BY al.nombre_completo ASC, n.fecha DESC`,
-      [id_curso]
-    );
+    let consulta = `
+      SELECT n.*, al.nombre_completo AS nombre_alumno, al.rut, asig.nombre AS nombre_asignatura
+      FROM notas n
+      JOIN alumnos al ON n.id_alumno = al.id
+      LEFT JOIN asignaturas asig ON n.id_asignatura = asig.id
+      WHERE al.id_curso = $1
+    `;
+    const valores = [id_curso];
+
+    if (id_asignatura) {
+      consulta += ` AND n.id_asignatura = $2`;
+      valores.push(id_asignatura);
+    }
+
+    consulta += ` ORDER BY al.nombre_completo ASC, n.fecha DESC`;
+
+    const respuesta = await pool.query(consulta, valores);
     res.status(200).json(respuesta.rows);
   } catch (error) {
     console.error('Error al obtener notas del curso:', error);
@@ -44,16 +62,16 @@ const obtenerNotasPorCurso = async (req, res) => {
 
 // POST /api/notas
 const crearNota = async (req, res) => {
-  const { id_alumno, descripcion, calificacion, fecha } = req.body;
+  const { id_alumno, descripcion, calificacion, fecha, id_asignatura } = req.body;
   if (!id_alumno || !descripcion || calificacion === undefined) {
     return res.status(400).json({ error: 'Faltan campos obligatorios' });
   }
   try {
     const respuesta = await pool.query(
-      `INSERT INTO notas (id_alumno, descripcion, calificacion, fecha)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO notas (id_alumno, descripcion, calificacion, fecha, id_asignatura)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [id_alumno, descripcion, calificacion, fecha || new Date()]
+      [id_alumno, descripcion, calificacion, fecha || new Date(), id_asignatura]
     );
     res.status(201).json(respuesta.rows[0]);
   } catch (error) {
@@ -65,14 +83,14 @@ const crearNota = async (req, res) => {
 // PUT /api/notas/:id
 const actualizarNota = async (req, res) => {
   const { id } = req.params;
-  const { descripcion, calificacion, fecha } = req.body;
+  const { descripcion, calificacion, fecha, id_asignatura } = req.body;
   try {
     const respuesta = await pool.query(
       `UPDATE notas
-       SET descripcion = $1, calificacion = $2, fecha = $3
-       WHERE id = $4
+       SET descripcion = $1, calificacion = $2, fecha = $3, id_asignatura = $4
+       WHERE id = $5
        RETURNING *`,
-      [descripcion, calificacion, fecha, id]
+      [descripcion, calificacion, fecha, id_asignatura, id]
     );
     if (respuesta.rows.length === 0) {
       return res.status(404).json({ error: 'Nota no encontrada' });
@@ -101,10 +119,31 @@ const eliminarNota = async (req, res) => {
   }
 };
 
+// GET /api/notas/config/asignaturas?id_profesor=...&id_curso=...
+const obtenerAsignaturasPorProfesorYCurso = async (req, res) => {
+  const { id_profesor, id_curso } = req.query;
+  try {
+    const respuesta = await pool.query(
+      `SELECT a.* 
+       FROM asignaturas a
+       JOIN curso_asignatura_profesor cap ON a.id = cap.id_asignatura
+       WHERE cap.id_profesor = $1 AND cap.id_curso = $2
+       ORDER BY a.nombre ASC`,
+      [id_profesor, id_curso]
+    );
+    res.status(200).json(respuesta.rows);
+  } catch (error) {
+    console.error('Error al obtener asignaturas:', error);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+};
+
 module.exports = {
   obtenerNotasPorAlumno,
   obtenerNotasPorCurso,
   crearNota,
   actualizarNota,
   eliminarNota,
+  obtenerAsignaturasPorProfesorYCurso
 };
+

@@ -109,4 +109,24 @@ const eliminarAlumno = async (req, res) => {
   }
 };
 
-module.exports = { obtenerAlumnos, obtenerAlumnoPorId, crearAlumno, actualizarAlumno, eliminarAlumno };
+// GET /api/alumnos/apoderado/:id_apoderado
+const obtenerAlumnosPorApoderado = async (req, res) => {
+  const { id_apoderado } = req.params;
+  try {
+    const respuesta = await pool.query(
+      `SELECT a.*, c.nombre AS nombre_curso
+       FROM alumnos a
+       LEFT JOIN cursos c ON a.id_curso = c.id
+       WHERE a.id_apoderado = $1
+       ORDER BY a.id_curso ASC`,
+      [id_apoderado]
+    );
+    res.status(200).json(respuesta.rows);
+  } catch (error) {
+    console.error('Error al obtener alumnos por apoderado:', error);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+};
+
+module.exports = { obtenerAlumnos, obtenerAlumnoPorId, crearAlumno, actualizarAlumno, eliminarAlumno, obtenerAlumnosPorApoderado };
+

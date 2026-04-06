@@ -3,7 +3,14 @@ const bcrypt = require('bcryptjs');
 
 const obtenerUsuarios = async (req, res) => {
   try {
-    const respuesta = await pool.query('SELECT * FROM usuarios');
+    const respuesta = await pool.query(`
+      SELECT u.id, u.nombre_completo, u.correo, u.rol, u.especialidad, c.nombre AS curso_jefatura
+      FROM usuarios u
+      LEFT JOIN cursos c ON c.id_profesor_jefe = u.id
+      ORDER BY
+        CASE u.rol WHEN 'director' THEN 1 WHEN 'profesor' THEN 2 ELSE 3 END,
+        u.nombre_completo
+    `);
     res.json(respuesta.rows);
   } catch (error) {
     console.error('Error al obtener los usuarios:', error);
