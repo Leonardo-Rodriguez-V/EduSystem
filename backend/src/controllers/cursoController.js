@@ -9,8 +9,13 @@ const obtenerCursos = async (req, res) => {
 
     if (id_profesor) {
       consulta = `
-        SELECT * FROM cursos
-        WHERE id_profesor_jefe = $1
+        SELECT * FROM (
+          SELECT c.* FROM cursos c WHERE c.id_profesor_jefe = $1
+          UNION
+          SELECT c.* FROM cursos c
+          JOIN curso_asignatura_profesor cap ON c.id = cap.id_curso
+          WHERE cap.id_profesor = $1
+        ) sub
         ORDER BY
           CASE nombre
             WHEN 'Pre-Kínder (NT1)' THEN 1

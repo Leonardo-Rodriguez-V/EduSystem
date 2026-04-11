@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -7,18 +6,23 @@ import Registro from './pages/Registro';
 import Asistencia from './pages/Asistencia';
 import Notas from './pages/Notas';
 import MuroAvisos from './pages/MuroAvisos';
+import Horarios from './pages/Horarios';
+import Calendario from './pages/Calendario';
 import PortalApoderado from './pages/PortalApoderado';
+import NotasHijo from './pages/NotasHijo';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
+import { NotificationProvider } from './context/NotificationContext';
 
 function App() {
-  const [usuarioGuardado] = useState(() => {
+  const usuario = (() => {
     try { return JSON.parse(localStorage.getItem('usuario')); } catch { return null; }
-  });
+  })();
 
   return (
-    <Router>
-      <Routes>
+    <NotificationProvider>
+      <Router>
+        <Routes>
         {/* Rutas públicas */}
         <Route path="/login" element={<Login />} />
 
@@ -38,14 +42,32 @@ function App() {
         <Route path="/notas" element={
           <ProtectedRoute allowedRoles={['director', 'profesor', 'apoderado']}>
             <Layout>
-              {usuarioGuardado?.rol === 'apoderado' ? <PortalApoderado /> : <Notas />}
+              {usuario?.rol === 'apoderado' ? <PortalApoderado /> : <Notas />}
             </Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/horarios" element={
+          <ProtectedRoute allowedRoles={['director', 'profesor', 'apoderado']}>
+            <Layout><Horarios /></Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/calendario" element={
+          <ProtectedRoute allowedRoles={['director', 'profesor', 'apoderado']}>
+            <Layout><Calendario /></Layout>
           </ProtectedRoute>
         } />
 
         <Route path="/muro-avisos" element={
           <ProtectedRoute allowedRoles={['director', 'profesor', 'apoderado']}>
             <Layout><MuroAvisos /></Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/notas-hijo" element={
+          <ProtectedRoute allowedRoles={['apoderado']}>
+            <Layout><NotasHijo /></Layout>
           </ProtectedRoute>
         } />
 
@@ -62,10 +84,11 @@ function App() {
         } />
 
         {/* Ruta raíz */}
-        <Route path="/" element={<Navigate to={usuarioGuardado ? '/dashboard' : '/login'} replace />} />
+        <Route path="/" element={<Navigate to={usuario ? '/dashboard' : '/login'} replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </Router>
+      </Router>
+    </NotificationProvider>
   );
 }
 

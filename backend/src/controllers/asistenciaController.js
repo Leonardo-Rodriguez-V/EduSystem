@@ -71,6 +71,18 @@ const guardarAsistencia = async (req, res) => {
       );
     }
     await client.query('COMMIT');
+
+    // Emitir evento Real-time
+    const io = req.app.get('io');
+    if (io) {
+      const presentes = registros.filter(r => r.estado === 'presente').length;
+      io.emit('attendance_report', {
+        mensaje: `Resumen de asistencia guardado para el ${fecha}`,
+        presentes,
+        totales: registros.length
+      });
+    }
+
     res.status(200).json({ mensaje: 'Asistencia guardada correctamente' });
   } catch (error) {
     await client.query('ROLLBACK');

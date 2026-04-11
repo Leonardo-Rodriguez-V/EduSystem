@@ -1,32 +1,60 @@
-import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { 
+  LayoutDashboard, 
+  Users, 
+  CheckSquare, 
+  GraduationCap, 
+  Calendar, 
+  CalendarDays, 
+  Bell, 
+  UserPlus, 
+  User as UserIcon
+} from 'lucide-react';
 
-/* ──────────────────────────────────────────────
-   Navegación por rol
-────────────────────────────────────────────── */
+// Atomic Components
+import Sidebar from './Sidebar';
+import Topbar from './Topbar';
+import AuraOrb from './AuraOrb';
+import AuraPanel from './AuraPanel';
+
+// Hooks
+import { useAura } from '../hooks/useAura';
+import { useNotifications } from '../context/NotificationContext';
+
 const NAV_ITEMS = {
   director: [
-    { label: 'Dashboard',        icon: '🏠', path: '/dashboard' },
-    { label: 'Gestión Usuarios', icon: '👥', path: '/usuarios' },
-    { label: 'Asistencia',       icon: '📋', path: '/asistencia' },
-    { label: 'Notas',            icon: '📝', path: '/notas' },
-    { label: 'Muro de Avisos',   icon: '📢', path: '/muro-avisos' },
-    { label: 'Nuevo Usuario',    icon: '➕', path: '/registro' },
+    { label: 'Dashboard',        icon: LayoutDashboard, path: '/dashboard' },
+    { label: 'Gestión Usuarios', icon: Users,           path: '/usuarios' },
+    { label: 'Asistencia',       icon: CheckSquare,     path: '/asistencia' },
+    { label: 'Notas',            icon: GraduationCap,   path: '/notas' },
+    { label: 'Horarios',         icon: Calendar,        path: '/horarios' },
+    { label: 'Calendario',       icon: CalendarDays,    path: '/calendario' },
+    { label: 'Muro de Avisos',   icon: Bell,            path: '/muro-avisos' },
+    { label: 'Nuevo Usuario',    icon: UserPlus,        path: '/registration' },
   ],
   profesor: [
-    { label: 'Dashboard',      icon: '🏠', path: '/dashboard' },
-    { label: 'Asistencia',     icon: '📋', path: '/asistencia' },
-    { label: 'Notas',          icon: '📝', path: '/notas' },
-    { label: 'Muro de Avisos', icon: '📢', path: '/muro-avisos' },
+    { label: 'Dashboard',      icon: LayoutDashboard, path: '/dashboard' },
+    { label: 'Asistencia',     icon: CheckSquare,     path: '/asistencia' },
+    { label: 'Notas',          icon: GraduationCap,   path: '/notas' },
+    { label: 'Horarios',       icon: Calendar,        path: '/horarios' },
+    { label: 'Calendario',     icon: CalendarDays,    path: '/calendario' },
+    { label: 'Muro de Avisos', icon: Bell,            path: '/muro-avisos' },
   ],
   apoderado: [
-    { label: 'Dashboard',      icon: '🏠', path: '/dashboard' },
-    { label: 'Mi Hijo',        icon: '👦', path: '/notas' },
-    { label: 'Muro de Avisos', icon: '📢', path: '/muro-avisos' },
+    { label: 'Dashboard',      icon: LayoutDashboard, path: '/dashboard' },
+    { label: 'Mi Hijo',        icon: UserIcon,        path: '/notas' },
+    { label: 'Notas',          icon: GraduationCap,   path: '/notas-hijo' },
+    { label: 'Horarios',       icon: Calendar,        path: '/horarios' },
+    { label: 'Calendario',     icon: CalendarDays,    path: '/calendario' },
+    { label: 'Muro de Avisos', icon: Bell,            path: '/muro-avisos' },
   ],
   alumno: [
-    { label: 'Dashboard',  icon: '🏠', path: '/dashboard' },
-    { label: 'Mis Notas',  icon: '📝', path: '/notas' },
+    { label: 'Dashboard',  icon: LayoutDashboard, path: '/dashboard' },
+    { label: 'Mis Notas',  icon: GraduationCap,   path: '/notas' },
+    { label: 'Horarios',   icon: Calendar,        path: '/horarios' },
+    { label: 'Calendario', icon: CalendarDays,    path: '/calendario' },
   ],
 };
 
@@ -34,27 +62,40 @@ const TITULO_POR_RUTA = {
   '/dashboard':    'Dashboard',
   '/usuarios':     'Gestión de Usuarios',
   '/asistencia':   'Pasar Lista',
-  '/notas':        'Notas',
+  '/notas':        'Libro de Calificaciones',
+  '/horarios':     'Horarios de Clases',
+  '/calendario':   'Calendario Escolar',
   '/muro-avisos':  'Muro de Avisos',
-  '/reportes':     'Reportes',
-  '/registro':     'Nuevo Usuario',
+  '/notas-hijo':   'Notas del Estudiante',
+  '/registro':     'Registro de Usuarios',
 };
 
-/* Obtiene las iniciales del nombre para el avatar */
 function iniciales(nombre = '') {
   return nombre.split(' ').slice(0, 2).map(p => p[0]).join('').toUpperCase();
 }
 
-/* ──────────────────────────────────────────────
-   Componente principal
-────────────────────────────────────────────── */
 export default function Layout({ children }) {
   const location = useLocation();
-  const navigate = useNavigate();
-  const [sidebarAbierto, setSidebarAbierto] = useState(false);
+  const [sidebarAbierto, setSidebarAbierto] = useState(true);
+  const [tema, setTema] = useState(localStorage.getItem('theme') || 'light');
+  const lastNotifId = useRef(null);
+
+  useEffect(() => {
+    if (tema === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('theme', tema);
+  }, [tema]);
+
+  const toggleTema = () => setTema(t => t === 'light' ? 'dark' : 'light');
 
   const usuario = (() => {
-    try { return JSON.parse(localStorage.getItem('usuario')); } catch { return null; }
+    try { 
+      const u = localStorage.getItem('usuario');
+      return u ? JSON.parse(u) : { rol: 'invitado', nombre_completo: 'Usuario' }; 
+    } catch { return { rol: 'invitado', nombre_completo: 'Usuario' }; }
   })();
 
   const handleLogout = () => {
@@ -65,118 +106,95 @@ export default function Layout({ children }) {
 
   const navItems = NAV_ITEMS[usuario?.rol] || [];
   const tituloPagina = TITULO_POR_RUTA[location.pathname] || 'EduSync';
-  const rolLabel = {
-    director: 'Portal Director',
-    profesor: 'Portal Profesor',
-    apoderado: 'Portal Apoderado',
-    alumno: 'Portal Alumno',
-  }[usuario?.rol] || 'EduSync';
+
+  // AI-OS Aura Logic
+  const { notifications, hasNew, clearNew } = useNotifications();
+  const { 
+    isOpen: auraOpen, 
+    toggleAura, 
+    messages: auraMessages, 
+    sendMessage: sendAuraMessage, 
+    typing: isAuraTyping,
+    addSystemMessage 
+  } = useAura(usuario?.rol);
+
+  // Sincronizar notificaciones reales con el chat de Aura
+  useEffect(() => {
+    if (notifications.length > 0) {
+      const latest = notifications[0];
+      if (latest.id !== lastNotifId.current) {
+        lastNotifId.current = latest.id;
+        addSystemMessage(latest.mensaje);
+      }
+    }
+  }, [notifications, addSystemMessage]);
+
+  const handleToggleAura = () => {
+    if (hasNew) clearNew();
+    toggleAura();
+  };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#F0F4F8', fontFamily: "'Segoe UI', Arial, sans-serif" }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--color-background)', transition: 'background 0.3s' }}>
+      
+      <Sidebar 
+        sidebarAbierto={sidebarAbierto}
+        usuario={usuario}
+        navItems={navItems}
+        handleLogout={handleLogout}
+        iniciales={iniciales}
+      />
 
-      {/* ── Sidebar ── */}
-      <aside style={{
-        width: '240px', minHeight: '100vh', background: '#0D47A1',
-        display: 'flex', flexDirection: 'column',
-        position: 'fixed', left: 0, top: 0, zIndex: 100,
-        transform: sidebarAbierto ? 'translateX(0)' : undefined,
+      <div style={{ 
+        marginLeft: sidebarAbierto ? '280px' : '0', 
+        flex: 1, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        minHeight: '100vh',
+        transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
       }}>
-        {/* Logo */}
-        <div style={{ padding: '20px 16px 16px', borderBottom: '1px solid rgba(255,255,255,.15)' }}>
-          <div style={{ fontSize: '22px', fontWeight: 700, color: '#fff', letterSpacing: '.5px' }}>EduSync</div>
-          <div style={{ fontSize: '11px', color: '#BBDEFB', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '2px' }}>{rolLabel}</div>
-        </div>
 
-        {/* Usuario */}
-        <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
-            width: '38px', height: '38px', borderRadius: '50%', background: '#42A5F5',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 700, color: '#0D47A1', fontSize: '14px', flexShrink: 0,
-          }}>
-            {iniciales(usuario?.nombre_completo)}
-          </div>
-          <div>
-            <div style={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>{usuario?.nombre_completo}</div>
-            <div style={{ fontSize: '11px', color: '#BBDEFB' }}>{usuario?.correo}</div>
-          </div>
-        </div>
+        <Topbar 
+          sidebarAbierto={sidebarAbierto}
+          setSidebarAbierto={setSidebarAbierto}
+          tema={tema}
+          toggleTema={toggleTema}
+          tituloPagina={tituloPagina}
+        />
 
-        {/* Nav items */}
-        <nav style={{ flex: 1, padding: '10px 0' }}>
-          {navItems.map(item => {
-            const activo = location.pathname === item.path;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => setSidebarAbierto(false)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '12px',
-                  padding: '11px 18px', cursor: 'pointer', textDecoration: 'none',
-                  color: activo ? '#fff' : 'rgba(255,255,255,.75)',
-                  fontSize: '13.5px',
-                  background: activo ? 'rgba(255,255,255,.13)' : 'transparent',
-                  borderLeft: activo ? '3px solid #42A5F5' : '3px solid transparent',
-                  transition: 'all .2s',
-                }}
-              >
-                <span style={{ fontSize: '17px', width: '20px', textAlign: 'center' }}>{item.icon}</span>
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Cerrar sesión */}
-        <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,.1)' }}>
-          <button
-            onClick={handleLogout}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '10px',
-              padding: '9px 8px', cursor: 'pointer', background: 'none', border: 'none',
-              color: 'rgba(255,255,255,.6)', fontSize: '13px', borderRadius: '6px',
-              width: '100%', transition: '.2s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.07)'; e.currentTarget.style.color = '#fff'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'rgba(255,255,255,.6)'; }}
+        <main style={{ padding: '0 32px 32px' }}>
+          <motion.div
+            key={location.pathname}
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
           >
-            🔓 Cerrar sesión
-          </button>
-        </div>
-      </aside>
+            {children}
+          </motion.div>
+        </main>
 
-      {/* ── Contenido principal ── */}
-      <div style={{ marginLeft: '240px', flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-
-        {/* Topbar */}
-        <div style={{
-          background: '#fff', padding: '14px 28px',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          borderBottom: '1px solid #E8EDF2', position: 'sticky', top: 0, zIndex: 50,
+        <footer style={{ 
+          textAlign: 'center', 
+          padding: '24px', 
+          color: 'var(--color-foreground)', 
+          opacity: 0.4,
+          fontSize: '11px', 
+          fontWeight: 600,
+          background: 'transparent',
+          letterSpacing: '0.02em'
         }}>
-          <div style={{ fontSize: '18px', fontWeight: 600, color: '#1A2B4A' }}>{tituloPagina}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <span style={{
-              fontSize: '12px', color: '#607D8B', background: '#F5F7FA',
-              padding: '6px 12px', borderRadius: '20px',
-            }}>
-              {new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}
-            </span>
-          </div>
-        </div>
-
-        {/* Página */}
-        <div style={{ padding: '24px 28px', flex: 1 }}>
-          {children}
-        </div>
-
-        {/* Footer */}
-        <footer style={{ textAlign: 'center', padding: '12px', color: '#B0BEC5', fontSize: '12px', borderTop: '1px solid #E8EDF2', background: '#fff' }}>
-          © 2024 EduSync — Sistema de Gestión Escolar
+          EDU SYNC 2026 — SISTEMA DE GESTIÓN EDUCATIVA PREMIUM
         </footer>
       </div>
+
+      <AuraOrb onClick={handleToggleAura} hasNotification={hasNew} />
+      <AuraPanel 
+        isOpen={auraOpen} 
+        onClose={toggleAura} 
+        messages={auraMessages}
+        sendMessage={sendAuraMessage}
+        typing={isAuraTyping}
+      />
     </div>
   );
 }

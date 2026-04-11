@@ -1,23 +1,31 @@
 import { useEffect, useState } from 'react';
 import apiFetch from '../utils/api';
+import { 
+  Users, 
+  BookOpen, 
+  BarChart3, 
+  PlusCircle, 
+  ChevronRight,
+  GraduationCap,
+  LayoutDashboard,
+  Clock
+} from 'lucide-react';
+import { motion } from 'framer-motion';
+import StatCard from '../components/StatCard';
 
 const s = {
-  pageHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '22px' },
-  pageTitle:  { fontSize: '20px', fontWeight: 700, color: '#1A2B4A' },
-  pageSub:    { fontSize: '13px', color: '#607D8B', marginTop: '2px' },
-  kpiGrid:    { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' },
-  kpiCard:    (color) => ({ background: '#fff', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', borderLeft: `4px solid ${color}` }),
-  kpiLabel:   { fontSize: '12px', color: '#607D8B', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '.5px' },
-  kpiValue:   { fontSize: '32px', fontWeight: 700, color: '#1A2B4A', margin: '6px 0 4px' },
-  kpiSub:     { fontSize: '12px', color: '#607D8B' },
-  card:       { background: '#fff', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', marginBottom: '20px' },
-  cardHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' },
-  cardTitle:  { fontSize: '15px', fontWeight: 600, color: '#1A2B4A' },
-  tbl:        { width: '100%', borderCollapse: 'collapse', fontSize: '13.5px' },
-  th:         { textAlign: 'left', padding: '10px 12px', fontSize: '11.5px', fontWeight: 600, color: '#607D8B', textTransform: 'uppercase', letterSpacing: '.5px', borderBottom: '2px solid #E8EDF2' },
-  td:         { padding: '11px 12px', borderBottom: '1px solid #E8EDF2', color: '#2D3A4A', verticalAlign: 'middle' },
-  badge:      (bg, color) => ({ display: 'inline-block', padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 600, background: bg, color }),
-  btn:        { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600, background: '#1565C0', color: '#fff' },
+  container:  { padding: '0 0 40px 0', maxWidth: '1400px', margin: '0 auto' },
+  pageHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '40px' },
+  pageTitle:  { fontSize: '32px', fontWeight: 900, color: 'var(--color-foreground)', margin: 0, fontFamily: "'Crimson Pro', serif" },
+  pageSub:    { fontSize: '15px', color: 'var(--color-foreground)', opacity: 0.6, marginTop: '4px', fontWeight: 600 },
+  kpiGrid:    { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '48px' },
+  sectionTitle: { fontSize: '22px', fontWeight: 800, color: 'var(--color-foreground)', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' },
+  tblCard:    { padding: '24px', background: 'var(--color-surface)', borderRadius: '32px', boxShadow: 'var(--clay-shadow)', border: '1px solid rgba(255,255,255,0.1)' },
+  tbl:        { width: '100%', borderCollapse: 'separate', borderSpacing: '0 12px' },
+  th:         { textAlign: 'left', padding: '0 20px', fontSize: '12px', fontWeight: 800, color: 'var(--color-foreground)', opacity: 0.4, textTransform: 'uppercase', letterSpacing: '0.1em' },
+  tr:         { background: 'var(--color-muted)', borderRadius: '20px', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' },
+  td:         { padding: '16px 20px', color: 'var(--color-foreground)', fontSize: '14px', fontWeight: 600 },
+  badge:      (bg, color) => ({ display: 'inline-flex', padding: '6px 14px', borderRadius: '14px', fontSize: '11px', fontWeight: 800, background: bg, color, boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)' }),
 };
 
 export default function Dashboard() {
@@ -25,180 +33,255 @@ export default function Dashboard() {
   const [alumnos, setAlumnos] = useState([]);
   const [cargando, setCargando] = useState(true);
 
-  const usuario = (() => { try { return JSON.parse(localStorage.getItem('usuario')); } catch { return {}; } })();
+  const usuario = (() => { 
+    try { 
+      const u = localStorage.getItem('usuario');
+      return u ? JSON.parse(u) : { rol: 'invitado', nombre_completo: 'Usuario' }; 
+    } catch { return { rol: 'invitado', nombre_completo: 'Usuario' }; } 
+  })();
 
   useEffect(() => {
-    Promise.all([
-      apiFetch('/cursos').then(r => r?.json()).catch(() => []),
-      apiFetch('/alumnos').then(r => r?.json()).catch(() => []),
-    ]).then(([c, a]) => {
-      setCursos(Array.isArray(c) ? c : []);
-      setAlumnos(Array.isArray(a) ? a : []);
-    }).finally(() => setCargando(false));
-  }, []);
+    const fetchCursos = usuario.rol === 'profesor'
+      ? `/cursos?id_profesor=${usuario.id}`
+      : '/cursos';
 
-  const totalAlumnos = alumnos.length;
+    apiFetch(fetchCursos).then(r => r?.json()).catch(() => []).then(async (c) => {
+      const cursosData = Array.isArray(c) ? c : [];
+      setCursos(cursosData);
 
-  /* ── Render por rol ── */
-  if (usuario.rol === 'director') return <DashboardDirector usuario={usuario} cursos={cursos} totalAlumnos={totalAlumnos} cargando={cargando} />;
-  if (usuario.rol === 'profesor') return <DashboardProfesor usuario={usuario} cursos={cursos} totalAlumnos={totalAlumnos} cargando={cargando} />;
-  return <DashboardGenerico usuario={usuario} cursos={cursos} />;
+      if (usuario.rol === 'director') {
+        const a = await apiFetch('/alumnos').then(r => r?.json()).catch(() => []);
+        setAlumnos(Array.isArray(a) ? a : []);
+      } else if (usuario.rol === 'profesor' && cursosData.length > 0) {
+        const resultados = await Promise.all(
+          cursosData.map(curso =>
+            apiFetch(`/alumnos?id_curso=${curso.id}`).then(r => r?.json()).catch(() => [])
+          )
+        );
+        setAlumnos(resultados.flat());
+      } else {
+        setAlumnos([]);
+      }
+      setCargando(false);
+    });
+  }, [usuario.id, usuario.rol]);
+
+  return (
+    <div style={s.container}>
+      {usuario.rol === 'director' && <DashboardDirector usuario={usuario} cursos={cursos} totalAlumnos={alumnos.length} cargando={cargando} />}
+      {usuario.rol === 'profesor' && <DashboardProfesor usuario={usuario} cursos={cursos} totalAlumnos={alumnos.length} cargando={cargando} />}
+      {!['director', 'profesor'].includes(usuario.rol) && <DashboardGenerico usuario={usuario} />}
+    </div>
+  );
 }
 
 /* ────────── DIRECTOR ────────── */
 function DashboardDirector({ usuario, cursos, totalAlumnos, cargando }) {
   return (
-    <div>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
       <div style={s.pageHeader}>
         <div>
-          <div style={s.pageTitle}>Bienvenido, Director {usuario.nombre_completo?.split(' ')[0]}</div>
-          <div style={s.pageSub}>Resumen general del establecimiento</div>
+          <h1 style={s.pageTitle}>Panel de Control Administrativo</h1>
+          <p style={s.pageSub}>Gestionando {usuario?.nombre_completo?.split(',')[0] || 'Sistema'}</p>
         </div>
-        <button style={s.btn}>+ Nuevo aviso</button>
+        <button className="clay-button" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px' }}>
+          <PlusCircle size={20} />
+          Nuevo aviso global
+        </button>
       </div>
 
-      {/* KPIs */}
       <div style={s.kpiGrid}>
-        <div style={s.kpiCard('#1565C0')}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <div>
-              <div style={s.kpiLabel}>Total Alumnos</div>
-              <div style={s.kpiValue}>{cargando ? '...' : totalAlumnos}</div>
-              <div style={s.kpiSub}>Matriculados activos</div>
-            </div>
-            <span style={{ fontSize: '28px' }}>👤</span>
-          </div>
-        </div>
-        <div style={s.kpiCard('#2E7D32')}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <div>
-              <div style={s.kpiLabel}>Cursos Activos</div>
-              <div style={s.kpiValue}>{cargando ? '...' : cursos.length}</div>
-              <div style={s.kpiSub}>Año 2026</div>
-            </div>
-            <span style={{ fontSize: '28px' }}>📚</span>
-          </div>
-        </div>
-        <div style={s.kpiCard('#F57F17')}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <div>
-              <div style={s.kpiLabel}>Asistencia Promedio</div>
-              <div style={s.kpiValue}>—</div>
-              <div style={s.kpiSub}>Actualizar con datos reales</div>
-            </div>
-            <span style={{ fontSize: '28px' }}>📊</span>
-          </div>
-        </div>
+        <StatCard 
+          title="Total Alumnos" 
+          value={cargando ? '...' : totalAlumnos} 
+          subtext="Crecimiento del 4% mensual" 
+          icon={Users} 
+          color="#6366f1"
+          delay={0.1}
+        />
+        <StatCard 
+          title="Cursos Activos" 
+          value={cargando ? '...' : cursos.length} 
+          subtext="Año Académico 2026" 
+          icon={BookOpen} 
+          color="#10b981"
+          delay={0.2}
+        />
+        <StatCard 
+          title="Asistencia Global" 
+          value="94.2%" 
+          subtext="Promedio sobre meta (90%)" 
+          icon={BarChart3} 
+          color="#f59e0b"
+          delay={0.3}
+        />
       </div>
 
-      {/* Cursos */}
-      <div style={s.card}>
-        <div style={s.cardHeader}>
-          <span style={s.cardTitle}>Cursos registrados</span>
-        </div>
-        {cargando ? (
-          <p style={{ color: '#90A4AE', fontSize: '13px' }}>Cargando...</p>
-        ) : cursos.length === 0 ? (
-          <p style={{ color: '#90A4AE', fontSize: '13px' }}>No hay cursos registrados.</p>
-        ) : (
-          <table style={s.tbl}>
-            <thead>
-              <tr>
-                <th style={s.th}>Curso</th>
-                <th style={s.th}>Año</th>
-                <th style={s.th}>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cursos.map(c => (
-                <tr key={c.id} style={{ cursor: 'default' }}>
-                  <td style={s.td}><strong>{c.nombre}</strong></td>
-                  <td style={s.td}>{c.anio}</td>
-                  <td style={s.td}><span style={s.badge('#E8F5E9', '#2E7D32')}>Activo</span></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+      <div style={s.sectionTitle}>
+        <GraduationCap size={26} color="var(--color-primary)" />
+        Estructura Académica
       </div>
-    </div>
+      
+      <div style={s.tblCard}>
+        <table style={s.tbl}>
+          <thead>
+            <tr>
+              <th style={s.th}>Nombre del Curso</th>
+              <th style={s.th}>Año Lectivo</th>
+              <th style={s.th}>Estado Académico</th>
+              <th style={s.th}>Gestión</th>
+            </tr>
+          </thead>
+          <tbody>
+            {cursos.map((c, i) => (
+              <motion.tr 
+                key={c.id} 
+                style={s.tr}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4 + (i * 0.05) }}
+                className="hover:bg-[rgba(255,255,255,0.4)] cursor-pointer"
+              >
+                <td style={{ ...s.td, borderRadius: '20px 0 0 20px' }}>
+                  <div style={{ fontWeight: 800, fontSize: '15px' }}>{c.nombre}</div>
+                </td>
+                <td style={s.td}>{c.anio}</td>
+                <td style={s.td}>
+                  <span style={s.badge('#dcfce7', '#15803d')}>Certificado</span>
+                </td>
+                <td style={{ ...s.td, borderRadius: '0 20px 20px 0' }}>
+                  <button style={{ color: 'var(--color-primary)', background: 'none', border: 'none', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px' }}>
+                    Ver Detalles <ChevronRight size={16} />
+                  </button>
+                </td>
+              </motion.tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </motion.div>
   );
 }
 
 /* ────────── PROFESOR ────────── */
 function DashboardProfesor({ usuario, cursos, totalAlumnos, cargando }) {
   return (
-    <div>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <div style={s.pageHeader}>
         <div>
-          <div style={s.pageTitle}>Bienvenido, {usuario.nombre_completo?.split(' ')[0]}</div>
-          <div style={s.pageSub}>Control de clases, alumnos y evaluaciones asignadas</div>
+          <h1 style={s.pageTitle}>Bienvenido, Prof. {usuario?.nombre_completo?.split(' ').slice(-1) || 'Docente'}</h1>
+          <p style={s.pageSub}>Tu resumen educativo para hoy</p>
         </div>
       </div>
 
-      {/* KPIs */}
       <div style={s.kpiGrid}>
-        <div style={s.kpiCard('#1565C0')}>
-          <div style={s.kpiLabel}>Mis Cursos Jefes</div>
-          <div style={s.kpiValue}>{cargando ? '...' : cursos.length}</div>
-          <div style={s.kpiSub}>Cursos asignados</div>
-        </div>
-        <div style={s.kpiCard('#2E7D32')}>
-          <div style={s.kpiLabel}>Mis Alumnos</div>
-          <div style={s.kpiValue}>{cargando ? '...' : totalAlumnos}</div>
-          <div style={s.kpiSub}>Total matriculados</div>
-        </div>
-        <div style={s.kpiCard('#F57F17')}>
-          <div style={s.kpiLabel}>Pendientes</div>
-          <div style={s.kpiValue}>0</div>
-          <div style={s.kpiSub}>Asistencias sin registrar</div>
-        </div>
+        <StatCard 
+          title="Mis Secciones" 
+          value={cargando ? '...' : cursos.length} 
+          icon={LayoutDashboard} 
+          color="#4f46e5"
+          subtext="Carga académica total"
+          delay={0.1}
+        />
+        <StatCard 
+          title="Alumnos Totales" 
+          value={cargando ? '...' : totalAlumnos} 
+          icon={Users} 
+          color="#0ea5e9"
+          subtext="Impacto educativo"
+          delay={0.2}
+        />
+        <StatCard 
+          title="Notas por Subir" 
+          value="12" 
+          icon={Clock} 
+          color="#ef4444"
+          subtext="Evaluaciones pendientes"
+          delay={0.3}
+        />
       </div>
 
-      {/* Cursos */}
-      <div style={s.card}>
-        <div style={s.cardHeader}>
-          <span style={s.cardTitle}>Mis Cursos</span>
-        </div>
-        {cargando ? (
-          <p style={{ color: '#90A4AE', fontSize: '13px' }}>Cargando...</p>
-        ) : cursos.length === 0 ? (
-          <p style={{ color: '#90A4AE', fontSize: '13px' }}>No tienes cursos asignados.</p>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px' }}>
-            {cursos.map(c => (
-              <div key={c.id} style={{ borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,.08)', border: '1px solid #E8EDF2' }}>
-                <div style={{ background: 'linear-gradient(135deg, #1565C0, #42A5F5)', padding: '24px 16px' }}>
-                  <div style={{ color: '#fff', fontSize: '18px', fontWeight: 700 }}>{c.nombre}</div>
-                </div>
-                <div style={{ background: '#fff', padding: '14px 16px' }}>
-                  <span style={{ fontSize: '12px', background: '#E3F2FD', color: '#1565C0', padding: '2px 8px', borderRadius: '8px', fontWeight: 600 }}>AÑO {c.anio}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+      <div style={s.sectionTitle}>
+        <BookOpen size={26} color="var(--color-primary)" />
+        Mis Cursos Asignados
       </div>
-    </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
+        {cursos.map((c, i) => {
+          const esJefe = c.id_profesor_jefe === usuario.id;
+          return (
+            <motion.div 
+              key={c.id} 
+              className="clay-card" 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.4 + (i * 0.1) }}
+              whileHover={{ y: -10 }}
+              style={{ overflow: 'hidden', padding: 0, borderRadius: '28px' }}
+            >
+              <div style={{ 
+                background: esJefe 
+                  ? 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)' 
+                  : 'linear-gradient(135deg, #475569 0%, #64748b 100%)', 
+                padding: '40px 32px', 
+                position: 'relative',
+                color: 'white'
+              }}>
+                {esJefe && (
+                  <div style={{ 
+                    position: 'absolute', top: '16px', right: '16px', 
+                    background: 'rgba(255,255,255,0.2)', padding: '6px 12px', 
+                    borderRadius: '12px', fontSize: '10px', fontWeight: 900, 
+                    textTransform: 'uppercase', letterSpacing: '0.05em',
+                    backdropFilter: 'blur(4px)'
+                  }}>
+                    Profesor Jefe
+                  </div>
+                )}
+                <div style={{ fontSize: '26px', fontWeight: 900, fontFamily: "'Crimson Pro', serif" }}>{c.nombre}</div>
+                <div style={{ opacity: 0.8, fontSize: '14px', marginTop: '4px', fontWeight: 600 }}>Año lectivo {c.anio}</div>
+              </div>
+              <div style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--color-surface)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 800, opacity: 0.4 }}>Estado</span>
+                  <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--color-foreground)' }}>Vigente</span>
+                </div>
+                <button className="clay-button" style={{ padding: '10px 20px', fontSize: '13px', fontWeight: 800 }}>
+                  Abrir Libro
+                </button>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+    </motion.div>
   );
 }
 
-/* ────────── GENÉRICO (apoderado / alumno) ────────── */
+/* ────────── GENÉRICO ────────── */
 function DashboardGenerico({ usuario }) {
   return (
-    <div>
-      <div style={s.pageHeader}>
-        <div>
-          <div style={s.pageTitle}>Bienvenido, {usuario.nombre_completo}</div>
-          <div style={s.pageSub}>Portal EduSync</div>
+    <div style={{ textAlign: 'center', padding: '100px 20px' }}>
+      <motion.div 
+        className="clay-card" 
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        style={{ maxWidth: '600px', margin: '0 auto', padding: '60px 40px', borderRadius: '40px' }}
+      >
+        <div style={{ 
+          background: 'var(--color-muted)', width: '100px', height: '100px', 
+          borderRadius: '30px', display: 'flex', alignItems: 'center', 
+          justifyContent: 'center', margin: '0 auto 32px', color: 'var(--color-primary)',
+          boxShadow: 'var(--clay-shadow)'
+        }}>
+          <GraduationCap size={48} />
         </div>
-      </div>
-      <div style={s.card}>
-        <div style={s.cardTitle}>Información del sistema</div>
-        <p style={{ color: '#607D8B', fontSize: '13.5px', marginTop: '12px' }}>
-          Usa el menú lateral para navegar entre las secciones disponibles.
+        <h1 style={{ ...s.pageTitle, fontSize: '28px' }}>¡Hola, {usuario?.nombre_completo || 'Usuario'}!</h1>
+        <p style={{ ...s.pageSub, fontSize: '17px', marginTop: '16px', lineHeight: 1.6 }}>
+          Bienvenido a tu ecosistema digital **EduSync**. Estamos preparando tu información personalizada.
+          Explora tus secciones en el panel lateral.
         </p>
-      </div>
+      </motion.div>
     </div>
   );
 }

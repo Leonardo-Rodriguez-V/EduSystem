@@ -1,202 +1,243 @@
 import { useEffect, useState } from 'react';
 import apiFetch from '../utils/api';
+import { 
+  Activity, 
+  GraduationCap, 
+  Bell, 
+  User, 
+  Calendar,
+  ChevronRight,
+  TrendingUp,
+  MessageSquare
+} from 'lucide-react';
 
 const s = {
-  pageTitle:  { fontSize: '20px', fontWeight: 700, color: '#1A2B4A', marginBottom: '4px' },
-  pageSub:    { fontSize: '13px', color: '#607D8B', marginBottom: '24px' },
-  grid2:      { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' },
-  card:       { background: '#fff', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 4px rgba(0,0,0,.06)' },
-  cardTitle:  { fontSize: '15px', fontWeight: 600, color: '#1A2B4A', marginBottom: '16px' },
-  kpiGrid:    { display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '14px', marginBottom: '20px' },
-  kpi:        (color) => ({ background: '#fff', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 4px rgba(0,0,0,.06)', borderLeft: `4px solid ${color}`, textAlign: 'center' }),
-  kpiVal:     { fontSize: '28px', fontWeight: 700, color: '#1A2B4A', margin: '4px 0' },
-  kpiLbl:     { fontSize: '11px', color: '#607D8B', textTransform: 'uppercase', letterSpacing: '.5px' },
-  tbl:        { width: '100%', borderCollapse: 'collapse', fontSize: '13px' },
-  th:         { textAlign: 'left', padding: '8px 10px', fontSize: '11px', fontWeight: 600, color: '#607D8B', textTransform: 'uppercase', borderBottom: '2px solid #E8EDF2' },
-  td:         { padding: '9px 10px', borderBottom: '1px solid #E8EDF2', color: '#2D3A4A' },
-  badge:      (bg, color) => ({ display: 'inline-block', padding: '2px 9px', borderRadius: '10px', fontSize: '11px', fontWeight: 600, background: bg, color }),
-  empty:      { textAlign: 'center', padding: '30px', color: '#90A4AE', fontSize: '13px' },
+  container:  { padding: '24px', maxWidth: '1200px', margin: '0 auto' },
+  pageTitle:  { fontSize: '28px', fontWeight: 800, color: 'var(--color-foreground)', margin: 0 },
+  pageSub:    { fontSize: '15px', color: '#64748b', marginTop: '4px', marginBottom: '32px' },
+  bentoGrid:  { display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '24px' },
+  card:       { padding: '24px', height: '100%', boxSizing: 'border-box' },
+  kpiTitle:   { fontSize: '13px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' },
+  kpiValue:   { fontSize: '42px', fontWeight: 900, color: 'var(--color-foreground)', marginBottom: '8px' },
+  tbl:        { width: '100%', borderCollapse: 'separate', borderSpacing: '0 6px' },
+  th:         { textAlign: 'left', padding: '10px 16px', fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' },
+  tr:         { background: 'var(--color-muted)', borderRadius: '12px' },
+  td:         { padding: '12px 16px', fontSize: '14px', color: 'var(--color-foreground)' },
+  badge:      (bg, color) => ({ display: 'inline-flex', padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, background: bg, color, border: '1px solid var(--color-border)' }),
 };
 
 function colorEstado(e) {
-  if (e === 'presente') return ['#E8F5E9', '#2E7D32'];
-  if (e === 'tardanza') return ['#FFF8E1', '#F57F17'];
-  return ['#FFEBEE', '#C62828'];
+  if (e === 'presente') return ['#dcfce7', '#15803d'];
+  if (e === 'tardanza') return ['#fef3c7', '#b45309'];
+  return ['#fee2e2', '#b91c1c'];
 }
 
 function colorNota(n) {
-  if (!n && n !== 0) return ['#F5F7FA', '#607D8B'];
-  if (n >= 6) return ['#E8F5E9', '#2E7D32'];
-  if (n >= 4) return ['#FFF8E1', '#F57F17'];
-  return ['#FFEBEE', '#C62828'];
+  const val = Number(n);
+  if (!n && n !== 0) return ['#f1f5f9', '#64748b'];
+  if (val >= 6) return ['#dcfce7', '#15803d'];
+  if (val >= 4) return ['#fef3c7', '#b45309'];
+  return ['#fee2e2', '#b91c1c'];
 }
 
 export default function PortalApoderado() {
   const usuario = (() => { try { return JSON.parse(localStorage.getItem('usuario')); } catch { return {}; } })();
 
+  const [alumnos,     setAlumnos]     = useState([]);
   const [alumno,      setAlumno]      = useState(null);
   const [asistencias, setAsistencias] = useState([]);
   const [notas,       setNotas]       = useState([]);
   const [avisos,      setAvisos]      = useState([]);
   const [cargando,    setCargando]    = useState(true);
+  const [cargandoDetalle, setCargandoDetalle] = useState(false);
 
   useEffect(() => {
-    const cargar = async () => {
+    const cargarAlumnos = async () => {
       try {
-        /* 1. Buscar alumno vinculado al apoderado */
-        const resAlumnos = await apiFetch('/alumnos');
-        const listaAlumnos = await resAlumnos?.json();
-        if (!Array.isArray(listaAlumnos) || listaAlumnos.length === 0) return;
-
-        /* Buscar alumno donde id_apoderado coincide con el usuario actual */
-        const miAlumno = listaAlumnos.find(a => a.id_apoderado === usuario.id) || listaAlumnos[0];
-        setAlumno(miAlumno);
-
-        /* 2. Cargar datos en paralelo */
-        const [resAsistencia, resNotas, resAvisos] = await Promise.all([
-          apiFetch(`/asistencia/alumno/${miAlumno.id}`),
-          apiFetch(`/notas?id_alumno=${miAlumno.id}`),
-          miAlumno.id_curso ? apiFetch(`/avisos?id_curso=${miAlumno.id_curso}`) : Promise.resolve(null),
-        ]);
-
-        const [dataAsistencia, dataNotas, dataAvisos] = await Promise.all([
-          resAsistencia?.json(),
-          resNotas?.json(),
-          resAvisos?.json(),
-        ]);
-
-        if (Array.isArray(dataAsistencia)) setAsistencias(dataAsistencia);
-        if (Array.isArray(dataNotas))      setNotas(dataNotas);
-        if (Array.isArray(dataAvisos))     setAvisos(dataAvisos);
+        const res = await apiFetch(`/alumnos/apoderado/${usuario.id}`);
+        const data = await res?.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setAlumnos(data);
+          setAlumno(data[0]);
+        }
       } catch (e) {
-        console.error('Error al cargar datos del apoderado:', e);
+        console.error(e);
       } finally {
         setCargando(false);
       }
     };
-    cargar();
+    if (usuario.id) cargarAlumnos();
   }, [usuario.id]);
 
-  /* Métricas */
+  useEffect(() => {
+    if (!alumno) return;
+    const cargarDetalles = async () => {
+      setCargandoDetalle(true);
+      try {
+        const [resAsistencia, resNotas, resAvisos] = await Promise.all([
+          apiFetch(`/asistencia/alumno/${alumno.id}`),
+          apiFetch(`/notas?id_alumno=${alumno.id}`),
+          alumno.id_curso ? apiFetch(`/avisos?id_curso=${alumno.id_curso}`) : Promise.resolve(null),
+        ]);
+        const [dataA, dataN, dataAv] = await Promise.all([
+          resAsistencia?.json(),
+          resNotas?.json(),
+          resAvisos?.json(),
+        ]);
+        setAsistencias(Array.isArray(dataA) ? dataA : []);
+        setNotas(Array.isArray(dataN) ? dataN : []);
+        setAvisos(Array.isArray(dataAv) ? dataAv : []);
+      } finally {
+        setCargandoDetalle(false);
+      }
+    };
+    cargarDetalles();
+  }, [alumno]);
+
   const totalClases  = asistencias.length;
   const presentes    = asistencias.filter(a => a.estado === 'presente').length;
   const pctAsistencia = totalClases > 0 ? ((presentes / totalClases) * 100).toFixed(1) : '—';
-
-  const promedioNotas = notas.length > 0
+  const promN = notas.length > 0
     ? (notas.reduce((s, n) => s + parseFloat(n.calificacion), 0) / notas.length).toFixed(1)
     : '—';
 
-  if (cargando) return <p style={{ color: '#90A4AE', textAlign: 'center', padding: '60px' }}>Cargando información...</p>;
+  if (cargando) return <div style={{ padding: '100px', textAlign: 'center' }}><TrendingUp className="animate-pulse" size={48} color="var(--color-primary)" /></div>;
 
   if (!alumno) return (
-    <div style={{ textAlign: 'center', padding: '60px', background: '#fff', borderRadius: '12px' }}>
-      <div style={{ fontSize: '40px', marginBottom: '12px' }}>👨‍👩‍👧</div>
-      <div style={{ color: '#607D8B', fontSize: '14px' }}>No tienes un alumno vinculado a tu cuenta.</div>
-      <div style={{ color: '#90A4AE', fontSize: '12px', marginTop: '8px' }}>Contacta al director para vincular tu cuenta.</div>
+    <div style={{ textAlign: 'center', padding: '80px 20px' }}>
+      <div className="clay-card" style={{ maxWidth: '500px', margin: '0 auto', padding: '40px' }}>
+        <User size={64} color="#94a3b8" style={{ marginBottom: '20px' }} />
+        <h2 style={s.pageTitle}>Sin Alumnos Vinculados</h2>
+        <p style={{ color: '#64748b' }}>No hemos encontrado estudiantes asociados a tu cuenta de apoderado.</p>
+      </div>
     </div>
   );
 
   return (
-    <div>
-      <div style={s.pageTitle}>Portal Apoderado</div>
-      <div style={s.pageSub}>
-        Seguimiento académico de <strong>{alumno.nombre_completo}</strong> · {alumno.nombre_curso}
-      </div>
+    <div style={s.container}>
+      <h1 style={s.pageTitle}>Portal del Apoderado</h1>
+      <p style={s.pageSub}>Información académica en tiempo real</p>
+      
+      {alumnos.length > 1 && (
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', overflowX: 'auto', padding: '8px' }}>
+          {alumnos.map(a => (
+            <button
+              key={a.id}
+              onClick={() => setAlumno(a)}
+              className={alumno?.id === a.id ? "clay-button" : "clay-card"}
+              style={{
+                padding: '10px 20px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                border: alumno?.id === a.id ? 'none' : '2px solid white',
+                borderRadius: '16px',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                fontSize: '14px',
+                fontWeight: 700
+              }}
+            >
+              <User size={16} />
+              {a.nombre_completo.split(' ')[0]}
+            </button>
+          ))}
+        </div>
+      )}
 
-      {/* KPIs */}
-      <div style={s.kpiGrid}>
-        <div style={s.kpi('#1565C0')}>
-          <div style={s.kpiLbl}>Asistencia</div>
-          <div style={{ ...s.kpiVal, color: pctAsistencia < 85 ? '#C62828' : '#2E7D32' }}>{pctAsistencia}%</div>
-          <div style={{ fontSize: '11px', color: '#90A4AE' }}>{presentes} de {totalClases} clases</div>
-        </div>
-        <div style={s.kpi('#2E7D32')}>
-          <div style={s.kpiLbl}>Promedio general</div>
-          <div style={{ ...s.kpiVal, color: colorNota(Number(promedioNotas))[1] }}>{promedioNotas}</div>
-          <div style={{ fontSize: '11px', color: '#90A4AE' }}>{notas.length} evaluaciones</div>
-        </div>
-        <div style={s.kpi('#F57F17')}>
-          <div style={s.kpiLbl}>Avisos del curso</div>
-          <div style={s.kpiVal}>{avisos.length}</div>
-          <div style={{ fontSize: '11px', color: '#90A4AE' }}>publicados</div>
-        </div>
-      </div>
-
-      <div style={s.grid2}>
-        {/* Últimas asistencias */}
-        <div style={s.card}>
-          <div style={s.cardTitle}>📋 Asistencia reciente</div>
-          {asistencias.length === 0 ? (
-            <div style={s.empty}>Sin registros de asistencia</div>
-          ) : (
-            <table style={s.tbl}>
-              <thead>
-                <tr>
-                  <th style={s.th}>Fecha</th>
-                  <th style={s.th}>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {asistencias.slice(0, 10).map(a => (
-                  <tr key={a.id}>
-                    <td style={s.td}>{new Date(a.fecha).toLocaleDateString('es-CL')}</td>
-                    <td style={s.td}>
-                      <span style={s.badge(...colorEstado(a.estado))}>{a.estado}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+      <div style={{ ...s.bentoGrid, opacity: cargandoDetalle ? 0.6 : 1, transition: 'opacity 0.3s' }}>
+        
+        {/* Profile Card */}
+        <div className="clay-card" style={{ ...s.card, gridColumn: 'span 4', gridRow: 'span 1', background: 'linear-gradient(135deg, var(--color-surface), var(--color-background))' }}>
+          <div style={{ background: 'var(--color-primary)', width: '48px', height: '48px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', marginBottom: '16px' }}>
+            <User size={24} />
+          </div>
+          <h2 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 4px' }}>{alumno.nombre_completo}</h2>
+          <p style={{ fontSize: '14px', color: '#64748b', margin: 0 }}>{alumno.nombre_curso} · 2026</p>
         </div>
 
-        {/* Notas */}
-        <div style={s.card}>
-          <div style={s.cardTitle}>📝 Calificaciones</div>
-          {notas.length === 0 ? (
-            <div style={s.empty}>Sin calificaciones registradas</div>
-          ) : (
-            <table style={s.tbl}>
-              <thead>
-                <tr>
-                  <th style={s.th}>Evaluación</th>
-                  <th style={s.th}>Nota</th>
-                  <th style={s.th}>Fecha</th>
-                </tr>
-              </thead>
-              <tbody>
-                {notas.map(n => (
-                  <tr key={n.id}>
-                    <td style={s.td}>{n.descripcion}</td>
-                    <td style={s.td}>
-                      <span style={s.badge(...colorNota(n.calificacion))}>{parseFloat(n.calificacion).toFixed(1)}</span>
-                    </td>
-                    <td style={s.td}>{new Date(n.fecha).toLocaleDateString('es-CL')}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+        {/* Attendance Score */}
+        <div className="clay-card" style={{ ...s.card, gridColumn: 'span 4', textAlign: 'center' }}>
+          <div style={s.kpiTitle}><Activity size={16} color="#059669" /> Asistencia</div>
+          <div style={{ ...s.kpiValue, color: Number(pctAsistencia) < 85 ? '#dc2626' : '#059669' }}>{pctAsistencia}%</div>
+          <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>{presentes} de {totalClases} clases presentes</p>
         </div>
-      </div>
 
-      {/* Avisos del curso */}
-      {avisos.length > 0 && (
-        <div style={s.card}>
-          <div style={s.cardTitle}>📢 Avisos del curso</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {avisos.slice(0, 5).map(a => (
-              <div key={a.id} style={{ padding: '14px', background: '#F5F7FA', borderRadius: '10px', borderLeft: '3px solid #1565C0' }}>
-                <div style={{ fontWeight: 600, color: '#1A2B4A', fontSize: '14px' }}>{a.titulo}</div>
-                <div style={{ fontSize: '12px', color: '#90A4AE', margin: '3px 0 8px' }}>
-                  {a.creado_en ? new Date(a.creado_en).toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}
+        {/* General average */}
+        <div className="clay-card" style={{ ...s.card, gridColumn: 'span 4', textAlign: 'center' }}>
+          <div style={s.kpiTitle}><GraduationCap size={16} color="var(--color-accent)" /> Promedio</div>
+          <div style={{ ...s.kpiValue, color: colorNota(promN)[1] }}>{promN}</div>
+          <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>{notas.length} evaluaciones registradas</p>
+        </div>
+
+        {/* Notices / Announcements */}
+        <div className="clay-card" style={{ ...s.card, gridColumn: 'span 5', gridRow: 'span 2' }}>
+          <div style={s.kpiTitle}><Bell size={16} color="var(--color-primary)" /> Avisos del Curso</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
+            {avisos.length === 0 ? (
+              <p style={{ color: '#cbd5e1', fontSize: '14px', textAlign: 'center', padding: '20px' }}>Sin avisos nuevos</p>
+            ) : (
+              avisos.slice(0, 4).map(a => (
+                <div key={a.id} style={{ paddingBottom: '16px', borderBottom: '1px solid var(--color-border)' }}>
+                   <div style={{ fontWeight: 800, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}><MessageSquare size={14} color="#94a3b8" /> {a.titulo}</div>
+                   <p style={{ fontSize: '13px', color: '#64748b', marginTop: '6px', lineHeight: 1.5 }}>{a.mensaje}</p>
+                   <span style={{ fontSize: '11px', color: '#94a3b8' }}>{new Date(a.creado_en).toLocaleDateString()}</span>
                 </div>
-                <div style={{ fontSize: '13px', color: '#455A64', lineHeight: '1.5' }}>{a.mensaje}</div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Latest Grades Table */}
+        <div className="clay-card" style={{ ...s.card, gridColumn: 'span 7' }}>
+          <div style={s.kpiTitle}><TrendingUp size={16} color="var(--color-primary)" /> Últimas Calificaciones</div>
+          <table style={s.tbl}>
+            <thead>
+              <tr>
+                <th style={s.th}>Evaluación</th>
+                <th style={s.th}>Fecha</th>
+                <th style={{ ...s.th, textAlign: 'right' }}>Nota</th>
+              </tr>
+            </thead>
+            <tbody>
+              {notas.slice(0, 5).map(n => (
+                <tr key={n.id} style={s.tr}>
+                  <td style={{ ...s.td, fontWeight: 700, borderRadius: '12px 0 0 12px' }}>{n.descripcion}</td>
+                  <td style={s.td}>{new Date(n.fecha).toLocaleDateString()}</td>
+                  <td style={{ ...s.td, textAlign: 'right', borderRadius: '0 12px 12px 0' }}>
+                    <div style={s.badge(...colorNota(n.calificacion))}>{parseFloat(n.calificacion).toFixed(1)}</div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mini attendance history */}
+        <div className="clay-card" style={{ ...s.card, gridColumn: 'span 7' }}>
+          <div style={s.kpiTitle}><Calendar size={16} color="var(--color-primary)" /> Registro de Asistencia Reciente</div>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '16px' }}>
+            {asistencias.slice(0, 14).map(as => (
+              <div key={as.id} style={{ 
+                width: '40px', 
+                height: '40px', 
+                borderRadius: '12px', 
+                background: colorEstado(as.estado)[0], 
+                color: colorEstado(as.estado)[1],
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '11px',
+                fontWeight: 900,
+                boxShadow: 'inset 2px 2px 4px rgba(255,255,255,0.4)'
+              }} title={`${as.fecha}: ${as.estado}`}>
+                {as.estado[0].toUpperCase()}
               </div>
             ))}
           </div>
         </div>
-      )}
+
+      </div>
     </div>
   );
 }

@@ -19,7 +19,8 @@ function Asistencia() {
     const cargarCurso = async () => {
       setCargando(true);
       try {
-        const res  = await apiFetch('/cursos');
+        const url  = esDirector ? '/cursos' : `/cursos?id_profesor=${usuario.id}`;
+        const res  = await apiFetch(url);
         const data = await res.json();
         if (!Array.isArray(data) || data.length === 0) {
           setMensaje({ texto: 'No hay cursos registrados en el sistema.', tipo: 'error' });
@@ -27,7 +28,7 @@ function Asistencia() {
           return;
         }
         setCursos(data);
-        // Profesor → su curso; Director → primer curso
+        // Profesor → su curso jefe primero; si no, el primero de la lista
         const miCurso = data.find(c => c.id_profesor_jefe === usuario.id) || data[0];
         setCurso(miCurso);
       } catch {
@@ -105,7 +106,7 @@ function Asistencia() {
         setMensaje({ texto: 'Asistencia guardada correctamente.', tipo: 'exito' });
       } else {
         const err = await res.json();
-        setMensaje({ texto: err.error || 'Error al guardar.', tipo: 'error' });
+        setMensaje({ texto: (err.detalle || err.error || 'Error al guardar.'), tipo: 'error' });
       }
     } catch {
       setMensaje({ texto: 'Error de conexión.', tipo: 'error' });
@@ -140,7 +141,7 @@ function Asistencia() {
 
       {/* Selector de fecha (+ selector de curso para Director) */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-6 flex flex-wrap items-center gap-4">
-        {esDirector && cursos.length > 0 && (
+        {cursos.length > 1 && (
           <>
             <label className="text-sm font-bold text-slate-600">Curso:</label>
             <select
@@ -148,7 +149,11 @@ function Asistencia() {
               onChange={e => setCurso(cursos.find(c => String(c.id) === e.target.value))}
               className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             >
-              {cursos.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+              {cursos.map(c => (
+                <option key={c.id} value={c.id}>
+                  {c.nombre}{c.id_profesor_jefe === usuario.id ? ' ★' : ''}
+                </option>
+              ))}
             </select>
           </>
         )}

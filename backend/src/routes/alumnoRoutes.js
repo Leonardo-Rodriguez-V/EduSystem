@@ -10,6 +10,8 @@ router.get('/:id', alumnoController.obtenerAlumnoPorId);
 router.post('/', alumnoController.crearAlumno);
 // PUT /api/alumnos/:id
 router.put('/:id', alumnoController.actualizarAlumno);
+// GET /api/alumnos/apoderado/:id_apoderado
+router.get('/apoderado/:id_apoderado', alumnoController.obtenerAlumnosPorApoderado);
 // DELETE /api/alumnos/:id
 router.delete('/:id', alumnoController.eliminarAlumno);
 

@@ -73,7 +73,20 @@ const crearNota = async (req, res) => {
        RETURNING *`,
       [id_alumno, descripcion, calificacion, fecha || new Date(), id_asignatura]
     );
-    res.status(201).json(respuesta.rows[0]);
+
+    const nuevaNota = respuesta.rows[0];
+
+    // Emitir evento Real-time
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('new_grade', {
+        mensaje: `Nueva nota subida: ${nuevaNota.descripcion}`,
+        calificacion: nuevaNota.calificacion,
+        id_alumno: nuevaNota.id_alumno
+      });
+    }
+
+    res.status(201).json(nuevaNota);
   } catch (error) {
     console.error('Error al crear nota:', error);
     res.status(500).json({ error: 'Error del servidor', detalle: error.message });
@@ -138,12 +151,33 @@ const obtenerAsignaturasPorProfesorYCurso = async (req, res) => {
   }
 };
 
+// GET /api/notas/asignaturas-curso/:id_curso
+// Devuelve todas las asignaturas que se enseñan en un curso (para mostrarlas aunque no haya notas)
+const obtenerAsignaturasPorCurso = async (req, res) => {
+  const { id_curso } = req.params;
+  try {
+    const respuesta = await pool.query(
+      `SELECT DISTINCT a.id, a.nombre
+       FROM asignaturas a
+       JOIN curso_asignatura_profesor cap ON a.id = cap.id_asignatura
+       WHERE cap.id_curso = $1
+       ORDER BY a.nombre ASC`,
+      [id_curso]
+    );
+    res.status(200).json(respuesta.rows);
+  } catch (error) {
+    console.error('Error al obtener asignaturas del curso:', error);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+};
+
 module.exports = {
   obtenerNotasPorAlumno,
   obtenerNotasPorCurso,
   crearNota,
   actualizarNota,
   eliminarNota,
-  obtenerAsignaturasPorProfesorYCurso
+  obtenerAsignaturasPorProfesorYCurso,
+  obtenerAsignaturasPorCurso
 };
 

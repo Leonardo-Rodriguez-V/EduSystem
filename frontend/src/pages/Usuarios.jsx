@@ -158,7 +158,7 @@ export default function Usuarios() {
                 <th style={s.th}>Usuario</th>
                 <th style={s.th}>Correo</th>
                 <th style={s.th}>Rol</th>
-                <th style={s.th}>Vinculación</th>
+                <th style={s.th}>Curso / Vinculación</th>
                 <th style={s.th}>Acciones</th>
               </tr>
             </thead>
@@ -187,6 +187,22 @@ export default function Usuarios() {
                           <option value="">Sin alumno</option>
                           {alumnos.map(a => <option key={a.id} value={a.id}>{a.nombre_completo}</option>)}
                         </select>
+                      ) : u.rol === 'profesor' ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {u.curso_jefatura && (
+                            <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 600, background: '#EDE7F6', color: '#4527A0' }}>
+                              {u.curso_jefatura}
+                            </span>
+                          )}
+                          {u.especialidad && (
+                            <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 500, background: '#E3F2FD', color: '#1565C0' }}>
+                              {u.especialidad}
+                            </span>
+                          )}
+                          {!u.curso_jefatura && !u.especialidad && (
+                            <span style={{ color: '#B0BEC5', fontSize: '12px' }}>—</span>
+                          )}
+                        </div>
                       ) : (
                         <span style={{ color: '#B0BEC5', fontSize: '12px' }}>—</span>
                       )}
