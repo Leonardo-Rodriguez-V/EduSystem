@@ -2,7 +2,7 @@ node_modules/
 .env
 dist/
 .DS_Store
-backend/node_modules/
-backend/.env
-frontend/node_modules/
-frontend/dist/
+Producto/backend/node_modules/
+Producto/backend/.env
+Producto/frontend/node_modules/
+Producto/frontend/dist/
