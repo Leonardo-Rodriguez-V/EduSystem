@@ -16,11 +16,49 @@ const s = {
 
 const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
 const BLOQUES = [
-  { inicio: '08:00', fin: '09:30' },
-  { inicio: '09:45', fin: '11:15' },
-  { inicio: '11:30', fin: '13:00' },
-  { inicio: '14:00', fin: '15:30' },
+  { type: 'class',  inicio: '08:00', fin: '09:30', label: 'Bloque 1' },
+  { type: 'break',  inicio: '09:30', fin: '09:45', label: 'Recreo' },
+  { type: 'class',  inicio: '09:45', fin: '11:15', label: 'Bloque 2' },
+  { type: 'break',  inicio: '11:15', fin: '11:30', label: 'Recreo' },
+  { type: 'class',  inicio: '11:30', fin: '13:00', label: 'Bloque 3' },
+  { type: 'lunch',  inicio: '13:00', fin: '13:45', label: 'Almuerzo' },
+  { type: 'class',  inicio: '13:45', fin: '15:15', label: 'Bloque 4' },
+  { type: 'break',  inicio: '15:15', fin: '15:30', label: 'Recreo' },
+  { type: 'class',  inicio: '15:30', fin: '17:00', label: 'Bloque 5' },
 ];
+
+const COLORS = {
+  'Lenguaje': '#FCE4EC', 'Literatura': '#FCE4EC',
+  'Matemática': '#E3F2FD',
+  'Ciencias': '#E8F5E9', 'Biología': '#E8F5E9', 'Física': '#E8F5E9', 'Química': '#E8F5E9',
+  'Historia': '#FFF3E0', 'Filosofía': '#FFF3E0', 'Ciudadana': '#FFF3E0',
+  'Inglés': '#EDE7F6',
+  'Educación Física': '#F1F8E9',
+  'Artes': '#FAFAFA', 'Música': '#FAFAFA', 'Tecnología': '#FAFAFA',
+  'Orientación': '#E0F7FA', 'Religión': '#FBE9E7',
+  'Taller': '#EFEBE9', 'Electivas': '#ECEFF1'
+};
+
+const BORDERS = {
+  'Lenguaje': '#D81B60', 'Literatura': '#D81B60',
+  'Matemática': '#1976D2',
+  'Ciencias': '#388E3C', 'Biología': '#388E3C', 'Física': '#388E3C', 'Química': '#388E3C',
+  'Historia': '#F57C00', 'Filosofía': '#F57C00', 'Ciudadana': '#F57C00',
+  'Inglés': '#5E35B1',
+  'Educación Física': '#689F38',
+  'Artes': '#455A64', 'Música': '#455A64', 'Tecnología': '#455A64',
+  'Orientación': '#0097A7', 'Religión': '#D84315',
+  'Taller': '#5D4037', 'Electivas': '#455A64'
+};
+
+const getColor = (name) => {
+  for (const key in COLORS) if (name.includes(key)) return COLORS[key];
+  return '#F5F5F5';
+};
+const getBorder = (name) => {
+  for (const key in BORDERS) if (name.includes(key)) return BORDERS[key];
+  return '#9E9E9E';
+};
 
 export default function Horarios() {
   const [cursos, setCursos] = useState([]);
@@ -32,7 +70,6 @@ export default function Horarios() {
 
   useEffect(() => {
     if (usuario.rol === 'apoderado') {
-      // Apoderado: mostrar solo el horario del curso de su hijo
       apiFetch(`/alumnos/apoderado/${usuario.id}`).then(r => r?.json()).then(data => {
         if (!Array.isArray(data) || data.length === 0) { setCargando(false); return; }
         const vistos = new Set();
@@ -70,9 +107,9 @@ export default function Horarios() {
   };
 
   return (
-    <div>
+    <div style={{ padding: '0 10px' }}>
       <div style={s.header}>
-        <div style={s.title}>Horario de Clases</div>
+        <div style={s.title}>Horario de Clases — {cursoSel?.nombre}</div>
         {cursos.length > 1 && (
           <select
             style={s.select}
@@ -96,32 +133,58 @@ export default function Horarios() {
         {/* Rows */}
         {BLOQUES.map((b, bIdx) => (
           <div key={bIdx} style={{ display: 'contents' }}>
-            <div style={s.timeCell}>
-              <div>{b.inicio}</div>
+            <div style={{ ...s.timeCell, ...(b.type !== 'class' ? { background: '#f0f4f7', color: '#78909c' } : {}) }}>
+              <div style={{fontWeight: 800, fontSize: '10px', marginBottom: '4px'}}>{b.inicio}</div>
               <div style={{ fontSize: '9px', opacity: 0.6 }}>a</div>
-              <div>{b.fin}</div>
+              <div style={{fontWeight: 800, fontSize: '10px', marginTop: '4px'}}>{b.fin}</div>
             </div>
-            {DIAS.map((_d, dIdx) => {
-              const entry = getEntry(dIdx, b.inicio);
-              return (
-                <div key={dIdx} style={s.cell}>
-                  {entry ? (
-                    <div style={s.entry()}>
-                      <div style={s.entryAsig}>{entry.nombre_asignatura}</div>
-                      {entry.nombre_profesor && (
-                        <div style={s.entryTime}>{entry.nombre_profesor.split(' ').slice(0,2).join(' ')}</div>
-                      )}
-                    </div>
-                  ) : (
-                    <div style={{ flex: 1, border: '1px dashed #ECEFF1', borderRadius: '8px' }} />
-                  )}
-                </div>
-              );
-            })}
+
+            {b.type === 'class' ? (
+              DIAS.map((_d, dIdx) => {
+                const entry = getEntry(dIdx, b.inicio);
+                return (
+                  <div key={dIdx} style={s.cell}>
+                    {entry ? (
+                      <div style={{
+                        ...s.entry(getColor(entry.nombre_asignatura)),
+                        borderLeft: `4px solid ${getBorder(entry.nombre_asignatura)}`,
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                        transition: 'transform 0.2s',
+                        cursor: 'default'
+                      }}>
+                        <div style={s.entryAsig}>{entry.nombre_asignatura}</div>
+                        {entry.nombre_profesor && (
+                          <div style={s.entryTime}>
+                            {entry.nombre_profesor.split(' ').slice(0,2).join(' ')}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div style={{ flex: 1, border: '1px dashed #E0E0E0', borderRadius: '8px', opacity: 0.5 }} />
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <div style={{
+                gridColumn: 'span 5',
+                background: b.type === 'lunch' ? '#FFF9C4' : '#ECEFF1',
+                color: b.type === 'lunch' ? '#FBC02D' : '#90A4AE',
+                fontSize: '10px',
+                fontWeight: 700,
+                letterSpacing: '2px',
+                textTransform: 'uppercase',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: b.type === 'lunch' ? '40px' : '20px'
+              }}>
+                {b.label}
+              </div>
+            )}
           </div>
         ))}
       </div>
-
     </div>
   );
 }

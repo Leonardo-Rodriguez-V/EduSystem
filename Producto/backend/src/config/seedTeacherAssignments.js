@@ -23,14 +23,19 @@ async function main() {
     const { rows: asignaturas } = await client.query('SELECT id, nombre FROM asignaturas');
     const { rows: profesores }  = await client.query("SELECT id, correo FROM usuarios WHERE rol = 'profesor'");
 
-    const cursoId = (nombre) =>
-      cursos.find(c => c.nombre.toLowerCase() === nombre.toLowerCase())?.id;
+    const cursoId = (nombre) => {
+      const n = nombre.toLowerCase().trim().replace('°', '').replace('ro', '').replace('do', '').replace('er', '').replace('to', '');
+      return cursos.find(c => {
+        const cn = c.nombre.toLowerCase().trim().replace('°', '').replace('ro', '').replace('do', '').replace('er', '').replace('to', '');
+        return cn === n;
+      })?.id;
+    };
 
     const asigId = (nombre) =>
-      asignaturas.find(a => a.nombre.toLowerCase() === nombre.toLowerCase())?.id;
+      asignaturas.find(a => a.nombre.toLowerCase().trim() === nombre.toLowerCase().trim())?.id;
 
     const profId = (correo) =>
-      profesores.find(p => p.correo === correo)?.id;
+      profesores.find(p => p.correo.toLowerCase() === correo.toLowerCase())?.id;
 
     let ok = 0;
     let skip = 0;
