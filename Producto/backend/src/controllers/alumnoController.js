@@ -116,8 +116,9 @@ const obtenerAlumnosPorApoderado = async (req, res) => {
     const respuesta = await pool.query(
       `SELECT a.*, c.nombre AS nombre_curso
        FROM alumnos a
+       JOIN apoderado_alumno aa ON a.id = aa.id_alumno
        LEFT JOIN cursos c ON a.id_curso = c.id
-       WHERE a.id_apoderado = $1
+       WHERE aa.id_apoderado = $1
        ORDER BY a.id_curso ASC`,
       [id_apoderado]
     );

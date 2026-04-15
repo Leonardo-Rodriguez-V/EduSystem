@@ -1,18 +1,36 @@
 import { useEffect, useState } from 'react';
 import apiFetch from '../utils/api';
 
+// Estilos base con variables CSS (compatibles con dark mode)
+const s = {
+  container:  { fontFamily: 'inherit' },
+  title:      { fontSize: '26px', fontWeight: 800, color: 'var(--color-foreground)', marginBottom: '4px' },
+  subtitle:   { fontSize: '14px', color: 'var(--color-foreground)', opacity: 0.55, marginBottom: '24px' },
+  card:       { background: 'var(--color-surface)', borderRadius: '16px', border: '1px solid var(--color-border)', padding: '20px', marginBottom: '20px', boxShadow: '0 1px 4px rgba(0,0,0,.06)' },
+  label:      { fontSize: '13px', fontWeight: 700, color: 'var(--color-foreground)', opacity: 0.6 },
+  select:     { border: '1px solid var(--color-border)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', background: 'var(--color-muted)', color: 'var(--color-foreground)', outline: 'none', cursor: 'pointer' },
+  dateInput:  { border: '1px solid var(--color-border)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', background: 'var(--color-muted)', color: 'var(--color-foreground)', outline: 'none' },
+};
+
+// Colores sólidos para estados — funcionan en claro Y oscuro
+const ESTADO_COLORS = {
+  presente: { solid: '#15803d', light: 'rgba(21,128,61,0.1)',  border: '#15803d', text: '#15803d' },
+  ausente:  { solid: '#dc2626', light: 'rgba(220,38,38,0.1)',  border: '#dc2626', text: '#dc2626' },
+  tardanza: { solid: '#d97706', light: 'rgba(217,119,6,0.1)',  border: '#d97706', text: '#d97706' },
+};
+
 function Asistencia() {
-  const usuario = JSON.parse(localStorage.getItem('usuario')) || {};
+  const usuario    = JSON.parse(localStorage.getItem('usuario')) || {};
   const esDirector = usuario.rol === 'director';
 
-  const [curso,     setCurso]     = useState(null);
-  const [cursos,    setCursos]    = useState([]);
-  const [alumnos,   setAlumnos]   = useState([]);
+  const [curso,      setCurso]      = useState(null);
+  const [cursos,     setCursos]     = useState([]);
+  const [alumnos,    setAlumnos]    = useState([]);
   const [asistencia, setAsistencia] = useState({});
-  const [fecha,     setFecha]     = useState(new Date().toISOString().split('T')[0]);
-  const [cargando,  setCargando]  = useState(true);
-  const [guardando, setGuardando] = useState(false);
-  const [mensaje,   setMensaje]   = useState({ texto: '', tipo: '' });
+  const [fecha,      setFecha]      = useState(new Date().toISOString().split('T')[0]);
+  const [cargando,   setCargando]   = useState(true);
+  const [guardando,  setGuardando]  = useState(false);
+  const [mensaje,    setMensaje]    = useState({ texto: '', tipo: '' });
 
   // 1. Cargar cursos
   useEffect(() => {
@@ -23,12 +41,11 @@ function Asistencia() {
         const res  = await apiFetch(url);
         const data = await res.json();
         if (!Array.isArray(data) || data.length === 0) {
-          setMensaje({ texto: 'No hay cursos registrados en el sistema.', tipo: 'error' });
+          setMensaje({ texto: 'No hay cursos registrados.', tipo: 'error' });
           setCargando(false);
           return;
         }
         setCursos(data);
-        // Profesor → su curso jefe primero; si no, el primero de la lista
         const miCurso = data.find(c => c.id_profesor_jefe === usuario.id) || data[0];
         setCurso(miCurso);
       } catch {
@@ -39,28 +56,22 @@ function Asistencia() {
     cargarCurso();
   }, []);
 
-  // 2. Cargar alumnos y asistencia existente cuando cambia el curso o la fecha
+  // 2. Cargar alumnos y asistencia cuando cambia curso o fecha
   useEffect(() => {
     if (!curso) return;
     const cargarAlumnos = async () => {
       setCargando(true);
       try {
-        const res = await apiFetch(`/asistencia?id_curso=${curso.id}&fecha=${fecha}`);
+        const res   = await apiFetch(`/asistencia?id_curso=${curso.id}&fecha=${fecha}`);
         const datos = await res.json();
-
         if (!Array.isArray(datos)) {
           setMensaje({ texto: datos.error || 'Error al cargar alumnos.', tipo: 'error' });
           setAlumnos([]);
           return;
         }
-
         setAlumnos(datos);
-
-        // Pre-cargar estados ya guardados (si existen)
         const estadosPrevios = {};
-        datos.forEach(a => {
-          if (a.estado) estadosPrevios[a.id] = a.estado;
-        });
+        datos.forEach(a => { if (a.estado) estadosPrevios[a.id] = a.estado; });
         setAsistencia(estadosPrevios);
       } catch {
         setMensaje({ texto: 'Error al cargar los alumnos.', tipo: 'error' });
@@ -71,16 +82,8 @@ function Asistencia() {
     cargarAlumnos();
   }, [curso, fecha]);
 
-  const marcar = (id_alumno, estado) => {
-    setAsistencia(prev => ({ ...prev, [id_alumno]: estado }));
-    setMensaje({ texto: '', tipo: '' });
-  };
-
-  const marcarTodos = (estado) => {
-    const todos = {};
-    alumnos.forEach(a => { todos[a.id] = estado; });
-    setAsistencia(todos);
-  };
+  const marcar     = (id, estado) => { setAsistencia(prev => ({ ...prev, [id]: estado })); setMensaje({ texto: '', tipo: '' }); };
+  const marcarTodos = (estado)    => { const todos = {}; alumnos.forEach(a => { todos[a.id] = estado; }); setAsistencia(todos); };
 
   const guardar = async () => {
     const sinMarcar = alumnos.filter(a => !asistencia[a.id]);
@@ -88,25 +91,18 @@ function Asistencia() {
       setMensaje({ texto: `Faltan ${sinMarcar.length} alumno(s) por marcar.`, tipo: 'error' });
       return;
     }
-
     setGuardando(true);
     try {
-      const registros = alumnos.map(a => ({
-        id_alumno: a.id,
-        estado: asistencia[a.id],
-        observacion: null,
-      }));
-
+      const registros = alumnos.map(a => ({ id_alumno: a.id, estado: asistencia[a.id], observacion: null }));
       const res = await apiFetch('/asistencia/guardar', {
         method: 'POST',
         body: JSON.stringify({ id_curso: curso.id, fecha, registros }),
       });
-
       if (res.ok) {
         setMensaje({ texto: 'Asistencia guardada correctamente.', tipo: 'exito' });
       } else {
         const err = await res.json();
-        setMensaje({ texto: (err.detalle || err.error || 'Error al guardar.'), tipo: 'error' });
+        setMensaje({ texto: err.detalle || err.error || 'Error al guardar.', tipo: 'error' });
       }
     } catch {
       setMensaje({ texto: 'Error de conexión.', tipo: 'error' });
@@ -115,60 +111,54 @@ function Asistencia() {
     }
   };
 
-  const presentes  = alumnos.filter(a => asistencia[a.id] === 'presente').length;
-  const ausentes   = alumnos.filter(a => asistencia[a.id] === 'ausente').length;
-  const tardanzas  = alumnos.filter(a => asistencia[a.id] === 'tardanza').length;
+  const presentes = alumnos.filter(a => asistencia[a.id] === 'presente').length;
+  const ausentes  = alumnos.filter(a => asistencia[a.id] === 'ausente').length;
+  const tardanzas = alumnos.filter(a => asistencia[a.id] === 'tardanza').length;
 
-  const estadoBtn = (id_alumno, estado) => {
-    const activo = asistencia[id_alumno] === estado;
-    const estilos = {
-      presente: activo ? 'bg-emerald-500 text-white' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100',
-      ausente:  activo ? 'bg-rose-500 text-white'    : 'bg-rose-50 text-rose-700 hover:bg-rose-100',
-      tardanza: activo ? 'bg-amber-400 text-white'   : 'bg-amber-50 text-amber-700 hover:bg-amber-100',
+  const btnEstado = (idAlumno, estado) => {
+    const activo = asistencia[idAlumno] === estado;
+    const c      = ESTADO_COLORS[estado];
+    return {
+      padding: '5px 12px',
+      borderRadius: '8px',
+      fontSize: '12px',
+      fontWeight: 700,
+      cursor: 'pointer',
+      transition: 'all 0.15s',
+      border: `1.5px solid ${c.border}`,
+      background: activo ? c.solid : 'transparent',
+      color: activo ? '#fff' : c.text,
     };
-    return `px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${activo ? 'border-transparent' : 'border-slate-200'} ${estilos[estado]}`;
   };
 
   return (
-    <div className="font-sans">
+    <div style={s.container}>
       {/* Encabezado */}
-      <header className="mb-6">
-        <h1 className="text-3xl font-extrabold text-slate-800">Pasar Lista</h1>
-        <p className="text-slate-500 mt-1">
-          {curso ? <span className="font-semibold text-blue-600">{curso.nombre}</span> : 'Cargando curso...'}
-        </p>
-      </header>
+      <div style={s.title}>Pasar Lista</div>
+      <div style={s.subtitle}>
+        {curso ? <span style={{ fontWeight: 600, color: 'var(--color-primary)' }}>{curso.nombre}</span> : 'Cargando curso...'}
+      </div>
 
-      {/* Selector de fecha (+ selector de curso para Director) */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-6 flex flex-wrap items-center gap-4">
+      {/* Selector de fecha y curso */}
+      <div style={{ ...s.card, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '16px' }}>
         {cursos.length > 1 && (
           <>
-            <label className="text-sm font-bold text-slate-600">Curso:</label>
-            <select
-              value={curso?.id || ''}
-              onChange={e => setCurso(cursos.find(c => String(c.id) === e.target.value))}
-              className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-            >
+            <span style={s.label}>Curso:</span>
+            <select style={s.select} value={curso?.id || ''} onChange={e => setCurso(cursos.find(c => String(c.id) === e.target.value))}>
               {cursos.map(c => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}{c.id_profesor_jefe === usuario.id ? ' ★' : ''}
-                </option>
+                <option key={c.id} value={c.id}>{c.nombre}{c.id_profesor_jefe === usuario.id ? ' ★' : ''}</option>
               ))}
             </select>
           </>
         )}
-        <label className="text-sm font-bold text-slate-600">Fecha:</label>
-        <input
-          type="date"
-          value={fecha}
-          onChange={e => setFecha(e.target.value)}
-          className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-        />
-        <div className="ml-auto flex gap-2 flex-wrap">
-          <button onClick={() => marcarTodos('presente')} className="px-3 py-2 text-xs font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg border border-slate-200 transition-all">
+        <span style={s.label}>Fecha:</span>
+        <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} style={s.dateInput} />
+
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button onClick={() => marcarTodos('presente')} style={{ ...btnEstado(null, 'presente'), background: ESTADO_COLORS.presente.light, color: ESTADO_COLORS.presente.text }}>
             Todos Presentes
           </button>
-          <button onClick={() => marcarTodos('ausente')} className="px-3 py-2 text-xs font-bold bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg border border-slate-200 transition-all">
+          <button onClick={() => marcarTodos('ausente')} style={{ ...btnEstado(null, 'ausente'), background: ESTADO_COLORS.ausente.light, color: ESTADO_COLORS.ausente.text }}>
             Todos Ausentes
           </button>
         </div>
@@ -176,77 +166,94 @@ function Asistencia() {
 
       {/* Resumen */}
       {alumnos.length > 0 && (
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
-            <p className="text-2xl font-black text-emerald-600">{presentes}</p>
-            <p className="text-xs font-bold text-emerald-500 uppercase tracking-wide">Presentes</p>
-          </div>
-          <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 text-center">
-            <p className="text-2xl font-black text-rose-600">{ausentes}</p>
-            <p className="text-xs font-bold text-rose-500 uppercase tracking-wide">Ausentes</p>
-          </div>
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
-            <p className="text-2xl font-black text-amber-600">{tardanzas}</p>
-            <p className="text-xs font-bold text-amber-500 uppercase tracking-wide">Tardanzas</p>
-          </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '20px' }}>
+          {[
+            { label: 'Presentes', valor: presentes, estado: 'presente' },
+            { label: 'Ausentes',  valor: ausentes,  estado: 'ausente'  },
+            { label: 'Tardanzas', valor: tardanzas,  estado: 'tardanza' },
+          ].map(({ label, valor, estado }) => {
+            const c = ESTADO_COLORS[estado];
+            return (
+              <div key={estado} style={{ background: c.light, border: `1px solid ${c.border}`, borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                <div style={{ fontSize: '28px', fontWeight: 900, color: c.solid }}>{valor}</div>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: c.text, textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.85 }}>{label}</div>
+              </div>
+            );
+          })}
         </div>
       )}
 
-
       {/* Lista de alumnos */}
       {cargando ? (
-        <p className="text-slate-400 animate-pulse text-center py-10">Cargando alumnos...</p>
+        <div style={{ textAlign: 'center', padding: '60px 0' }}>
+          <div style={{ width: '32px', height: '32px', border: '3px solid var(--color-border)', borderTopColor: 'var(--color-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
+          <div style={{ fontSize: '13px', color: 'var(--color-foreground)', opacity: 0.5 }}>Cargando alumnos...</div>
+        </div>
       ) : alumnos.length === 0 ? (
-        <div className="text-center py-16 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
-          <p className="text-slate-400">No hay alumnos en este curso.</p>
+        <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--color-surface)', borderRadius: '16px', border: '2px dashed var(--color-border)' }}>
+          <div style={{ fontSize: '14px', color: 'var(--color-foreground)', opacity: 0.4 }}>No hay alumnos en este curso.</div>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-6">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="text-left px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">#</th>
-                <th className="text-left px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Alumno</th>
-                <th className="text-left px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider hidden sm:table-cell">RUT</th>
-                <th className="text-center px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Estado</th>
+        <div style={{ ...s.card, padding: 0, overflow: 'hidden', marginBottom: '20px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr style={{ background: 'var(--color-muted)', borderBottom: '1px solid var(--color-border)' }}>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '11px', fontWeight: 700, color: 'var(--color-foreground)', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '0.5px' }}>#</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '11px', fontWeight: 700, color: 'var(--color-foreground)', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Alumno</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '11px', fontWeight: 700, color: 'var(--color-foreground)', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '0.5px' }}>RUT</th>
+                <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '11px', fontWeight: 700, color: 'var(--color-foreground)', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Estado</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {alumnos.map((alumno, i) => (
-                <tr key={alumno.id} className={`transition-colors ${asistencia[alumno.id] ? '' : 'bg-slate-50'}`}>
-                  <td className="px-5 py-3 text-slate-400 font-medium">{i + 1}</td>
-                  <td className="px-5 py-3 font-semibold text-slate-800">{alumno.nombre_completo}</td>
-                  <td className="px-5 py-3 text-slate-500 hidden sm:table-cell">{alumno.rut}</td>
-                  <td className="px-5 py-3">
-                    <div className="flex justify-center gap-2">
-                      <button onClick={() => marcar(alumno.id, 'presente')} className={estadoBtn(alumno.id, 'presente')}>Presente</button>
-                      <button onClick={() => marcar(alumno.id, 'tardanza')} className={estadoBtn(alumno.id, 'tardanza')}>Tardanza</button>
-                      <button onClick={() => marcar(alumno.id, 'ausente')}  className={estadoBtn(alumno.id, 'ausente')}>Ausente</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+            <tbody>
+              {alumnos.map((alumno, i) => {
+                const estado = asistencia[alumno.id];
+                const c = estado ? ESTADO_COLORS[estado] : null;
+                return (
+                  <tr key={alumno.id} style={{
+                    borderBottom: '1px solid var(--color-border)',
+                    background: c ? c.light : 'var(--color-surface)',
+                    transition: 'background 0.15s',
+                  }}>
+                    <td style={{ padding: '12px 16px', color: 'var(--color-foreground)', opacity: 0.4, fontWeight: 600 }}>{i + 1}</td>
+                    <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--color-foreground)' }}>{alumno.nombre_completo}</td>
+                    <td style={{ padding: '12px 16px', color: 'var(--color-foreground)', opacity: 0.5 }}>{alumno.rut}</td>
+                    <td style={{ padding: '12px 16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
+                        <button onClick={() => marcar(alumno.id, 'presente')} style={btnEstado(alumno.id, 'presente')}>Presente</button>
+                        <button onClick={() => marcar(alumno.id, 'tardanza')} style={btnEstado(alumno.id, 'tardanza')}>Tardanza</button>
+                        <button onClick={() => marcar(alumno.id, 'ausente')}  style={btnEstado(alumno.id, 'ausente')}>Ausente</button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       )}
 
-      {/* Botón guardar + mensaje */}
+      {/* Mensaje + botón guardar */}
       {alumnos.length > 0 && (
-        <div className="flex flex-col items-end gap-3">
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
           {mensaje.texto && (
-            <div className={`w-full p-4 rounded-xl text-sm font-medium border ${
-              mensaje.tipo === 'exito'
-                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                : 'bg-rose-50 text-rose-800 border-rose-200'
-            }`}>
+            <div style={{
+              width: '100%', padding: '12px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 600,
+              background: mensaje.tipo === 'exito' ? 'rgba(21,128,61,0.1)' : 'rgba(220,38,38,0.1)',
+              color:      mensaje.tipo === 'exito' ? '#15803d' : '#dc2626',
+              border:     `1px solid ${mensaje.tipo === 'exito' ? 'rgba(21,128,61,0.3)' : 'rgba(220,38,38,0.3)'}`,
+            }}>
               {mensaje.texto}
             </div>
           )}
           <button
             onClick={guardar}
             disabled={guardando}
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold py-3 px-8 rounded-xl shadow-md transition-all active:scale-[0.98]"
+            style={{
+              background: guardando ? 'var(--color-muted)' : 'var(--color-primary)',
+              color: '#fff', border: 'none', borderRadius: '12px', padding: '12px 32px',
+              fontSize: '14px', fontWeight: 700, cursor: guardando ? 'not-allowed' : 'pointer',
+              opacity: guardando ? 0.7 : 1, transition: 'all 0.2s', boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            }}
           >
             {guardando ? 'Guardando...' : 'Guardar Asistencia'}
           </button>

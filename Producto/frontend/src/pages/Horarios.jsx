@@ -2,68 +2,69 @@ import { useState, useEffect } from 'react';
 import apiFetch from '../utils/api';
 
 const s = {
-  header:     { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' },
-  title:      { fontSize: '20px', fontWeight: 700, color: '#1A2B4A' },
-  select:     { padding: '8px 12px', borderRadius: '8px', border: '1px solid #E8EDF2', fontSize: '13.5px', fontWeight: 600, background: '#fff', color: '#1565C0', outline: 'none', cursor: 'pointer' },
-  grid:       { display: 'grid', gridTemplateColumns: '80px repeat(5, 1fr)', gap: '1px', background: '#E8EDF2', border: '1px solid #E8EDF2', borderRadius: '12px', overflow: 'hidden' },
-  headCell:   { background: '#F8FAFC', padding: '12px', textAlign: 'center', fontSize: '11px', fontWeight: 700, color: '#607D8B', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  timeCell:   { background: '#F8FAFC', padding: '12px', textAlign: 'center', fontSize: '11px', fontWeight: 600, color: '#90A4AE', display: 'flex', flexDirection: 'column', justifyContent: 'center' },
-  cell:       { background: '#fff', padding: '10px', minHeight: '80px', display: 'flex', flexDirection: 'column', gap: '4px' },
-  entry:      (bg) => ({ background: bg || '#E3F2FD', padding: '8px', borderRadius: '8px', borderLeft: '3px solid #1565C0' }),
-  entryAsig:  { fontSize: '12px', fontWeight: 700, color: '#1A237E' },
-  entryTime:  { fontSize: '10px', color: '#546E7A', marginTop: '2px' },
+  header:    { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' },
+  title:     { fontSize: '20px', fontWeight: 700, color: 'var(--color-foreground)' },
+  select:    { padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--color-border)', fontSize: '13.5px', fontWeight: 600, background: 'var(--color-surface)', color: 'var(--color-primary)', outline: 'none', cursor: 'pointer' },
+  grid:      { display: 'grid', gridTemplateColumns: '80px repeat(5, 1fr)', gap: '1px', background: 'var(--color-border)', border: '1px solid var(--color-border)', borderRadius: '12px', overflow: 'hidden' },
+  headCell:  { background: 'var(--color-muted)', padding: '12px', textAlign: 'center', fontSize: '11px', fontWeight: 700, color: 'var(--color-foreground)', opacity: 0.7, textTransform: 'uppercase', letterSpacing: '0.5px' },
+  timeCell:  { background: 'var(--color-muted)', padding: '12px', textAlign: 'center', fontSize: '11px', fontWeight: 600, color: 'var(--color-foreground)', opacity: 0.6, display: 'flex', flexDirection: 'column', justifyContent: 'center' },
+  cell:      { background: 'var(--color-surface)', padding: '10px', minHeight: '80px', display: 'flex', flexDirection: 'column', gap: '4px' },
 };
 
 const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+
 const BLOQUES = [
-  { type: 'class',  inicio: '08:00', fin: '09:30', label: 'Bloque 1' },
-  { type: 'break',  inicio: '09:30', fin: '09:45', label: 'Recreo' },
-  { type: 'class',  inicio: '09:45', fin: '11:15', label: 'Bloque 2' },
-  { type: 'break',  inicio: '11:15', fin: '11:30', label: 'Recreo' },
-  { type: 'class',  inicio: '11:30', fin: '13:00', label: 'Bloque 3' },
-  { type: 'lunch',  inicio: '13:00', fin: '13:45', label: 'Almuerzo' },
-  { type: 'class',  inicio: '13:45', fin: '15:15', label: 'Bloque 4' },
-  { type: 'break',  inicio: '15:15', fin: '15:30', label: 'Recreo' },
-  { type: 'class',  inicio: '15:30', fin: '17:00', label: 'Bloque 5' },
+  { type: 'class', inicio: '08:00', fin: '09:30', label: 'Bloque 1' },
+  { type: 'break', inicio: '09:30', fin: '09:45', label: 'Recreo' },
+  { type: 'class', inicio: '09:45', fin: '11:15', label: 'Bloque 2' },
+  { type: 'break', inicio: '11:15', fin: '11:30', label: 'Recreo' },
+  { type: 'class', inicio: '11:30', fin: '13:00', label: 'Bloque 3' },
+  { type: 'lunch', inicio: '13:00', fin: '13:45', label: 'Almuerzo' },
+  { type: 'class', inicio: '13:45', fin: '15:15', label: 'Bloque 4' },
+  { type: 'break', inicio: '15:15', fin: '15:30', label: 'Recreo' },
+  { type: 'class', inicio: '15:30', fin: '17:00', label: 'Bloque 5' },
 ];
 
-const COLORS = {
-  'Lenguaje': '#FCE4EC', 'Literatura': '#FCE4EC',
-  'Matemática': '#E3F2FD',
-  'Ciencias': '#E8F5E9', 'Biología': '#E8F5E9', 'Física': '#E8F5E9', 'Química': '#E8F5E9',
-  'Historia': '#FFF3E0', 'Filosofía': '#FFF3E0', 'Ciudadana': '#FFF3E0',
-  'Inglés': '#EDE7F6',
-  'Educación Física': '#F1F8E9',
-  'Artes': '#FAFAFA', 'Música': '#FAFAFA', 'Tecnología': '#FAFAFA',
-  'Orientación': '#E0F7FA', 'Religión': '#FBE9E7',
-  'Taller': '#EFEBE9', 'Electivas': '#ECEFF1'
+// Colores saturados que funcionan en modo claro Y oscuro
+const SUBJECT_COLORS = {
+  'Lenguaje':    { bg: '#c2185b', text: '#fff' },
+  'Literatura':  { bg: '#c2185b', text: '#fff' },
+  'Matemática':  { bg: '#1565c0', text: '#fff' },
+  'Biología':    { bg: '#2e7d32', text: '#fff' },
+  'Química':     { bg: '#00695c', text: '#fff' },
+  'Física':      { bg: '#1565c0', text: '#fff' },
+  'Ciencias':    { bg: '#2e7d32', text: '#fff' },
+  'Historia':    { bg: '#e65100', text: '#fff' },
+  'Filosofía':   { bg: '#4a148c', text: '#fff' },
+  'Ciudadana':   { bg: '#4a148c', text: '#fff' },
+  'Inglés':      { bg: '#6a1b9a', text: '#fff' },
+  'Física':      { bg: '#0277bd', text: '#fff' },
+  'Educación Física': { bg: '#558b2f', text: '#fff' },
+  'Artes':       { bg: '#4e342e', text: '#fff' },
+  'Música':      { bg: '#37474f', text: '#fff' },
+  'Tecnología':  { bg: '#37474f', text: '#fff' },
+  'Orientación': { bg: '#00838f', text: '#fff' },
+  'Religión':    { bg: '#bf360c', text: '#fff' },
+  'Pensamiento': { bg: '#1565c0', text: '#fff' },
+  'Lenguajes Artísticos': { bg: '#4e342e', text: '#fff' },
+  'Corporalidad': { bg: '#558b2f', text: '#fff' },
+  'Exploración': { bg: '#2e7d32', text: '#fff' },
+  'Identidad':   { bg: '#00838f', text: '#fff' },
+  'Convivencia': { bg: '#00838f', text: '#fff' },
+  'Comprensión': { bg: '#e65100', text: '#fff' },
 };
 
-const BORDERS = {
-  'Lenguaje': '#D81B60', 'Literatura': '#D81B60',
-  'Matemática': '#1976D2',
-  'Ciencias': '#388E3C', 'Biología': '#388E3C', 'Física': '#388E3C', 'Química': '#388E3C',
-  'Historia': '#F57C00', 'Filosofía': '#F57C00', 'Ciudadana': '#F57C00',
-  'Inglés': '#5E35B1',
-  'Educación Física': '#689F38',
-  'Artes': '#455A64', 'Música': '#455A64', 'Tecnología': '#455A64',
-  'Orientación': '#0097A7', 'Religión': '#D84315',
-  'Taller': '#5D4037', 'Electivas': '#455A64'
-};
-
-const getColor = (name) => {
-  for (const key in COLORS) if (name.includes(key)) return COLORS[key];
-  return '#F5F5F5';
-};
-const getBorder = (name) => {
-  for (const key in BORDERS) if (name.includes(key)) return BORDERS[key];
-  return '#9E9E9E';
+const getSubjectColor = (name) => {
+  for (const key in SUBJECT_COLORS) {
+    if (name.includes(key)) return SUBJECT_COLORS[key];
+  }
+  return { bg: '#455a64', text: '#fff' };
 };
 
 export default function Horarios() {
-  const [cursos, setCursos] = useState([]);
+  const [cursos,   setCursos]   = useState([]);
   const [cursoSel, setCursoSel] = useState(null);
-  const [horario, setHorario] = useState([]);
+  const [horario,  setHorario]  = useState([]);
   const [, setCargando] = useState(true);
 
   const usuario = (() => { try { return JSON.parse(localStorage.getItem('usuario')); } catch { return {}; } })();
@@ -88,10 +89,7 @@ export default function Horarios() {
     }
     const url = usuario.rol === 'profesor' ? `/cursos?id_profesor=${usuario.id}` : '/cursos';
     apiFetch(url).then(r => r?.json()).then(data => {
-      if (Array.isArray(data)) {
-        setCursos(data);
-        setCursoSel(data[0] || null);
-      }
+      if (Array.isArray(data)) { setCursos(data); setCursoSel(data[0] || null); }
     }).finally(() => setCargando(false));
   }, [usuario.id, usuario.rol]);
 
@@ -102,9 +100,8 @@ export default function Horarios() {
       .then(data => { if (Array.isArray(data)) setHorario(data); });
   }, [cursoSel]);
 
-  const getEntry = (diaIdx, bloqueInicio) => {
-    return horario.find(h => Number(h.dia_semana) === (diaIdx + 1) && h.bloque_inicio.startsWith(bloqueInicio));
-  };
+  const getEntry = (diaIdx, bloqueInicio) =>
+    horario.find(h => Number(h.dia_semana) === (diaIdx + 1) && h.bloque_inicio.startsWith(bloqueInicio));
 
   return (
     <div style={{ padding: '0 10px' }}>
@@ -114,7 +111,7 @@ export default function Horarios() {
           <select
             style={s.select}
             value={cursoSel?.id || ''}
-            onChange={(e) => setCursoSel(cursos.find(c => c.id === parseInt(e.target.value)))}
+            onChange={e => setCursoSel(cursos.find(c => c.id === parseInt(e.target.value)))}
           >
             {cursos.map(c => (
               <option key={c.id} value={c.id}>
@@ -126,41 +123,74 @@ export default function Horarios() {
       </div>
 
       <div style={s.grid}>
-        {/* Header row */}
+        {/* Fila de encabezado */}
         <div style={s.headCell}>Hora</div>
         {DIAS.map(d => <div key={d} style={s.headCell}>{d}</div>)}
 
-        {/* Rows */}
+        {/* Filas */}
         {BLOQUES.map((b, bIdx) => (
           <div key={bIdx} style={{ display: 'contents' }}>
-            <div style={{ ...s.timeCell, ...(b.type !== 'class' ? { background: '#f0f4f7', color: '#78909c' } : {}) }}>
-              <div style={{fontWeight: 800, fontSize: '10px', marginBottom: '4px'}}>{b.inicio}</div>
-              <div style={{ fontSize: '9px', opacity: 0.6 }}>a</div>
-              <div style={{fontWeight: 800, fontSize: '10px', marginTop: '4px'}}>{b.fin}</div>
+            {/* Celda de hora */}
+            <div style={{
+              ...s.timeCell,
+              ...(b.type !== 'class' ? {
+                background: b.type === 'lunch' ? 'rgba(251,192,45,0.15)' : 'var(--color-muted)',
+              } : {})
+            }}>
+              {b.type === 'class' ? (
+                <>
+                  <div style={{ fontWeight: 800, fontSize: '10px', marginBottom: '2px' }}>{b.inicio}</div>
+                  <div style={{ fontSize: '9px', opacity: 0.5 }}>—</div>
+                  <div style={{ fontWeight: 800, fontSize: '10px', marginTop: '2px' }}>{b.fin}</div>
+                </>
+              ) : (
+                <div style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', opacity: 0.6 }}>
+                  {b.label}
+                </div>
+              )}
             </div>
 
             {b.type === 'class' ? (
               DIAS.map((_d, dIdx) => {
                 const entry = getEntry(dIdx, b.inicio);
+                const color = entry ? getSubjectColor(entry.nombre_asignatura) : null;
                 return (
                   <div key={dIdx} style={s.cell}>
                     {entry ? (
                       <div style={{
-                        ...s.entry(getColor(entry.nombre_asignatura)),
-                        borderLeft: `4px solid ${getBorder(entry.nombre_asignatura)}`,
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                        transition: 'transform 0.2s',
-                        cursor: 'default'
+                        background: color.bg,
+                        color: color.text,
+                        padding: '8px 10px',
+                        borderRadius: '8px',
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                        flex: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px',
                       }}>
-                        <div style={s.entryAsig}>{entry.nombre_asignatura}</div>
+                        <div style={{ fontSize: '12px', fontWeight: 700, lineHeight: 1.3 }}>
+                          {entry.nombre_asignatura}
+                        </div>
                         {entry.nombre_profesor && (
-                          <div style={s.entryTime}>
-                            {entry.nombre_profesor.split(' ').slice(0,2).join(' ')}
+                          <div style={{ fontSize: '10px', opacity: 0.85, marginTop: 'auto' }}>
+                            {entry.nombre_profesor.split(' ').slice(0, 2).join(' ')}
                           </div>
                         )}
                       </div>
                     ) : (
-                      <div style={{ flex: 1, border: '1px dashed #E0E0E0', borderRadius: '8px', opacity: 0.5 }} />
+                      <div style={{
+                        flex: 1,
+                        border: '1px dashed var(--color-border)',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '10px',
+                        color: 'var(--color-foreground)',
+                        opacity: 0.25,
+                      }}>
+                        Libre
+                      </div>
                     )}
                   </div>
                 );
@@ -168,8 +198,8 @@ export default function Horarios() {
             ) : (
               <div style={{
                 gridColumn: 'span 5',
-                background: b.type === 'lunch' ? '#FFF9C4' : '#ECEFF1',
-                color: b.type === 'lunch' ? '#FBC02D' : '#90A4AE',
+                background: b.type === 'lunch' ? 'rgba(251,192,45,0.12)' : 'var(--color-muted)',
+                color: b.type === 'lunch' ? '#b8860b' : 'var(--color-foreground)',
                 fontSize: '10px',
                 fontWeight: 700,
                 letterSpacing: '2px',
@@ -177,7 +207,8 @@ export default function Horarios() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                height: b.type === 'lunch' ? '40px' : '20px'
+                opacity: b.type === 'lunch' ? 1 : 0.5,
+                height: b.type === 'lunch' ? '36px' : '18px',
               }}>
                 {b.label}
               </div>
