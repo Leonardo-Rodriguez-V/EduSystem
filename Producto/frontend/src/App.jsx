@@ -10,6 +10,7 @@ import Horarios from './pages/Horarios';
 import Calendario from './pages/Calendario';
 import PortalApoderado from './pages/PortalApoderado';
 import NotasHijo from './pages/NotasHijo';
+import Alumnos from './pages/Alumnos';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import { NotificationProvider } from './context/NotificationContext';
@@ -74,6 +75,12 @@ function App() {
         <Route path="/usuarios" element={
           <ProtectedRoute allowedRoles={['director']}>
             <Layout><Usuarios /></Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/alumnos" element={
+          <ProtectedRoute allowedRoles={['director']}>
+            <Layout><Alumnos /></Layout>
           </ProtectedRoute>
         } />
 

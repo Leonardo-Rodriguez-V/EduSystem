@@ -1,39 +1,25 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import apiFetch from '../utils/api';
-import { User, GraduationCap, TrendingUp } from 'lucide-react';
+import { User, GraduationCap, TrendingUp, AlertTriangle } from 'lucide-react';
 
 function colorNota(n) {
   const v = Number(n);
-  if (!n && n !== 0) return { bg: '#f1f5f9', text: '#64748b', border: '#e2e8f0' };
-  if (v >= 6)  return { bg: '#dcfce7', text: '#15803d', border: '#86efac' };
-  if (v >= 4)  return { bg: '#fef3c7', text: '#b45309', border: '#fcd34d' };
-  return { bg: '#fee2e2', text: '#b91c1c', border: '#fca5a5' };
+  if (!n && n !== 0) return { bg: 'var(--color-muted)', text: 'var(--color-foreground)', border: 'var(--color-border)', op: 0.5 };
+  if (v >= 6)  return { bg: 'rgba(21,128,61,0.15)',   text: '#15803d', border: 'rgba(21,128,61,0.4)',   op: 1 };
+  if (v >= 4)  return { bg: 'rgba(180,83,9,0.12)',    text: '#b45309', border: 'rgba(180,83,9,0.35)',    op: 1 };
+  return         { bg: 'rgba(185,28,28,0.12)',  text: '#b91c1c', border: 'rgba(185,28,28,0.35)',  op: 1 };
 }
 
-const s = {
-  page:      { padding: '0 0 40px', maxWidth: '1200px', margin: '0 auto' },
-  header:    { marginBottom: '28px' },
-  title:     { fontSize: '26px', fontWeight: 900, color: 'var(--color-foreground)', margin: 0, fontFamily: "'Crimson Pro', serif" },
-  sub:       { fontSize: '14px', color: '#64748b', marginTop: '4px' },
-  selector:  { display: 'flex', gap: '10px', marginBottom: '28px', flexWrap: 'wrap' },
-  grid:      { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' },
-  card:      { background: 'var(--color-surface)', borderRadius: '20px', overflow: 'hidden', boxShadow: 'var(--clay-shadow)', border: '1px solid rgba(255,255,255,0.1)' },
-  cardHead:  (color) => ({ background: color, padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }),
-  asigName:  { fontWeight: 800, fontSize: '15px', color: '#1e293b' },
-  promBadge: (c) => ({ fontSize: '22px', fontWeight: 900, color: c.text, background: c.bg, border: `2px solid ${c.border}`, borderRadius: '12px', padding: '4px 14px', minWidth: '52px', textAlign: 'center' }),
-  notaRow:   { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 20px', borderBottom: '1px solid var(--color-border)' },
-  notaDesc:  { fontSize: '13px', fontWeight: 600, color: 'var(--color-foreground)' },
-  notaFecha: { fontSize: '11px', color: '#94a3b8', marginTop: '2px' },
-  notaBadge: (c) => ({ fontSize: '14px', fontWeight: 800, color: c.text, background: c.bg, padding: '4px 12px', borderRadius: '8px', border: `1px solid ${c.border}` }),
-  empty:     { padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' },
-  promedioGlobal: { display: 'flex', gap: '20px', marginBottom: '28px', flexWrap: 'wrap' },
-  kpi:       { background: 'var(--color-surface)', borderRadius: '16px', padding: '16px 24px', boxShadow: 'var(--clay-shadow)', display: 'flex', alignItems: 'center', gap: '16px', flex: '1', minWidth: '180px' },
-};
-
-const CABECERAS_COLOR = [
-  '#e0f2fe', '#fce7f3', '#f0fdf4', '#fef9c3', '#ede9fe',
-  '#ffedd5', '#f0f9ff', '#ecfdf5', '#fff1f2', '#f5f3ff',
+const ASIG_COLORS = [
+  { bg: 'rgba(99,102,241,0.15)',  border: 'rgba(99,102,241,0.3)',  accent: '#6366f1' },
+  { bg: 'rgba(16,185,129,0.15)', border: 'rgba(16,185,129,0.3)', accent: '#10b981' },
+  { bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.3)', accent: '#f59e0b' },
+  { bg: 'rgba(239,68,68,0.12)',  border: 'rgba(239,68,68,0.3)',  accent: '#ef4444' },
+  { bg: 'rgba(168,85,247,0.15)', border: 'rgba(168,85,247,0.3)', accent: '#a855f7' },
+  { bg: 'rgba(14,165,233,0.15)', border: 'rgba(14,165,233,0.3)', accent: '#0ea5e9' },
+  { bg: 'rgba(236,72,153,0.12)', border: 'rgba(236,72,153,0.3)', accent: '#ec4899' },
+  { bg: 'rgba(20,184,166,0.15)', border: 'rgba(20,184,166,0.3)', accent: '#14b8a6' },
 ];
 
 export default function NotasHijo() {
@@ -46,7 +32,6 @@ export default function NotasHijo() {
   const [cargando,  setCargando]  = useState(true);
   const [cargandoN, setCargandoN] = useState(false);
 
-  // Cargar hijos
   useEffect(() => {
     apiFetch(`/alumnos/apoderado/${usuario.id}`)
       .then(r => r?.json())
@@ -60,7 +45,6 @@ export default function NotasHijo() {
       .finally(() => setCargando(false));
   }, [usuario.id]);
 
-  // Cargar notas y asignaturas cuando cambia el hijo seleccionado
   useEffect(() => {
     if (!hijoSel) return;
     setCargandoN(true);
@@ -75,7 +59,6 @@ export default function NotasHijo() {
     }).finally(() => setCargandoN(false));
   }, [hijoSel]);
 
-  // Agrupar notas por asignatura
   const notasPorAsig = {};
   for (const n of notas) {
     const key = n.id_asignatura ?? 'sin_asig';
@@ -84,9 +67,7 @@ export default function NotasHijo() {
     notasPorAsig[key].notas.push(n);
   }
 
-  // Combinar con todas las asignaturas del curso (para mostrar las que no tienen notas)
   const asignaturasConNotas = [...asigs];
-  // agregar asignaturas que vengan de notas pero no estén en la lista del curso
   for (const key of Object.keys(notasPorAsig)) {
     if (key !== 'sin_asig' && !asigs.find(a => String(a.id) === String(key))) {
       asignaturasConNotas.push({ id: key, nombre: notasPorAsig[key].nombre });
@@ -98,143 +79,168 @@ export default function NotasHijo() {
 
   const calcProm = (notasArr) => {
     if (!notasArr || notasArr.length === 0) return null;
-    const sum = notasArr.reduce((s, n) => s + parseFloat(n.calificacion), 0);
-    return (sum / notasArr.length).toFixed(1);
+    return (notasArr.reduce((s, n) => s + parseFloat(n.calificacion), 0) / notasArr.length).toFixed(1);
   };
 
-  // KPIs globales
   const promGlobal = calcProm(notas);
   const totalEvals = notas.length;
   const bajaNota   = notas.filter(n => parseFloat(n.calificacion) < 4).length;
+  const colPG      = colorNota(promGlobal);
 
   const fmtFecha = (f) => f ? new Date(f).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' }) : '';
 
   if (cargando) return (
     <div style={{ padding: '80px', textAlign: 'center' }}>
-      <TrendingUp className="animate-pulse" size={48} color="var(--color-primary)" />
+      <div style={{ width: '40px', height: '40px', border: '3px solid var(--color-border)', borderTopColor: 'var(--color-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
     </div>
   );
 
   if (!hijoSel) return (
     <div style={{ textAlign: 'center', padding: '80px 20px' }}>
-      <div className="clay-card" style={{ maxWidth: '480px', margin: '0 auto', padding: '40px' }}>
-        <GraduationCap size={56} color="#94a3b8" style={{ marginBottom: '16px' }} />
+      <div className="clay-card" style={{ maxWidth: '480px', margin: '0 auto', padding: '40px', borderRadius: '28px' }}>
+        <GraduationCap size={56} color="var(--color-primary)" style={{ marginBottom: '16px' }} />
         <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-foreground)' }}>Sin alumnos vinculados</h2>
-        <p style={{ color: '#64748b', marginTop: '8px' }}>No se encontraron estudiantes asociados a tu cuenta.</p>
+        <p style={{ color: 'var(--color-foreground)', opacity: 0.5, marginTop: '8px' }}>No se encontraron estudiantes asociados a tu cuenta.</p>
       </div>
     </div>
   );
 
   return (
-    <motion.div style={s.page} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+    <motion.div style={{ padding: '0 0 40px', maxWidth: '1200px', margin: '0 auto' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+
       {/* Header */}
-      <div style={s.header}>
-        <h1 style={s.title}>Notas de {hijoSel.nombre_completo.split(' ')[0]}</h1>
-        <p style={s.sub}>{hijoSel.nombre_curso || 'Curso'} · Año Lectivo 2026</p>
+      <div style={{ marginBottom: '28px' }}>
+        <h1 style={{ fontSize: '30px', fontWeight: 900, color: 'var(--color-foreground)', margin: 0, fontFamily: "'Crimson Pro', serif" }}>
+          Notas de {hijoSel.nombre_completo.split(' ')[0]}
+        </h1>
+        <p style={{ fontSize: '14px', color: 'var(--color-foreground)', opacity: 0.5, marginTop: '4px', fontWeight: 600 }}>
+          {hijoSel.nombre_curso || 'Curso'} · Año Lectivo 2026
+        </p>
       </div>
 
       {/* Selector de hijo */}
       {hijos.length > 1 && (
-        <div style={s.selector}>
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '28px', flexWrap: 'wrap' }}>
           {hijos.map(h => (
             <button
               key={h.id}
               onClick={() => setHijoSel(h)}
-              className={hijoSel?.id === h.id ? 'clay-button' : 'clay-card'}
               style={{
                 padding: '10px 20px', borderRadius: '16px', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', gap: '8px',
-                fontSize: '14px', fontWeight: 700,
-                border: hijoSel?.id === h.id ? 'none' : '2px solid transparent',
+                fontSize: '14px', fontWeight: 700, border: 'none',
+                background: hijoSel?.id === h.id ? 'var(--color-primary)' : 'var(--color-muted)',
+                color: hijoSel?.id === h.id ? '#fff' : 'var(--color-foreground)',
+                transition: 'all 0.2s',
               }}
             >
               <User size={15} />
               {h.nombre_completo.split(' ').slice(0, 2).join(' ')}
-              <span style={{ fontSize: '11px', opacity: 0.7, fontWeight: 600 }}>
-                {h.nombre_curso}
-              </span>
+              <span style={{ fontSize: '11px', opacity: 0.7 }}>{h.nombre_curso}</span>
             </button>
           ))}
         </div>
       )}
 
       {/* KPIs */}
-      <div style={s.promedioGlobal}>
-        <motion.div style={s.kpi} initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
-          <div style={{ background: colorNota(promGlobal).bg, borderRadius: '12px', padding: '12px', border: `2px solid ${colorNota(promGlobal).border}` }}>
-            <GraduationCap size={22} color={colorNota(promGlobal).text} />
+      <div style={{ display: 'flex', gap: '20px', marginBottom: '32px', flexWrap: 'wrap' }}>
+        <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}
+          style={{ background: 'var(--color-surface)', borderRadius: '20px', padding: '20px 28px', boxShadow: 'var(--clay-shadow)', display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: '180px', border: '1px solid var(--color-border)' }}>
+          <div style={{ background: colPG.bg, borderRadius: '14px', padding: '14px', border: `2px solid ${colPG.border}` }}>
+            <GraduationCap size={22} color={colPG.text} />
           </div>
           <div>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Promedio General</div>
-            <div style={{ fontSize: '28px', fontWeight: 900, color: colorNota(promGlobal).text }}>{promGlobal ?? '—'}</div>
+            <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--color-foreground)', opacity: 0.4, textTransform: 'uppercase', letterSpacing: '.5px' }}>Promedio General</div>
+            <div style={{ fontSize: '32px', fontWeight: 900, color: colPG.text, lineHeight: 1 }}>{promGlobal ?? '—'}</div>
           </div>
         </motion.div>
-        <motion.div style={s.kpi} initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.15 }}>
-          <div style={{ background: '#e0f2fe', borderRadius: '12px', padding: '12px', border: '2px solid #bae6fd' }}>
-            <TrendingUp size={22} color="#0284c7" />
+
+        <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.15 }}
+          style={{ background: 'var(--color-surface)', borderRadius: '20px', padding: '20px 28px', boxShadow: 'var(--clay-shadow)', display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: '180px', border: '1px solid var(--color-border)' }}>
+          <div style={{ background: 'rgba(14,165,233,0.15)', borderRadius: '14px', padding: '14px', border: '2px solid rgba(14,165,233,0.3)' }}>
+            <TrendingUp size={22} color="#0ea5e9" />
           </div>
           <div>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Evaluaciones</div>
-            <div style={{ fontSize: '28px', fontWeight: 900, color: '#0284c7' }}>{totalEvals}</div>
+            <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--color-foreground)', opacity: 0.4, textTransform: 'uppercase', letterSpacing: '.5px' }}>Evaluaciones</div>
+            <div style={{ fontSize: '32px', fontWeight: 900, color: '#0ea5e9', lineHeight: 1 }}>{totalEvals}</div>
           </div>
         </motion.div>
+
         {bajaNota > 0 && (
-          <motion.div style={s.kpi} initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
-            <div style={{ background: '#fee2e2', borderRadius: '12px', padding: '12px', border: '2px solid #fca5a5' }}>
-              <GraduationCap size={22} color="#b91c1c" />
+          <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}
+            style={{ background: 'var(--color-surface)', borderRadius: '20px', padding: '20px 28px', boxShadow: 'var(--clay-shadow)', display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: '180px', border: '1px solid rgba(185,28,28,0.3)' }}>
+            <div style={{ background: 'rgba(185,28,28,0.12)', borderRadius: '14px', padding: '14px', border: '2px solid rgba(185,28,28,0.3)' }}>
+              <AlertTriangle size={22} color="#b91c1c" />
             </div>
             <div>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Notas bajo 4.0</div>
-              <div style={{ fontSize: '28px', fontWeight: 900, color: '#b91c1c' }}>{bajaNota}</div>
+              <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--color-foreground)', opacity: 0.4, textTransform: 'uppercase', letterSpacing: '.5px' }}>Bajo 4.0</div>
+              <div style={{ fontSize: '32px', fontWeight: 900, color: '#b91c1c', lineHeight: 1 }}>{bajaNota}</div>
             </div>
           </motion.div>
         )}
       </div>
 
-      {/* Grid de asignaturas */}
+      {/* Grid asignaturas */}
       {cargandoN ? (
-        <p style={{ color: '#94a3b8', textAlign: 'center', padding: '40px' }}>Cargando notas...</p>
+        <div style={{ textAlign: 'center', padding: '60px' }}>
+          <div style={{ width: '36px', height: '36px', border: '3px solid var(--color-border)', borderTopColor: 'var(--color-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
+          <p style={{ color: 'var(--color-foreground)', opacity: 0.4, fontSize: '14px', fontWeight: 600 }}>Cargando notas...</p>
+        </div>
       ) : asignaturasConNotas.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--color-surface)', borderRadius: '20px', border: '2px dashed var(--color-border)' }}>
-          <GraduationCap size={48} color="#94a3b8" style={{ marginBottom: '12px' }} />
-          <p style={{ color: '#94a3b8', fontSize: '14px', fontWeight: 600 }}>No hay asignaturas ni notas registradas aún.</p>
+          <GraduationCap size={48} color="var(--color-primary)" style={{ opacity: 0.3, marginBottom: '12px' }} />
+          <p style={{ color: 'var(--color-foreground)', opacity: 0.4, fontSize: '14px', fontWeight: 600 }}>No hay asignaturas ni notas registradas aún.</p>
         </div>
       ) : (
-        <div style={s.grid}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
           {asignaturasConNotas.map((asig, idx) => {
             const notasAsig = notasPorAsig[asig.id]?.notas ?? [];
             const prom      = calcProm(notasAsig);
-            const colHead   = CABECERAS_COLOR[idx % CABECERAS_COLOR.length];
             const colProm   = colorNota(prom);
+            const asigColor = ASIG_COLORS[idx % ASIG_COLORS.length];
+
             return (
               <motion.div
                 key={asig.id}
-                style={s.card}
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.05 * idx }}
+                style={{ background: 'var(--color-surface)', borderRadius: '20px', overflow: 'hidden', boxShadow: 'var(--clay-shadow)', border: '1px solid var(--color-border)' }}
               >
-                {/* Cabecera */}
-                <div style={s.cardHead(colHead)}>
-                  <span style={s.asigName}>{asig.nombre}</span>
-                  <span style={s.promBadge(prom ? colProm : { bg: '#f1f5f9', text: '#94a3b8', border: '#e2e8f0' })}>
+                {/* Header con franja de color */}
+                <div style={{ borderTop: `4px solid ${asigColor.accent}`, padding: '16px 20px', background: asigColor.bg, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 800, fontSize: '15px', color: 'var(--color-foreground)' }}>{asig.nombre}</span>
+                  <span style={{
+                    fontSize: '20px', fontWeight: 900,
+                    color: colProm.text, background: colProm.bg,
+                    border: `2px solid ${colProm.border}`,
+                    borderRadius: '12px', padding: '4px 14px', minWidth: '52px', textAlign: 'center'
+                  }}>
                     {prom ?? '—'}
                   </span>
                 </div>
 
                 {/* Lista de notas */}
                 {notasAsig.length === 0 ? (
-                  <p style={s.empty}>Sin evaluaciones aún</p>
+                  <p style={{ padding: '20px', textAlign: 'center', color: 'var(--color-foreground)', opacity: 0.35, fontSize: '13px', fontStyle: 'italic' }}>
+                    Sin evaluaciones aún
+                  </p>
                 ) : (
                   notasAsig.map((n, i) => {
                     const c = colorNota(n.calificacion);
                     return (
-                      <div key={n.id ?? i} style={{ ...s.notaRow, borderBottom: i < notasAsig.length - 1 ? '1px solid var(--color-border)' : 'none' }}>
+                      <div key={n.id ?? i} style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        padding: '10px 20px',
+                        borderBottom: i < notasAsig.length - 1 ? '1px solid var(--color-border)' : 'none'
+                      }}>
                         <div>
-                          <div style={s.notaDesc}>{n.descripcion}</div>
-                          <div style={s.notaFecha}>{fmtFecha(n.fecha)}</div>
+                          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-foreground)' }}>{n.descripcion}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--color-foreground)', opacity: 0.45, marginTop: '2px' }}>{fmtFecha(n.fecha)}</div>
                         </div>
-                        <span style={s.notaBadge(c)}>{parseFloat(n.calificacion).toFixed(1)}</span>
+                        <span style={{ fontSize: '14px', fontWeight: 800, color: c.text, background: c.bg, padding: '4px 12px', borderRadius: '8px', border: `1px solid ${c.border}` }}>
+                          {parseFloat(n.calificacion).toFixed(1)}
+                        </span>
                       </div>
                     );
                   })

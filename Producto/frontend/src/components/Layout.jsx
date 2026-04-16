@@ -1,16 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  LayoutDashboard, 
-  Users, 
-  CheckSquare, 
-  GraduationCap, 
-  Calendar, 
-  CalendarDays, 
-  Bell, 
-  UserPlus, 
-  User as UserIcon
+import {
+  LayoutDashboard,
+  Users,
+  CheckSquare,
+  GraduationCap,
+  Calendar,
+  CalendarDays,
+  Bell,
+  UserPlus,
+  User as UserIcon,
+  BookUser
 } from 'lucide-react';
 
 // Atomic Components
@@ -27,6 +28,7 @@ const NAV_ITEMS = {
   director: [
     { label: 'Dashboard',        icon: LayoutDashboard, path: '/dashboard' },
     { label: 'Gestión Usuarios', icon: Users,           path: '/usuarios' },
+    { label: 'Gestión Alumnos', icon: BookUser,        path: '/alumnos' },
     { label: 'Asistencia',       icon: CheckSquare,     path: '/asistencia' },
     { label: 'Notas',            icon: GraduationCap,   path: '/notas' },
     { label: 'Horarios',         icon: Calendar,        path: '/horarios' },
@@ -68,6 +70,7 @@ const TITULO_POR_RUTA = {
   '/muro-avisos':  'Muro de Avisos',
   '/notas-hijo':   'Notas del Estudiante',
   '/registro':     'Registro de Usuarios',
+  '/alumnos':      'Gestión de Alumnos',
 };
 
 function iniciales(nombre = '') {
