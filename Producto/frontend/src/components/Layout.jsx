@@ -11,7 +11,8 @@ import {
   Bell,
   UserPlus,
   User as UserIcon,
-  BookUser
+  BookUser,
+  Settings
 } from 'lucide-react';
 
 // Atomic Components
@@ -35,6 +36,7 @@ const NAV_ITEMS = {
     { label: 'Calendario',       icon: CalendarDays,    path: '/calendario' },
     { label: 'Muro de Avisos',   icon: Bell,            path: '/muro-avisos' },
     { label: 'Nuevo Usuario',    icon: UserPlus,        path: '/registro' },
+    { label: 'Mi Perfil',        icon: Settings,        path: '/perfil' },
   ],
   profesor: [
     { label: 'Dashboard',      icon: LayoutDashboard, path: '/dashboard' },
@@ -43,6 +45,7 @@ const NAV_ITEMS = {
     { label: 'Horarios',       icon: Calendar,        path: '/horarios' },
     { label: 'Calendario',     icon: CalendarDays,    path: '/calendario' },
     { label: 'Muro de Avisos', icon: Bell,            path: '/muro-avisos' },
+    { label: 'Mi Perfil',      icon: Settings,        path: '/perfil' },
   ],
   apoderado: [
     { label: 'Dashboard',      icon: LayoutDashboard, path: '/dashboard' },
@@ -51,12 +54,14 @@ const NAV_ITEMS = {
     { label: 'Horarios',       icon: Calendar,        path: '/horarios' },
     { label: 'Calendario',     icon: CalendarDays,    path: '/calendario' },
     { label: 'Muro de Avisos', icon: Bell,            path: '/muro-avisos' },
+    { label: 'Mi Perfil',      icon: Settings,        path: '/perfil' },
   ],
   alumno: [
     { label: 'Dashboard',  icon: LayoutDashboard, path: '/dashboard' },
     { label: 'Mis Notas',  icon: GraduationCap,   path: '/notas' },
     { label: 'Horarios',   icon: Calendar,        path: '/horarios' },
     { label: 'Calendario', icon: CalendarDays,    path: '/calendario' },
+    { label: 'Mi Perfil',  icon: Settings,        path: '/perfil' },
   ],
 };
 
@@ -71,6 +76,7 @@ const TITULO_POR_RUTA = {
   '/notas-hijo':   'Notas del Estudiante',
   '/registro':     'Registro de Usuarios',
   '/alumnos':      'Gestión de Alumnos',
+  '/perfil':       'Mi Perfil',
 };
 
 function iniciales(nombre = '') {

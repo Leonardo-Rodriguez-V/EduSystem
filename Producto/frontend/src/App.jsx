@@ -11,6 +11,7 @@ import Calendario from './pages/Calendario';
 import PortalApoderado from './pages/PortalApoderado';
 import NotasHijo from './pages/NotasHijo';
 import Alumnos from './pages/Alumnos';
+import Perfil from './pages/Perfil';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import { NotificationProvider } from './context/NotificationContext';
@@ -87,6 +88,12 @@ function App() {
         <Route path="/registro" element={
           <ProtectedRoute allowedRoles={['director']}>
             <Layout><Registro /></Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/perfil" element={
+          <ProtectedRoute>
+            <Layout><Perfil /></Layout>
           </ProtectedRoute>
         } />
 

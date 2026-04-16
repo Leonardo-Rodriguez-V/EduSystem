@@ -30,6 +30,8 @@ export default function Alumnos() {
   const [guardando,   setGuardando]   = useState(false);
   const [cargando,    setCargando]    = useState(true);
   const [confirmId,   setConfirmId]   = useState(null);
+  const [pagina,      setPagina]      = useState(1);
+  const POR_PAGINA = 50;
 
   const cargarDatos = () => {
     setCargando(true);
@@ -104,6 +106,9 @@ export default function Alumnos() {
     const coincideCurso  = filtroCurso === 'todos' || String(a.id_curso) === String(filtroCurso);
     return coincideTexto && coincideCurso;
   });
+  const totalPaginas   = Math.ceil(alumnosFiltrados.length / POR_PAGINA);
+  const paginaActual   = Math.min(pagina, totalPaginas || 1);
+  const alumnosPagina  = alumnosFiltrados.slice((paginaActual - 1) * POR_PAGINA, paginaActual * POR_PAGINA);
 
   const fmtFecha = (f) => f
     ? new Date(f).toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
@@ -165,7 +170,7 @@ export default function Alumnos() {
               </tr>
             </thead>
             <tbody>
-              {alumnosFiltrados.map((a, i) => (
+              {alumnosPagina.map((a, i) => (
                 <motion.tr key={a.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.015 }}>
                   <td style={{ ...s.td, opacity: 0.35, fontWeight: 700, fontSize: '12px' }}>{i + 1}</td>
                   <td style={{ ...s.td, fontWeight: 700 }}>{a.nombre_completo}</td>
@@ -201,9 +206,23 @@ export default function Alumnos() {
         )}
       </div>
 
-      {!cargando && alumnosFiltrados.length > 0 && (
+      {/* Paginación */}
+      {totalPaginas > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px' }}>
+          <span style={{ fontSize: '12px', color: 'var(--color-foreground)', opacity: 0.4, fontWeight: 600 }}>
+            Página {paginaActual} de {totalPaginas} · {alumnosFiltrados.length} alumnos
+          </span>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button onClick={() => setPagina(p => Math.max(1, p - 1))} disabled={paginaActual === 1}
+              style={{ ...s.btnSec, opacity: paginaActual === 1 ? 0.4 : 1 }}>← Anterior</button>
+            <button onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))} disabled={paginaActual === totalPaginas}
+              style={{ ...s.btnSec, opacity: paginaActual === totalPaginas ? 0.4 : 1 }}>Siguiente →</button>
+          </div>
+        </div>
+      )}
+      {!cargando && totalPaginas <= 1 && alumnosFiltrados.length > 0 && (
         <p style={{ textAlign: 'right', fontSize: '12px', color: 'var(--color-foreground)', opacity: 0.35, marginTop: '10px', fontWeight: 600 }}>
-          Mostrando {alumnosFiltrados.length} de {alumnos.length} alumnos
+          {alumnosFiltrados.length} de {alumnos.length} alumnos
         </p>
       )}
 

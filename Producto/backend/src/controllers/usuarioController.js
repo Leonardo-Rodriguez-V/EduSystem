@@ -39,6 +39,9 @@ const crearUsuario = async (req, res) => {
     const { contraseña: _, ...datosUsuario } = respuesta.rows[0];
     res.status(201).json(datosUsuario);
   } catch (error) {
+    if (error.code === '23505') {
+      return res.status(409).json({ error: 'El correo electrónico ya está registrado en el sistema.' });
+    }
     console.error('Error detallado al crear el usuario:', error);
     res.status(500).json({ error: 'Error del servidor al crear usuario', detail: error.message });
   }

@@ -35,6 +35,8 @@ export default function Usuarios() {
   const [guardando,  setGuardando]  = useState(false);
   const [cargando,   setCargando]   = useState(true);
   const [confirmId,  setConfirmId]  = useState(null);
+  const [pagina,     setPagina]     = useState(1);
+  const POR_PAGINA = 50;
 
   const cargarUsuarios = () => {
     apiFetch('/usuarios').then(r => r?.json()).then(data => {
@@ -80,6 +82,9 @@ export default function Usuarios() {
     const coincide = u.nombre_completo.toLowerCase().includes(busqueda.toLowerCase()) || u.correo.toLowerCase().includes(busqueda.toLowerCase());
     return coincide && (filtroRol === 'todos' || u.rol === filtroRol);
   });
+  const totalPaginas  = Math.ceil(usuariosFiltrados.length / POR_PAGINA);
+  const paginaActual  = Math.min(pagina, totalPaginas || 1);
+  const usuariosPagina = usuariosFiltrados.slice((paginaActual - 1) * POR_PAGINA, paginaActual * POR_PAGINA);
 
   const iniciales = (n = '') => n.split(' ').slice(0, 2).map(p => p[0]).join('').toUpperCase();
 
@@ -128,7 +133,7 @@ export default function Usuarios() {
               </tr>
             </thead>
             <tbody>
-              {usuariosFiltrados.map(u => {
+              {usuariosPagina.map(u => {
                 const rc = ROL_COLORS[u.rol] || { bg: 'rgba(100,100,100,0.1)', color: '#888' };
                 return (
                   <tr key={u.id} style={{ transition: 'background 0.1s' }}>
@@ -204,6 +209,21 @@ export default function Usuarios() {
           </table>
         )}
       </div>
+
+      {/* Paginación */}
+      {totalPaginas > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px' }}>
+          <span style={{ fontSize: '12px', color: 'var(--color-foreground)', opacity: 0.4, fontWeight: 600 }}>
+            Página {paginaActual} de {totalPaginas} · {usuariosFiltrados.length} usuarios
+          </span>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button onClick={() => setPagina(p => Math.max(1, p - 1))} disabled={paginaActual === 1}
+              style={{ ...s.btnSec, opacity: paginaActual === 1 ? 0.4 : 1 }}>← Anterior</button>
+            <button onClick={() => setPagina(p => Math.min(totalPaginas, p + 1))} disabled={paginaActual === totalPaginas}
+              style={{ ...s.btnSec, opacity: paginaActual === totalPaginas ? 0.4 : 1 }}>Siguiente →</button>
+          </div>
+        </div>
+      )}
 
       {/* Modal crear / editar */}
       {modal && (
