@@ -4,7 +4,14 @@ const bcrypt = require('bcryptjs');
 const obtenerUsuarios = async (req, res) => {
   try {
     const respuesta = await pool.query(`
-      SELECT u.id, u.nombre_completo, u.correo, u.rol, u.especialidad, c.nombre AS curso_jefatura
+      SELECT
+        u.id, u.nombre_completo, u.correo, u.rol, u.especialidad,
+        c.nombre AS curso_jefatura,
+        (SELECT STRING_AGG(DISTINCT a.nombre, ', ' ORDER BY a.nombre)
+         FROM curso_asignatura_profesor cap
+         JOIN asignaturas a ON cap.id_asignatura = a.id
+         WHERE cap.id_profesor = u.id) AS asignaturas_que_imparte,
+        (SELECT COUNT(*) FROM apoderado_alumno aa WHERE aa.id_apoderado = u.id) AS total_hijos
       FROM usuarios u
       LEFT JOIN cursos c ON c.id_profesor_jefe = u.id
       ORDER BY

@@ -77,6 +77,31 @@ export default function Dashboard() {
 
 /* ────────── DIRECTOR ────────── */
 function DashboardDirector({ usuario, cursos, totalAlumnos, cargando }) {
+  const [modalAviso, setModalAviso] = useState(false);
+  const [avisoForm,  setAvisoForm]  = useState({ titulo: '', contenido: '' });
+  const [enviando,   setEnviando]   = useState(false);
+  const [avisoMsg,   setAvisoMsg]   = useState('');
+
+  const publicarGlobal = async () => {
+    if (!avisoForm.titulo.trim() || !avisoForm.contenido.trim()) return;
+    setEnviando(true);
+    try {
+      await Promise.all(cursos.map(c =>
+        apiFetch('/avisos', {
+          method: 'POST',
+          body: JSON.stringify({ id_curso: c.id, id_autor: usuario.id, titulo: avisoForm.titulo, contenido: avisoForm.contenido }),
+        })
+      ));
+      setAvisoMsg(`Aviso publicado en ${cursos.length} cursos.`);
+      setAvisoForm({ titulo: '', contenido: '' });
+      setTimeout(() => { setAvisoMsg(''); setModalAviso(false); }, 2000);
+    } catch {
+      setAvisoMsg('Error al publicar.');
+    } finally {
+      setEnviando(false);
+    }
+  };
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
       <div style={s.pageHeader}>
@@ -84,11 +109,54 @@ function DashboardDirector({ usuario, cursos, totalAlumnos, cargando }) {
           <h1 style={s.pageTitle}>Panel de Control Administrativo</h1>
           <p style={s.pageSub}>Gestionando {usuario?.nombre_completo?.split(',')[0] || 'Sistema'}</p>
         </div>
-        <button className="clay-button" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px' }}>
+        <button className="clay-button" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px' }} onClick={() => setModalAviso(true)}>
           <PlusCircle size={20} />
           Nuevo aviso global
         </button>
       </div>
+
+      {/* Modal aviso global */}
+      {modalAviso && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300, padding: '20px' }}
+          onClick={e => { if (e.target === e.currentTarget) setModalAviso(false); }}>
+          <div style={{ background: 'var(--color-surface)', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '460px', border: '1px solid var(--color-border)', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <div style={{ fontSize: '17px', fontWeight: 700, color: 'var(--color-foreground)', marginBottom: '6px' }}>Nuevo Aviso Global</div>
+            <div style={{ fontSize: '12px', color: 'var(--color-foreground)', opacity: 0.5, marginBottom: '20px' }}>
+              Se publicará en los {cursos.length} cursos de la institución
+            </div>
+
+            {avisoMsg && (
+              <div style={{ marginBottom: '14px', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', background: 'rgba(21,128,61,0.1)', color: '#15803d', border: '1px solid rgba(21,128,61,0.3)' }}>
+                {avisoMsg}
+              </div>
+            )}
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-foreground)', opacity: 0.6, marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '.5px' }}>Título</label>
+              <input value={avisoForm.titulo} onChange={e => setAvisoForm(p => ({ ...p, titulo: e.target.value }))}
+                placeholder="Ej: Reunión de apoderados general"
+                style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--color-border)', borderRadius: '8px', background: 'var(--color-muted)', color: 'var(--color-foreground)', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-foreground)', opacity: 0.6, marginBottom: '6px', display: 'block', textTransform: 'uppercase', letterSpacing: '.5px' }}>Contenido</label>
+              <textarea value={avisoForm.contenido} onChange={e => setAvisoForm(p => ({ ...p, contenido: e.target.value }))}
+                placeholder="Escribe el aviso aquí..."
+                style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--color-border)', borderRadius: '8px', background: 'var(--color-muted)', color: 'var(--color-foreground)', fontSize: '13px', outline: 'none', boxSizing: 'border-box', resize: 'vertical', minHeight: '100px' }} />
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => setModalAviso(false)} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'transparent', color: 'var(--color-foreground)', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}>
+                Cancelar
+              </button>
+              <button onClick={publicarGlobal} disabled={enviando || !avisoForm.titulo || !avisoForm.contenido}
+                style={{ flex: 2, padding: '10px', borderRadius: '8px', border: 'none', background: 'var(--color-primary)', color: '#fff', cursor: 'pointer', fontWeight: 600, fontSize: '13px', opacity: (enviando || !avisoForm.titulo || !avisoForm.contenido) ? 0.6 : 1 }}>
+                {enviando ? 'Publicando...' : `Publicar en ${cursos.length} cursos`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       <div style={s.kpiGrid}>
         <StatCard 

@@ -1,137 +1,95 @@
 import { useState } from 'react';
 import apiFetch from '../utils/api';
 
-function Registro() {
-  const [formData, setFormData] = useState({
-    nombre_completo: '',
-    correo: '',
-    contraseña: '',
-    rol: 'profesor' // Valor inicial por defecto
-  });
-  const [mensaje, setMensaje] = useState({ texto: '', tipo: '' });
+const s = {
+  input:  { width: '100%', padding: '10px 14px', border: '1px solid var(--color-border)', borderRadius: '8px', fontSize: '14px', outline: 'none', color: 'var(--color-foreground)', background: 'var(--color-muted)', boxSizing: 'border-box' },
+  label:  { fontSize: '13px', fontWeight: 600, color: 'var(--color-foreground)', opacity: 0.7, marginBottom: '6px', display: 'block' },
+  select: { width: '100%', padding: '10px 14px', border: '1px solid var(--color-border)', borderRadius: '8px', fontSize: '14px', outline: 'none', color: 'var(--color-foreground)', background: 'var(--color-muted)', boxSizing: 'border-box' },
+};
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
+function Registro() {
+  const [form,    setForm]    = useState({ nombre_completo: '', correo: '', contraseña: '', rol: 'profesor' });
+  const [mensaje, setMensaje] = useState({ texto: '', tipo: '' });
+  const [enviando, setEnviando] = useState(false);
+
+  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMensaje({ texto: '', tipo: '' });
-
-    if (formData.contraseña.length < 8 || !/\d/.test(formData.contraseña)) {
-      setMensaje({ texto: 'La contraseña debe tener al menos 8 caracteres y un número', tipo: 'error' });
+    if (form.contraseña.length < 8 || !/\d/.test(form.contraseña)) {
+      setMensaje({ texto: 'La contraseña debe tener al menos 8 caracteres y un número.', tipo: 'error' });
       return;
     }
-
+    setEnviando(true);
     try {
-      const respuesta = await apiFetch('/usuarios', {
-        method: 'POST',
-        body: JSON.stringify(formData),
-      });
-
-      const datos = await respuesta.json();
-
-      if (respuesta.status === 201) {
-        setMensaje({ texto: '¡Usuario registrado con éxito! 🎉', tipo: 'exito' });
-        setFormData({ nombre_completo: '', correo: '', contraseña: '', rol: 'profesor' });
+      const res   = await apiFetch('/usuarios', { method: 'POST', body: JSON.stringify(form) });
+      const datos = await res.json();
+      if (res.status === 201) {
+        setMensaje({ texto: 'Usuario registrado con éxito.', tipo: 'exito' });
+        setForm({ nombre_completo: '', correo: '', contraseña: '', rol: 'profesor' });
       } else {
-        setMensaje({ 
-          texto: `Error: ${datos.detail || 'No se pudo registrar el usuario'}`, 
-          tipo: 'error' 
-        });
+        setMensaje({ texto: datos.detail || datos.error || 'No se pudo registrar el usuario.', tipo: 'error' });
       }
-    } catch (error) {
-      setMensaje({ texto: 'Error de conexión con el servidor', tipo: 'error' });
+    } catch {
+      setMensaje({ texto: 'Error de conexión con el servidor.', tipo: 'error' });
+    } finally {
+      setEnviando(false);
     }
   };
 
   return (
-    <div className="p-10 flex justify-center">
-      <div className="bg-white p-8 rounded-xl shadow-lg border border-slate-200 w-full max-w-lg">
-        <header className="mb-6 text-center">
-          <h1 className="text-3xl font-bold text-slate-800">Registro de Usuario</h1>
-          <p className="text-slate-500">Completa los datos para dar de alta en EduSync</p>
-        </header>
+    <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 20px' }}>
+      <div style={{ background: 'var(--color-surface)', borderRadius: '16px', padding: '36px', width: '100%', maxWidth: '480px', border: '1px solid var(--color-border)', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+
+        <div style={{ marginBottom: '28px', textAlign: 'center' }}>
+          <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--color-foreground)', marginBottom: '6px' }}>Registro de Usuario</div>
+          <div style={{ fontSize: '13px', color: 'var(--color-foreground)', opacity: 0.5 }}>Completa los datos para dar de alta en EduSync</div>
+        </div>
 
         {mensaje.texto && (
-          <div className={`mb-6 p-4 rounded-lg text-sm font-medium ${
-            mensaje.tipo === 'exito' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-          }`}>
+          <div style={{
+            marginBottom: '20px', padding: '12px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 600,
+            background: mensaje.tipo === 'exito' ? 'rgba(21,128,61,0.1)' : 'rgba(220,38,38,0.1)',
+            color:      mensaje.tipo === 'exito' ? '#15803d' : 'var(--color-destructive)',
+            border:     `1px solid ${mensaje.tipo === 'exito' ? 'rgba(21,128,61,0.3)' : 'rgba(220,38,38,0.3)'}`,
+          }}>
             {mensaje.texto}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Nombre Completo</label>
-            <input
-              type="text"
-              name="nombre_completo"
-              value={formData.nombre_completo}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-              placeholder="Ej: Ana Gomez"
-            />
+            <label style={s.label}>Nombre Completo</label>
+            <input style={s.input} type="text" name="nombre_completo" value={form.nombre_completo} onChange={handleChange} required placeholder="Ej: Ana Gómez" />
           </div>
-
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Correo Electrónico</label>
-            <input
-              type="email"
-              name="correo"
-              value={formData.correo}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-              placeholder="ana@edusync.com"
-            />
+            <label style={s.label}>Correo Electrónico</label>
+            <input style={s.input} type="email" name="correo" value={form.correo} onChange={handleChange} required placeholder="ana@edusync.com" />
           </div>
-
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Contraseña</label>
-            <input
-              type="password"
-              name="contraseña"
-              value={formData.contraseña}
-              onChange={handleChange}
-              required
-              minLength={8}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-              placeholder="Mínimo 8 caracteres y un número"
-            />
+            <label style={s.label}>Contraseña</label>
+            <input style={s.input} type="password" name="contraseña" value={form.contraseña} onChange={handleChange} required placeholder="Mínimo 8 caracteres y un número" />
           </div>
-
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Rol en el Sistema</label>
-            <select
-              name="rol"
-              value={formData.rol}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white"
-            >
+            <label style={s.label}>Rol en el Sistema</label>
+            <select style={s.select} name="rol" value={form.rol} onChange={handleChange}>
               <option value="director">Director</option>
               <option value="profesor">Profesor</option>
               <option value="apoderado">Apoderado</option>
             </select>
-            {/* 
-              NOTA PARA INTEGRANTE 1: 
-              A futuro, si el rol seleccionado es 'apoderado', se debe desplegar un campo adicional
-              para ingresar el ID del alumno vinculado a este apoderado.
-            */}
-            <p className="mt-2 text-xs text-slate-400 italic">
-              * Selección de roles institucionales autorizados.
-            </p>
+            <div style={{ marginTop: '6px', fontSize: '11px', color: 'var(--color-foreground)', opacity: 0.4 }}>
+              Selección de roles institucionales autorizados.
+            </div>
           </div>
 
-          <button
-            type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all transform active:scale-[0.98]"
-          >
-            Registrar Usuario
+          <button type="submit" disabled={enviando} style={{
+            marginTop: '8px', padding: '12px', borderRadius: '10px', border: 'none',
+            background: 'var(--color-primary)', color: '#fff', fontSize: '14px', fontWeight: 700,
+            cursor: enviando ? 'not-allowed' : 'pointer', opacity: enviando ? 0.7 : 1,
+            boxShadow: '0 4px 12px rgba(79,70,229,0.3)', transition: 'all 0.2s',
+          }}>
+            {enviando ? 'Registrando...' : 'Registrar Usuario'}
           </button>
         </form>
       </div>
