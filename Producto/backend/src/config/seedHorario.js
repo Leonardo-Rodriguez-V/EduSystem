@@ -12,6 +12,9 @@ const BLOQUES = [
 
 // ─── BOLSAS SEMANALES ─────────────────────────────────────────────────────────
 // Formato: [nombre_asignatura, cantidad_de_bloques_en_la_semana]
+// Media: 23 slots disponibles (Lun-Jue 5 bloques + Vie 3 bloques con salida 13:30)
+// Básica: 19 slots (Lun-Jue 4 bloques + Vie 3 bloques)
+// Parvularia: 15 slots (3 bloques por día)
 
 const BOLSA_PARVULARIA = [            // 15 bloques: 3 por día (lun-vie)
   ['Lenguaje Verbal',                          3],
@@ -51,7 +54,10 @@ const BOLSA_BASICA_MAYOR = [          // 19 bloques: 4 (lun-jue) + 3 (vie)
   ['Orientación',                              1],
 ];
 
-const BOLSA_MEDIA_INICIAL = [         // 21 bloques: 5 (lun/mié) + 4 (mar/jue) + 3 (vie)
+// MEJORA: 23 bloques (llena los 23 slots JEC de media)
+// Se agrega Religión y Consejo de Curso para aprovechar los 2 slots libres
+// Se mantiene Biología en 2 bloques (corrección respecto a propuesta V3)
+const BOLSA_MEDIA_INICIAL = [         // 23 bloques: 5 (lun-jue) + 3 (vie) — 1° y 2° Medio
   ['Lengua y Literatura',                      3],
   ['Matemática',                               3],
   ['Historia, Geografía y Ciencias Sociales',  2],
@@ -63,9 +69,12 @@ const BOLSA_MEDIA_INICIAL = [         // 21 bloques: 5 (lun/mié) + 4 (mar/jue) 
   ['Artes Visuales',                           1],
   ['Filosofía',                                1],
   ['Orientación',                              1],
+  ['Religión',                                 1],  // aprovecha slot libre #1
+  ['Consejo de Curso',                         1],  // aprovecha slot libre #2
 ];
 
-const BOLSA_MEDIA_FINAL = [           // 21 bloques: 5 (lun/mié) + 4 (mar/jue) + 3 (vie)
+// MEJORA: 3° y 4° Medio con bolsas separadas para personalizar cada nivel
+const BOLSA_TERCERO_MEDIO = [         // 23 bloques: 5 (lun-jue) + 3 (vie) — 3° Medio
   ['Lengua y Literatura',                      3],
   ['Matemática',                               3],
   ['Historia, Geografía y Ciencias Sociales',  2],
@@ -78,6 +87,25 @@ const BOLSA_MEDIA_FINAL = [           // 21 bloques: 5 (lun/mié) + 4 (mar/jue) 
   ['Filosofía',                                1],
   ['Educación Ciudadana',                      1],
   ['Orientación',                              1],
+  ['Electivo',                                 1],  // aprovecha slot libre #1
+  ['Consejo de Curso',                         1],  // aprovecha slot libre #2
+];
+
+const BOLSA_CUARTO_MEDIO = [          // 23 bloques: 5 (lun-jue) + 3 (vie) — 4° Medio
+  ['Lengua y Literatura',                      3],
+  ['Matemática',                               3],
+  ['Historia, Geografía y Ciencias Sociales',  2],
+  ['Biología',                                 2],
+  ['Química',                                  2],
+  ['Física',                                   2],
+  ['Inglés',                                   2],
+  ['Educación Física y Salud',                 1],
+  ['Artes Visuales',                           1],
+  ['Filosofía',                                1],
+  ['Educación Ciudadana',                      1],
+  ['Orientación',                              1],
+  ['Taller JEC',                               1],  // aprovecha slot libre #1
+  ['Consejo de Curso',                         1],  // aprovecha slot libre #2
 ];
 
 // ─── PRIORIDADES PEDAGÓGICAS JEC ─────────────────────────────────────────────
@@ -110,21 +138,27 @@ const PRIORIDAD = {
   'Comprensión del Entorno Sociocultural':   { preferBlocks: [2]    },
   'Identidad y Autonomía':                   { preferBlocks: [1, 2] },
   'Convivencia y Ciudadanía':                { preferBlocks: [1, 2] },
-  // CIERRE DE SEMANA → viernes tarde
+  // CIERRE DE JORNADA → tarde/viernes
   'Religión':                                { preferBlocks: [3, 4], preferDays: [4, 5] },
   'Orientación':                             { preferBlocks: [3, 4], preferDays: [5]    },
-  'Filosofía':                               { preferBlocks: [2, 3, 4]                   },
-  'Educación Ciudadana':                     { preferBlocks: [2, 3, 4]                   },
+  'Filosofía':                               { preferBlocks: [2, 3, 4]                  },
+  'Educación Ciudadana':                     { preferBlocks: [2, 3, 4]                  },
+  // NUEVOS — cierre de semana o tarde
+  'Consejo de Curso':                        { preferBlocks: [2, 3], preferDays: [5]    }, // viernes tarde
+  'Electivo':                                { preferBlocks: [3, 4]                     }, // tarde libre
+  'Taller JEC':                              { preferBlocks: [3, 4]                     }, // tarde libre
 };
 
 // ─── SLOTS DISPONIBLES POR NIVEL ─────────────────────────────────────────────
+// Media: Viernes con salida a las 13:30 → solo 3 bloques (B0-B2)
 function getSlotsDisponibles(nivel) {
   const slots = [];
   for (let dia = 1; dia <= 5; dia++) {
     let maxB;
-    if (nivel === 'parvularia')         maxB = 3;                    // B0-B2 todos los días
-    else if (nivel.startsWith('media')) maxB = dia === 5 ? 3 : 5;   // Vie 3 bloques, resto 5
-    else                                maxB = dia === 5 ? 3 : 4;   // Vie 3 bloques, resto 4
+    if (nivel === 'parvularia')                                                    maxB = 3;
+    else if (nivel === 'media_inicial' || nivel === 'tercero_medio' || nivel === 'cuarto_medio')
+                                                                                   maxB = dia === 5 ? 3 : 5;
+    else                                                                           maxB = dia === 5 ? 3 : 4;
     for (let b = 0; b < maxB; b++) slots.push({ dia, b });
   }
   return slots;
@@ -151,13 +185,15 @@ function scoreSlot(asigNombre, dia, bloque) {
   return score;
 }
 
+// MEJORA: 3° y 4° Medio ahora tienen niveles distintos para bolsas separadas
 function getNivel(nombre) {
   const n = nombre.toLowerCase();
   if (n.includes('kínder') || n.includes('kinder') || n.includes('nt1') || n.includes('nt2')) return 'parvularia';
   if (n.match(/[1-4]°\s*básico/))  return 'basica_menor';
   if (n.match(/[5-8]°\s*básico/))  return 'basica_mayor';
   if (n.match(/[12]°\s*medio/))    return 'media_inicial';
-  if (n.match(/[34]°\s*medio/))    return 'media_final';
+  if (n.match(/3°\s*medio/))       return 'tercero_medio';
+  if (n.match(/4°\s*medio/))       return 'cuarto_medio';
   return null;
 }
 
@@ -167,7 +203,8 @@ function getBolsa(nivel) {
     basica_menor:  BOLSA_BASICA_MENOR,
     basica_mayor:  BOLSA_BASICA_MAYOR,
     media_inicial: BOLSA_MEDIA_INICIAL,
-    media_final:   BOLSA_MEDIA_FINAL,
+    tercero_medio: BOLSA_TERCERO_MEDIO,
+    cuarto_medio:  BOLSA_CUARTO_MEDIO,
   }[nivel] ?? null;
 }
 
@@ -181,7 +218,7 @@ function generateSchedule(cursos, asignaturas, asignaciones) {
   const profFor = (id_curso, id_asig) =>
     asignaciones.find(a => a.id_curso === id_curso && a.id_asignatura === id_asig)?.id_profesor ?? null;
 
-  // Media primero (más restricciones por el B5 JEC)
+  // Media primero (más restricciones: 23 slots completamente llenos)
   const orden = [...cursos].sort((a, b) => {
     const peso = (n) => n.includes('Medio') ? 0 : n.includes('Básico') ? 1 : 2;
     return peso(a.nombre) - peso(b.nombre);
@@ -214,9 +251,9 @@ function generateSchedule(cursos, asignaturas, asignaciones) {
 
       const candidatos = slotsBase
         .filter(({ dia, b }) => {
-          if (busyCurso.has(`${curso.id}-${dia}-${b}`))   return false; // curso ocupado
-          if (pid && busyProf.has(`${dia}-${b}-${pid}`))  return false; // prof ocupado
-          if (diaAsig.has(`${curso.id}-${dia}-${asigNombre}`)) return false; // no repetir asig en mismo día
+          if (busyCurso.has(`${curso.id}-${dia}-${b}`))         return false; // curso ocupado
+          if (pid && busyProf.has(`${dia}-${b}-${pid}`))        return false; // prof ocupado
+          if (diaAsig.has(`${curso.id}-${dia}-${asigNombre}`))  return false; // no repetir asig en mismo día
           return true;
         })
         .map(slot => ({ ...slot, score: scoreSlot(asigNombre, slot.dia, slot.b) }))
@@ -240,8 +277,16 @@ async function main() {
   try {
     await client.query('BEGIN');
 
-    const { rows: cursos }      = await client.query('SELECT id, nombre FROM cursos');
-    const { rows: asignaturas } = await client.query('SELECT id, nombre FROM asignaturas');
+    // Insertar nuevas asignaturas si aún no existen
+    for (const nombre of ['Consejo de Curso', 'Electivo', 'Taller JEC', 'Religión']) {
+      await client.query(
+        `INSERT INTO asignaturas (nombre) SELECT $1 WHERE NOT EXISTS (SELECT 1 FROM asignaturas WHERE nombre = $1)`,
+        [nombre]
+      );
+    }
+
+    const { rows: cursos }       = await client.query('SELECT id, nombre FROM cursos');
+    const { rows: asignaturas }  = await client.query('SELECT id, nombre FROM asignaturas');
     const { rows: asignaciones } = await client.query(
       'SELECT id_curso, id_asignatura, id_profesor FROM curso_asignatura_profesor'
     );
@@ -249,7 +294,12 @@ async function main() {
     console.log('🗑️  Limpiando horario anterior...');
     await client.query('DELETE FROM horario');
 
-    console.log('🔄 Generando horario JEC con Bolsa Semanal + Prioridad Pedagógica...\n');
+    console.log('🔄 Generando horario JEC — Versión mejorada V4...\n');
+    console.log('   1° y 2° Medio : 23 bloques (+ Religión + Consejo de Curso)');
+    console.log('   3° Medio      : 23 bloques (+ Electivo + Consejo de Curso)');
+    console.log('   4° Medio      : 23 bloques (+ Taller JEC + Consejo de Curso)');
+    console.log('   Viernes Media : salida 13:30 (solo B0-B2)\n');
+
     let finalSchedule = null;
     let attempts      = 0;
     const MAX         = 5000;
@@ -284,7 +334,7 @@ async function main() {
     console.log(`   Bloques insertados : ${insertados}`);
     console.log(`   Cursos procesados  : ${cursos.length}`);
     console.log(`   Intentos usados    : ${attempts}`);
-    console.log(`\n💡 Ejecuta: node src/config/checkConflicts.js`);
+    console.log(`\n💡 Para exportar a Word: npm run export:horario`);
 
   } catch (e) {
     await client.query('ROLLBACK');

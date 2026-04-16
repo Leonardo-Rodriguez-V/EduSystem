@@ -32,7 +32,7 @@ const NAV_ITEMS = {
     { label: 'Horarios',         icon: Calendar,        path: '/horarios' },
     { label: 'Calendario',       icon: CalendarDays,    path: '/calendario' },
     { label: 'Muro de Avisos',   icon: Bell,            path: '/muro-avisos' },
-    { label: 'Nuevo Usuario',    icon: UserPlus,        path: '/registration' },
+    { label: 'Nuevo Usuario',    icon: UserPlus,        path: '/registro' },
   ],
   profesor: [
     { label: 'Dashboard',      icon: LayoutDashboard, path: '/dashboard' },

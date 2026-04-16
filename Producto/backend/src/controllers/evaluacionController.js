@@ -37,7 +37,27 @@ const crearEvaluacion = async (req, res) => {
   }
 };
 
+// GET /api/evaluaciones/pendientes?id_profesor=X
+// Evaluaciones cuya fecha ya pasó, creadas por el profesor
+const obtenerEvaluacionesPendientes = async (req, res) => {
+  const { id_profesor } = req.query;
+  if (!id_profesor) return res.status(400).json({ error: 'Se requiere id_profesor' });
+  try {
+    const respuesta = await pool.query(
+      `SELECT COUNT(id)::int AS total
+       FROM evaluaciones
+       WHERE id_profesor = $1 AND fecha <= CURRENT_DATE`,
+      [id_profesor]
+    );
+    res.json({ total: respuesta.rows[0].total });
+  } catch (error) {
+    console.error('Error al obtener evaluaciones pendientes:', error);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+};
+
 module.exports = {
   obtenerEvaluacionesPorCurso,
-  crearEvaluacion
+  crearEvaluacion,
+  obtenerEvaluacionesPendientes,
 };

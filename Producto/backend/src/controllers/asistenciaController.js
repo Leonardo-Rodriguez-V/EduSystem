@@ -116,9 +116,30 @@ const obtenerResumenPorCurso = async (req, res) => {
   }
 };
 
+// GET /api/asistencia/global
+const obtenerAsistenciaGlobal = async (req, res) => {
+  try {
+    const respuesta = await pool.query(`
+      SELECT
+        COUNT(CASE WHEN estado = 'presente' THEN 1 END)::int AS presentes,
+        COUNT(CASE WHEN estado = 'ausente'  THEN 1 END)::int AS ausentes,
+        COUNT(CASE WHEN estado = 'tardanza' THEN 1 END)::int AS tardanzas,
+        COUNT(id)::int AS total
+      FROM asistencia
+    `);
+    const { presentes, total } = respuesta.rows[0];
+    const porcentaje = total > 0 ? Math.round((presentes / total) * 1000) / 10 : 0;
+    res.json({ ...respuesta.rows[0], porcentaje });
+  } catch (error) {
+    console.error('Error al obtener asistencia global:', error);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+};
+
 module.exports = {
   obtenerAsistenciaPorCursoYFecha,
   obtenerAsistenciaPorAlumno,
   guardarAsistencia,
   obtenerResumenPorCurso,
+  obtenerAsistenciaGlobal,
 };
