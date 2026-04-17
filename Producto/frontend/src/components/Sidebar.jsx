@@ -21,15 +21,16 @@ const Sidebar = ({
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           style={{
             background: 'var(--color-surface)',
-            minHeight: '100vh',
-            display: 'flex', 
+            height: '100vh',
+            display: 'flex',
             flexDirection: 'column',
-            position: 'fixed', 
-            left: 0, 
-            top: 0, 
+            position: 'fixed',
+            left: 0,
+            top: 0,
             zIndex: 100,
             boxShadow: 'var(--clay-shadow)',
-            borderRight: '4px solid var(--color-surface)'
+            borderRight: '4px solid var(--color-surface)',
+            overflow: 'hidden'
           }}
         >
           {/* Logo Section */}
