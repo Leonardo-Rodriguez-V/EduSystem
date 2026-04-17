@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import apiFetch from '../utils/api';
+import { Download } from 'lucide-react';
 
 const s = {
   header:    { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' },
@@ -62,10 +63,11 @@ const getSubjectColor = (name) => {
 };
 
 export default function Horarios() {
-  const [cursos,   setCursos]   = useState([]);
-  const [cursoSel, setCursoSel] = useState(null);
-  const [horario,  setHorario]  = useState([]);
-  const [, setCargando] = useState(true);
+  const [cursos,      setCursos]      = useState([]);
+  const [cursoSel,    setCursoSel]    = useState(null);
+  const [horario,     setHorario]     = useState([]);
+  const [, setCargando]               = useState(true);
+  const [descargando, setDescargando] = useState(false);
 
   const usuario = (() => { try { return JSON.parse(localStorage.getItem('usuario')); } catch { return {}; } })();
 
@@ -103,23 +105,56 @@ export default function Horarios() {
   const getEntry = (diaIdx, bloqueInicio) =>
     horario.find(h => Number(h.dia_semana) === (diaIdx + 1) && h.bloque_inicio.startsWith(bloqueInicio));
 
+  const descargarWord = async () => {
+    if (!cursoSel || descargando) return;
+    setDescargando(true);
+    try {
+      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+      const res = await fetch(`${API_BASE}/horarios/exportar?id_curso=${cursoSel.id}`);
+      if (!res.ok) throw new Error('Error al generar el archivo');
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `Horario_${cursoSel.nombre}.docx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('No se pudo descargar el horario.');
+    } finally {
+      setDescargando(false);
+    }
+  };
+
   return (
     <div style={{ padding: '0 10px' }}>
       <div style={s.header}>
         <div style={s.title}>Horario de Clases — {cursoSel?.nombre}</div>
-        {cursos.length > 1 && (
-          <select
-            style={s.select}
-            value={cursoSel?.id || ''}
-            onChange={e => setCursoSel(cursos.find(c => c.id === parseInt(e.target.value)))}
-          >
-            {cursos.map(c => (
-              <option key={c.id} value={c.id}>
-                {c.nombre_alumno ? `${c.nombre_alumno.split(' ')[0]} — ${c.nombre}` : c.nombre}
-              </option>
-            ))}
-          </select>
-        )}
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          {cursos.length > 1 && (
+            <select
+              style={s.select}
+              value={cursoSel?.id || ''}
+              onChange={e => setCursoSel(cursos.find(c => c.id === parseInt(e.target.value)))}
+            >
+              {cursos.map(c => (
+                <option key={c.id} value={c.id}>
+                  {c.nombre_alumno ? `${c.nombre_alumno.split(' ')[0]} — ${c.nombre}` : c.nombre}
+                </option>
+              ))}
+            </select>
+          )}
+          {cursoSel && (
+            <button
+              onClick={descargarWord}
+              disabled={descargando}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px', border: 'none', background: 'var(--color-primary)', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: descargando ? 'not-allowed' : 'pointer', opacity: descargando ? 0.7 : 1 }}
+            >
+              <Download size={15} />
+              {descargando ? 'Generando...' : 'Descargar Word'}
+            </button>
+          )}
+        </div>
       </div>
 
       <div style={s.grid}>
