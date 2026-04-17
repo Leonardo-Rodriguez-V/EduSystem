@@ -17,6 +17,10 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import StatCard from '../components/StatCard';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, Cell, LineChart, Line, Legend,
+} from 'recharts';
 
 const s = {
   container:  { padding: '0 0 40px 0', maxWidth: '1400px', margin: '0 auto' },
@@ -88,11 +92,21 @@ function DashboardDirector({ usuario, cursos, totalAlumnos, cargando }) {
   const [avisoForm,  setAvisoForm]  = useState({ titulo: '', contenido: '' });
   const [enviando,   setEnviando]   = useState(false);
   const [avisoMsg,   setAvisoMsg]   = useState('');
-  const [asistGlobal, setAsistGlobal] = useState(null);
+  const [asistGlobal,   setAsistGlobal]   = useState(null);
+  const [statsAsist,    setStatsAsist]    = useState([]);
+  const [statsNotas,    setStatsNotas]    = useState([]);
 
   useEffect(() => {
     apiFetch('/asistencia/global').then(r => r?.json()).then(d => {
       if (d && typeof d.porcentaje === 'number') setAsistGlobal(d);
+    }).catch(() => {});
+
+    apiFetch('/asistencia/resumen-cursos').then(r => r?.json()).then(d => {
+      if (Array.isArray(d)) setStatsAsist(d.map(c => ({ nombre: c.nombre.length > 8 ? c.nombre.slice(0, 8) + '…' : c.nombre, porcentaje: c.porcentaje, nombreCompleto: c.nombre })));
+    }).catch(() => {});
+
+    apiFetch('/notas/promedio-cursos').then(r => r?.json()).then(d => {
+      if (Array.isArray(d)) setStatsNotas(d.map(c => ({ nombre: c.nombre.length > 8 ? c.nombre.slice(0, 8) + '…' : c.nombre, promedio: c.promedio ? parseFloat(c.promedio) : null, total_notas: c.total_notas, nombreCompleto: c.nombre })));
     }).catch(() => {});
   }, []);
 
@@ -241,6 +255,89 @@ function DashboardDirector({ usuario, cursos, totalAlumnos, cargando }) {
             ))}
           </tbody>
         </table>
+      </div>
+      {/* ── Sección Estadísticas ── */}
+      <div style={{ marginTop: '48px' }}>
+        <div style={s.sectionTitle}>
+          <BarChart3 size={26} color="var(--color-primary)" />
+          Estadísticas del Sistema
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: '24px' }}>
+
+          {/* Gráfico asistencia por curso */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
+            style={{ ...s.tblCard, padding: '28px' }}>
+            <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--color-foreground)', marginBottom: '4px' }}>Asistencia por Curso</div>
+            <div style={{ fontSize: '12px', color: 'var(--color-foreground)', opacity: 0.45, marginBottom: '20px', fontWeight: 600 }}>Porcentaje de presencia acumulado</div>
+            {statsAsist.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-foreground)', opacity: 0.3, fontSize: '13px', fontWeight: 600 }}>Sin datos de asistencia aún</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={statsAsist} margin={{ top: 4, right: 8, left: -10, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                  <XAxis dataKey="nombre" tick={{ fontSize: 11, fontWeight: 700, fill: 'var(--color-foreground)' }} axisLine={false} tickLine={false} />
+                  <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 11, fill: 'var(--color-foreground)' }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    formatter={(v, _, props) => [`${v}%`, props.payload.nombreCompleto || 'Asistencia']}
+                    contentStyle={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '10px', fontSize: '12px', fontWeight: 700 }}
+                    labelStyle={{ display: 'none' }}
+                  />
+                  <Bar dataKey="porcentaje" radius={[6, 6, 0, 0]}>
+                    {statsAsist.map((entry, i) => (
+                      <Cell key={i} fill={entry.porcentaje >= 90 ? '#10b981' : entry.porcentaje >= 75 ? '#f59e0b' : '#ef4444'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+            <div style={{ display: 'flex', gap: '16px', marginTop: '12px', flexWrap: 'wrap' }}>
+              {[{ color: '#10b981', label: '≥ 90% Óptima' }, { color: '#f59e0b', label: '75–89% Regular' }, { color: '#ef4444', label: '< 75% Crítica' }].map(l => (
+                <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700, color: 'var(--color-foreground)', opacity: 0.6 }}>
+                  <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: l.color }} />
+                  {l.label}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Gráfico promedio de notas por curso */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
+            style={{ ...s.tblCard, padding: '28px' }}>
+            <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--color-foreground)', marginBottom: '4px' }}>Promedio de Notas por Curso</div>
+            <div style={{ fontSize: '12px', color: 'var(--color-foreground)', opacity: 0.45, marginBottom: '20px', fontWeight: 600 }}>Promedio general de calificaciones</div>
+            {statsNotas.filter(c => c.promedio !== null).length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-foreground)', opacity: 0.3, fontSize: '13px', fontWeight: 600 }}>Sin notas registradas aún</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={statsNotas} margin={{ top: 4, right: 8, left: -10, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                  <XAxis dataKey="nombre" tick={{ fontSize: 11, fontWeight: 700, fill: 'var(--color-foreground)' }} axisLine={false} tickLine={false} />
+                  <YAxis domain={[1, 7]} ticks={[1, 2, 3, 4, 5, 6, 7]} tick={{ fontSize: 11, fill: 'var(--color-foreground)' }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    formatter={(v, _, props) => [v ? v.toFixed(1) : '—', props.payload.nombreCompleto || 'Promedio']}
+                    contentStyle={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '10px', fontSize: '12px', fontWeight: 700 }}
+                    labelStyle={{ display: 'none' }}
+                  />
+                  <Bar dataKey="promedio" radius={[6, 6, 0, 0]}>
+                    {statsNotas.map((entry, i) => (
+                      <Cell key={i} fill={!entry.promedio ? '#94a3b8' : entry.promedio >= 5 ? '#6366f1' : entry.promedio >= 4 ? '#f59e0b' : '#ef4444'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+            <div style={{ display: 'flex', gap: '16px', marginTop: '12px', flexWrap: 'wrap' }}>
+              {[{ color: '#6366f1', label: '≥ 5.0 Bueno' }, { color: '#f59e0b', label: '4.0–4.9 Suficiente' }, { color: '#ef4444', label: '< 4.0 Insuficiente' }].map(l => (
+                <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700, color: 'var(--color-foreground)', opacity: 0.6 }}>
+                  <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: l.color }} />
+                  {l.label}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+        </div>
       </div>
     </motion.div>
   );

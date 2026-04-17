@@ -8,6 +8,9 @@ router.get('/', asistenciaController.obtenerAsistenciaPorCursoYFecha);
 // GET /api/asistencia/global
 router.get('/global', asistenciaController.obtenerAsistenciaGlobal);
 
+// GET /api/asistencia/resumen-cursos
+router.get('/resumen-cursos', asistenciaController.obtenerResumenPorTodosLosCursos);
+
 // GET /api/asistencia/resumen?id_curso=1
 router.get('/resumen', asistenciaController.obtenerResumenPorCurso);
 

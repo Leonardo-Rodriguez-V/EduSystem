@@ -171,6 +171,29 @@ const obtenerAsignaturasPorCurso = async (req, res) => {
   }
 };
 
+// GET /api/notas/promedio-cursos
+const obtenerPromedioPorCurso = async (req, res) => {
+  try {
+    const respuesta = await pool.query(`
+      SELECT
+        c.id,
+        c.nombre,
+        ROUND(AVG(n.calificacion)::numeric, 1) AS promedio,
+        COUNT(n.id)::int AS total_notas,
+        COUNT(DISTINCT al.id)::int AS total_alumnos
+      FROM cursos c
+      LEFT JOIN alumnos al ON al.id_curso = c.id
+      LEFT JOIN notas n ON n.id_alumno = al.id
+      GROUP BY c.id, c.nombre
+      ORDER BY c.nombre
+    `);
+    res.json(respuesta.rows);
+  } catch (error) {
+    console.error('Error al obtener promedio por curso:', error);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+};
+
 module.exports = {
   obtenerNotasPorAlumno,
   obtenerNotasPorCurso,
@@ -178,6 +201,7 @@ module.exports = {
   actualizarNota,
   eliminarNota,
   obtenerAsignaturasPorProfesorYCurso,
-  obtenerAsignaturasPorCurso
+  obtenerAsignaturasPorCurso,
+  obtenerPromedioPorCurso,
 };
 

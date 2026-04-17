@@ -116,6 +116,34 @@ const obtenerResumenPorCurso = async (req, res) => {
   }
 };
 
+// GET /api/asistencia/resumen-cursos — asistencia % agrupada por curso
+const obtenerResumenPorTodosLosCursos = async (req, res) => {
+  try {
+    const respuesta = await pool.query(`
+      SELECT
+        c.id,
+        c.nombre,
+        COUNT(CASE WHEN asi.estado = 'presente' THEN 1 END)::int AS presentes,
+        COUNT(CASE WHEN asi.estado = 'ausente'  THEN 1 END)::int AS ausentes,
+        COUNT(CASE WHEN asi.estado = 'tardanza' THEN 1 END)::int AS tardanzas,
+        COUNT(asi.id)::int AS total
+      FROM cursos c
+      LEFT JOIN alumnos al ON al.id_curso = c.id
+      LEFT JOIN asistencia asi ON asi.id_alumno = al.id
+      GROUP BY c.id, c.nombre
+      ORDER BY c.nombre
+    `);
+    const rows = respuesta.rows.map(r => ({
+      ...r,
+      porcentaje: r.total > 0 ? Math.round((r.presentes / r.total) * 1000) / 10 : 0,
+    }));
+    res.json(rows);
+  } catch (error) {
+    console.error('Error al obtener resumen por cursos:', error);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+};
+
 // GET /api/asistencia/global
 const obtenerAsistenciaGlobal = async (req, res) => {
   try {
@@ -142,4 +170,5 @@ module.exports = {
   guardarAsistencia,
   obtenerResumenPorCurso,
   obtenerAsistenciaGlobal,
+  obtenerResumenPorTodosLosCursos,
 };
