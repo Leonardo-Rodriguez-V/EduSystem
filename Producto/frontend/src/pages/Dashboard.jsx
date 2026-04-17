@@ -321,14 +321,14 @@ function DashboardDirector({ usuario, cursos, totalAlumnos, cargando }) {
                   />
                   <Bar dataKey="promedio" radius={[6, 6, 0, 0]}>
                     {statsNotas.map((entry, i) => (
-                      <Cell key={i} fill={!entry.promedio ? '#94a3b8' : entry.promedio >= 5 ? '#6366f1' : entry.promedio >= 4 ? '#f59e0b' : '#ef4444'} />
+                      <Cell key={i} fill={!entry.promedio ? '#94a3b8' : entry.promedio >= 5 ? '#10b981' : entry.promedio >= 4 ? '#f59e0b' : '#ef4444'} />
                     ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             )}
             <div style={{ display: 'flex', gap: '16px', marginTop: '12px', flexWrap: 'wrap' }}>
-              {[{ color: '#6366f1', label: '≥ 5.0 Bueno' }, { color: '#f59e0b', label: '4.0–4.9 Suficiente' }, { color: '#ef4444', label: '< 4.0 Insuficiente' }].map(l => (
+              {[{ color: '#10b981', label: '≥ 5.0 Bueno' }, { color: '#f59e0b', label: '4.0–4.9 Suficiente' }, { color: '#ef4444', label: '< 4.0 Insuficiente' }].map(l => (
                 <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700, color: 'var(--color-foreground)', opacity: 0.6 }}>
                   <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: l.color }} />
                   {l.label}
