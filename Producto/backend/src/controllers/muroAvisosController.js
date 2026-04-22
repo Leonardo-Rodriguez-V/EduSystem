@@ -43,6 +43,26 @@ const crearAviso = async (req, res) => {
   }
 };
 
+// PUT /api/avisos/:id
+const actualizarAviso = async (req, res) => {
+  const { id } = req.params;
+  const { titulo, contenido } = req.body;
+  if (!titulo || !contenido) {
+    return res.status(400).json({ error: 'Título y contenido son obligatorios' });
+  }
+  try {
+    const respuesta = await pool.query(
+      `UPDATE muro_avisos SET titulo = $1, mensaje = $2 WHERE id = $3 RETURNING *`,
+      [titulo, contenido, id]
+    );
+    if (respuesta.rows.length === 0) return res.status(404).json({ error: 'Aviso no encontrado' });
+    res.status(200).json(respuesta.rows[0]);
+  } catch (error) {
+    console.error('Error al actualizar aviso:', error);
+    res.status(500).json({ error: 'Error del servidor', detalle: error.message });
+  }
+};
+
 // DELETE /api/avisos/:id
 const eliminarAviso = async (req, res) => {
   const { id } = req.params;
@@ -58,4 +78,4 @@ const eliminarAviso = async (req, res) => {
   }
 };
 
-module.exports = { obtenerAvisos, crearAviso, eliminarAviso };
+module.exports = { obtenerAvisos, crearAviso, actualizarAviso, eliminarAviso };

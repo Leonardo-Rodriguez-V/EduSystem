@@ -180,7 +180,9 @@ const obtenerPromedioPorCurso = async (req, res) => {
         c.nombre,
         ROUND(AVG(n.calificacion)::numeric, 1) AS promedio,
         COUNT(n.id)::int AS total_notas,
-        COUNT(DISTINCT al.id)::int AS total_alumnos
+        COUNT(DISTINCT al.id)::int AS total_alumnos,
+        COUNT(CASE WHEN n.calificacion >= 4.0 THEN 1 END)::int AS aprobados,
+        COUNT(CASE WHEN n.calificacion < 4.0  THEN 1 END)::int AS reprobados
       FROM cursos c
       LEFT JOIN alumnos al ON al.id_curso = c.id
       LEFT JOIN notas n ON n.id_alumno = al.id
@@ -194,6 +196,58 @@ const obtenerPromedioPorCurso = async (req, res) => {
   }
 };
 
+// GET /api/notas/analitica/riesgo?limite=4.0
+const obtenerAlumnosEnRiesgoAcademico = async (req, res) => {
+  const limite = req.query.limite || 4.0;
+  try {
+    const respuesta = await pool.query(`
+      SELECT 
+        al.id, 
+        al.nombre_completo, 
+        c.nombre AS nombre_curso,
+        ROUND(AVG(n.calificacion)::numeric, 1) AS promedio,
+        COUNT(CASE WHEN n.calificacion < 4.0 THEN 1 END)::int AS reprobadas
+      FROM alumnos al
+      JOIN cursos c ON al.id_curso = c.id
+      LEFT JOIN notas n ON n.id_alumno = al.id
+      GROUP BY al.id, al.nombre_completo, c.nombre
+      HAVING 
+        COUNT(n.id) > 2 AND 
+        AVG(n.calificacion) < $1
+      ORDER BY promedio ASC
+      LIMIT 10
+    `, [limite]);
+    res.json(respuesta.rows);
+  } catch (error) {
+    console.error('Error al obtener alumnos en riesgo académico:', error);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+};
+
+// GET /api/notas/analitica/top
+const obtenerMejoresPromedios = async (req, res) => {
+  try {
+    const respuesta = await pool.query(`
+      SELECT 
+        al.id, 
+        al.nombre_completo, 
+        c.nombre AS nombre_curso,
+        ROUND(AVG(n.calificacion)::numeric, 1) AS promedio
+      FROM alumnos al
+      JOIN cursos c ON al.id_curso = c.id
+      LEFT JOIN notas n ON n.id_alumno = al.id
+      GROUP BY al.id, al.nombre_completo, c.nombre
+      HAVING COUNT(n.id) > 2
+      ORDER BY promedio DESC
+      LIMIT 10
+    `);
+    res.json(respuesta.rows);
+  } catch (error) {
+    console.error('Error al obtener mejores promedios:', error);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+};
+
 module.exports = {
   obtenerNotasPorAlumno,
   obtenerNotasPorCurso,
@@ -203,5 +257,7 @@ module.exports = {
   obtenerAsignaturasPorProfesorYCurso,
   obtenerAsignaturasPorCurso,
   obtenerPromedioPorCurso,
+  obtenerAlumnosEnRiesgoAcademico,
+  obtenerMejoresPromedios,
 };
 

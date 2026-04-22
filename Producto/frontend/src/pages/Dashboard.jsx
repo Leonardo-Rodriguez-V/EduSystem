@@ -95,20 +95,38 @@ function DashboardDirector({ usuario, cursos, totalAlumnos, cargando }) {
   const [asistGlobal,   setAsistGlobal]   = useState(null);
   const [statsAsist,    setStatsAsist]    = useState([]);
   const [statsNotas,    setStatsNotas]    = useState([]);
+  const hoy = new Date();
+  const [filtroMes,  setFiltroMes]  = useState(hoy.getMonth() + 1);
+  const [filtroAnio, setFiltroAnio] = useState(hoy.getFullYear());
+
+  const cargarAsistencia = (mes, anio) => {
+    apiFetch(`/asistencia/resumen-cursos?mes=${mes}&anio=${anio}`).then(r => r?.json()).then(d => {
+      if (Array.isArray(d)) setStatsAsist(d.map(c => ({ nombre: c.nombre.length > 8 ? c.nombre.slice(0, 8) + '…' : c.nombre, porcentaje: c.porcentaje, nombreCompleto: c.nombre, presentes: c.presentes, total: c.total })));
+    }).catch(() => {});
+  };
 
   useEffect(() => {
     apiFetch('/asistencia/global').then(r => r?.json()).then(d => {
       if (d && typeof d.porcentaje === 'number') setAsistGlobal(d);
     }).catch(() => {});
 
-    apiFetch('/asistencia/resumen-cursos').then(r => r?.json()).then(d => {
-      if (Array.isArray(d)) setStatsAsist(d.map(c => ({ nombre: c.nombre.length > 8 ? c.nombre.slice(0, 8) + '…' : c.nombre, porcentaje: c.porcentaje, nombreCompleto: c.nombre })));
-    }).catch(() => {});
+    cargarAsistencia(filtroMes, filtroAnio);
 
     apiFetch('/notas/promedio-cursos').then(r => r?.json()).then(d => {
-      if (Array.isArray(d)) setStatsNotas(d.map(c => ({ nombre: c.nombre.length > 8 ? c.nombre.slice(0, 8) + '…' : c.nombre, promedio: c.promedio ? parseFloat(c.promedio) : null, total_notas: c.total_notas, nombreCompleto: c.nombre })));
+      if (Array.isArray(d)) setStatsNotas(d.map(c => ({
+        nombre: c.nombre.length > 8 ? c.nombre.slice(0, 8) + '…' : c.nombre,
+        promedio: c.promedio ? parseFloat(c.promedio) : null,
+        aprobados: c.aprobados || 0,
+        reprobados: c.reprobados || 0,
+        total_notas: c.total_notas,
+        nombreCompleto: c.nombre,
+      })));
     }).catch(() => {});
   }, []);
+
+  const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const anioActual = hoy.getFullYear();
+  const opcionesAnio = [anioActual - 1, anioActual, anioActual + 1];
 
   const publicarGlobal = async () => {
     if (!avisoForm.titulo.trim() || !avisoForm.contenido.trim()) return;
@@ -268,8 +286,22 @@ function DashboardDirector({ usuario, cursos, totalAlumnos, cargando }) {
           {/* Gráfico asistencia por curso */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
             style={{ ...s.tblCard, padding: '28px' }}>
-            <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--color-foreground)', marginBottom: '4px' }}>Asistencia por Curso</div>
-            <div style={{ fontSize: '12px', color: 'var(--color-foreground)', opacity: 0.45, marginBottom: '20px', fontWeight: 600 }}>Porcentaje de presencia acumulado</div>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              <div>
+                <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--color-foreground)', marginBottom: '2px' }}>Asistencia por Curso</div>
+                <div style={{ fontSize: '12px', color: 'var(--color-foreground)', opacity: 0.45, fontWeight: 600 }}>Porcentaje de presencia</div>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <select value={filtroMes} onChange={e => { const m = parseInt(e.target.value); setFiltroMes(m); cargarAsistencia(m, filtroAnio); }}
+                  style={{ padding: '5px 10px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-muted)', color: 'var(--color-foreground)', fontSize: '12px', fontWeight: 700, outline: 'none' }}>
+                  {MESES.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+                </select>
+                <select value={filtroAnio} onChange={e => { const a = parseInt(e.target.value); setFiltroAnio(a); cargarAsistencia(filtroMes, a); }}
+                  style={{ padding: '5px 10px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'var(--color-muted)', color: 'var(--color-foreground)', fontSize: '12px', fontWeight: 700, outline: 'none' }}>
+                  {opcionesAnio.map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
+              </div>
+            </div>
             {statsAsist.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-foreground)', opacity: 0.3, fontSize: '13px', fontWeight: 600 }}>Sin datos de asistencia aún</div>
             ) : (
@@ -301,34 +333,40 @@ function DashboardDirector({ usuario, cursos, totalAlumnos, cargando }) {
             </div>
           </motion.div>
 
-          {/* Gráfico promedio de notas por curso */}
+          {/* Gráfico distribución notas por curso */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
             style={{ ...s.tblCard, padding: '28px' }}>
-            <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--color-foreground)', marginBottom: '4px' }}>Promedio de Notas por Curso</div>
-            <div style={{ fontSize: '12px', color: 'var(--color-foreground)', opacity: 0.45, marginBottom: '20px', fontWeight: 600 }}>Promedio general de calificaciones</div>
-            {statsNotas.filter(c => c.promedio !== null).length === 0 ? (
+            <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--color-foreground)', marginBottom: '2px' }}>Distribución de Notas por Curso</div>
+            <div style={{ fontSize: '12px', color: 'var(--color-foreground)', opacity: 0.45, marginBottom: '20px', fontWeight: 600 }}>Aprobados (≥ 4.0) vs Reprobados (&lt; 4.0)</div>
+            {statsNotas.filter(c => c.total_notas > 0).length === 0 ? (
               <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-foreground)', opacity: 0.3, fontSize: '13px', fontWeight: 600 }}>Sin notas registradas aún</div>
             ) : (
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={statsNotas} margin={{ top: 4, right: 8, left: -10, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
                   <XAxis dataKey="nombre" tick={{ fontSize: 11, fontWeight: 700, fill: 'var(--color-foreground)' }} axisLine={false} tickLine={false} />
-                  <YAxis domain={[1, 7]} ticks={[1, 2, 3, 4, 5, 6, 7]} tick={{ fontSize: 11, fill: 'var(--color-foreground)' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: 'var(--color-foreground)' }} axisLine={false} tickLine={false} allowDecimals={false} />
                   <Tooltip
-                    formatter={(v, _, props) => [v ? v.toFixed(1) : '—', props.payload.nombreCompleto || 'Promedio']}
-                    contentStyle={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '10px', fontSize: '12px', fontWeight: 700 }}
-                    labelStyle={{ display: 'none' }}
+                    content={({ active, payload }) => {
+                      if (!active || !payload?.length) return null;
+                      const d = payload[0]?.payload;
+                      return (
+                        <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '10px 14px', fontSize: '12px', fontWeight: 700 }}>
+                          <div style={{ marginBottom: '6px', color: 'var(--color-foreground)' }}>{d.nombreCompleto}</div>
+                          {d.promedio && <div style={{ color: 'var(--color-foreground)', opacity: 0.6, marginBottom: '4px' }}>Promedio: {parseFloat(d.promedio).toFixed(1)}</div>}
+                          <div style={{ color: '#10b981' }}>✓ Aprobados: {d.aprobados}</div>
+                          <div style={{ color: '#ef4444' }}>✗ Reprobados: {d.reprobados}</div>
+                        </div>
+                      );
+                    }}
                   />
-                  <Bar dataKey="promedio" radius={[6, 6, 0, 0]}>
-                    {statsNotas.map((entry, i) => (
-                      <Cell key={i} fill={!entry.promedio ? '#94a3b8' : entry.promedio >= 5 ? '#10b981' : entry.promedio >= 4 ? '#f59e0b' : '#ef4444'} />
-                    ))}
-                  </Bar>
+                  <Bar dataKey="aprobados" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} name="Aprobados" />
+                  <Bar dataKey="reprobados" stackId="a" fill="#ef4444" radius={[6, 6, 0, 0]} name="Reprobados" />
                 </BarChart>
               </ResponsiveContainer>
             )}
             <div style={{ display: 'flex', gap: '16px', marginTop: '12px', flexWrap: 'wrap' }}>
-              {[{ color: '#10b981', label: '≥ 5.0 Bueno' }, { color: '#f59e0b', label: '4.0–4.9 Suficiente' }, { color: '#ef4444', label: '< 4.0 Insuficiente' }].map(l => (
+              {[{ color: '#10b981', label: 'Aprobados (≥ 4.0)' }, { color: '#ef4444', label: 'Reprobados (< 4.0)' }].map(l => (
                 <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700, color: 'var(--color-foreground)', opacity: 0.6 }}>
                   <div style={{ width: '10px', height: '10px', borderRadius: '3px', background: l.color }} />
                   {l.label}

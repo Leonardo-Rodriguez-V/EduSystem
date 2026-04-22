@@ -34,9 +34,18 @@ export default function Usuarios() {
   const [mensaje,    setMensaje]    = useState({ texto: '', tipo: '' });
   const [guardando,  setGuardando]  = useState(false);
   const [cargando,   setCargando]   = useState(true);
-  const [confirmId,  setConfirmId]  = useState(null);
-  const [pagina,     setPagina]     = useState(1);
+  const [confirmId,      setConfirmId]      = useState(null);
+  const [pagina,         setPagina]         = useState(1);
   const POR_PAGINA = 50;
+
+  // Hijos de apoderado
+  const [hijosApoderado,  setHijosApoderado]  = useState([]);
+  const [cargandoHijos,   setCargandoHijos]   = useState(false);
+  const [mostrarFormHijo, setMostrarFormHijo] = useState(false);
+  const [formHijo,        setFormHijo]        = useState({ nombre_completo: '', rut: '', fecha_nacimiento: '', id_curso: '' });
+  const [cursos,          setCursos]          = useState([]);
+  const [agregandoHijo,   setAgregandoHijo]   = useState(false);
+  const [mensajeHijo,     setMensajeHijo]     = useState({ texto: '', tipo: '' });
 
   const cargarUsuarios = () => {
     apiFetch('/usuarios').then(r => r?.json()).then(data => {
@@ -44,11 +53,30 @@ export default function Usuarios() {
     }).catch(() => {}).finally(() => setCargando(false));
   };
 
-  useEffect(() => { cargarUsuarios(); }, []);
+  useEffect(() => {
+    cargarUsuarios();
+    apiFetch('/cursos').then(r => r?.json()).then(data => {
+      if (Array.isArray(data)) setCursos(data);
+    }).catch(() => {});
+  }, []);
 
   const abrirCrear  = () => { setEditando(null); setForm(FORM_VACIO); setMensaje({ texto: '', tipo: '' }); setModal(true); };
-  const abrirEditar = (u) => { setEditando(u); setForm({ nombre_completo: u.nombre_completo, correo: u.correo, contraseña: '', rol: u.rol }); setMensaje({ texto: '', tipo: '' }); setModal(true); };
-  const cerrar      = () => { setModal(false); setEditando(null); };
+  const abrirEditar = (u) => {
+    setEditando(u);
+    setForm({ nombre_completo: u.nombre_completo, correo: u.correo, contraseña: '', rol: u.rol });
+    setMensaje({ texto: '', tipo: '' });
+    setMostrarFormHijo(false);
+    setFormHijo({ nombre_completo: '', rut: '', fecha_nacimiento: '', id_curso: '' });
+    setMensajeHijo({ texto: '', tipo: '' });
+    setModal(true);
+    if (u.rol === 'apoderado') {
+      setCargandoHijos(true);
+      apiFetch(`/alumnos/apoderado/${u.id}`).then(r => r?.json()).then(data => {
+        setHijosApoderado(Array.isArray(data) ? data : []);
+      }).catch(() => setHijosApoderado([])).finally(() => setCargandoHijos(false));
+    }
+  };
+  const cerrar = () => { setModal(false); setEditando(null); setHijosApoderado([]); setMostrarFormHijo(false); };
 
   const guardar = async () => {
     if (!form.nombre_completo.trim() || !form.correo.trim())
@@ -70,6 +98,40 @@ export default function Usuarios() {
       setMensaje({ texto: 'Error de conexión.', tipo: 'error' });
     } finally {
       setGuardando(false);
+    }
+  };
+
+  const agregarHijo = async () => {
+    if (!formHijo.nombre_completo.trim() || !formHijo.id_curso)
+      return setMensajeHijo({ texto: 'Nombre y curso son obligatorios.', tipo: 'error' });
+    setAgregandoHijo(true);
+    try {
+      const res  = await apiFetch('/alumnos/con-apoderado', {
+        method: 'POST',
+        body: JSON.stringify({ ...formHijo, id_apoderado: editando.id }),
+      });
+      const data = await res?.json();
+      if (res?.ok) {
+        setHijosApoderado(prev => [...prev, data]);
+        setFormHijo({ nombre_completo: '', rut: '', fecha_nacimiento: '', id_curso: '' });
+        setMostrarFormHijo(false);
+        setMensajeHijo({ texto: '', tipo: '' });
+        cargarUsuarios();
+      } else {
+        setMensajeHijo({ texto: data?.error || 'Error al agregar hijo.', tipo: 'error' });
+      }
+    } catch {
+      setMensajeHijo({ texto: 'Error de conexión.', tipo: 'error' });
+    } finally {
+      setAgregandoHijo(false);
+    }
+  };
+
+  const desvincularHijo = async (idAlumno) => {
+    const res = await apiFetch(`/alumnos/${idAlumno}/apoderado/${editando.id}`, { method: 'DELETE' });
+    if (res?.ok) {
+      setHijosApoderado(prev => prev.filter(h => h.id !== idAlumno));
+      cargarUsuarios();
     }
   };
 
@@ -229,7 +291,7 @@ export default function Usuarios() {
       {modal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '20px' }}
           onClick={e => { if (e.target === e.currentTarget) cerrar(); }}>
-          <div style={{ background: 'var(--color-surface)', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '440px', border: '1px solid var(--color-border)', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
+          <div style={{ background: 'var(--color-surface)', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto', border: '1px solid var(--color-border)', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
               <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-foreground)' }}>
                 {editando ? 'Editar usuario' : 'Nuevo usuario'}
@@ -269,6 +331,75 @@ export default function Usuarios() {
                 </select>
               </div>
             </div>
+
+            {/* Sección hijos vinculados — solo si editando apoderado */}
+            {editando?.rol === 'apoderado' && (
+              <div style={{ marginTop: '20px', borderTop: '1px solid var(--color-border)', paddingTop: '18px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-foreground)' }}>Hijos vinculados</span>
+                  <button style={{ ...s.btnSec, fontSize: '12px', padding: '4px 10px' }} onClick={() => { setMostrarFormHijo(v => !v); setMensajeHijo({ texto: '', tipo: '' }); }}>
+                    {mostrarFormHijo ? '✕ Cancelar' : '+ Agregar hijo'}
+                  </button>
+                </div>
+
+                {mensajeHijo.texto && (
+                  <div style={{ marginBottom: '10px', padding: '8px 12px', borderRadius: '8px', fontSize: '12px',
+                    background: mensajeHijo.tipo === 'error' ? 'rgba(220,38,38,0.1)' : 'rgba(21,128,61,0.1)',
+                    color: mensajeHijo.tipo === 'error' ? 'var(--color-destructive)' : '#15803d',
+                    border: `1px solid ${mensajeHijo.tipo === 'error' ? 'rgba(220,38,38,0.3)' : 'rgba(21,128,61,0.3)'}`,
+                  }}>{mensajeHijo.texto}</div>
+                )}
+
+                {mostrarFormHijo && (
+                  <div style={{ background: 'var(--color-muted)', borderRadius: '10px', padding: '14px', marginBottom: '12px', border: '1px solid var(--color-border)' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <label style={s.label}>Nombre completo *</label>
+                        <input style={s.input} placeholder="Nombre del alumno" value={formHijo.nombre_completo} onChange={e => setFormHijo(p => ({ ...p, nombre_completo: e.target.value }))} />
+                      </div>
+                      <div>
+                        <label style={s.label}>RUT (opcional)</label>
+                        <input style={s.input} placeholder="12.345.678-9" value={formHijo.rut} onChange={e => setFormHijo(p => ({ ...p, rut: e.target.value }))} />
+                      </div>
+                      <div>
+                        <label style={s.label}>Fecha de nacimiento</label>
+                        <input style={s.input} type="date" value={formHijo.fecha_nacimiento} onChange={e => setFormHijo(p => ({ ...p, fecha_nacimiento: e.target.value }))} />
+                      </div>
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <label style={s.label}>Curso *</label>
+                        <select style={s.select} value={formHijo.id_curso} onChange={e => setFormHijo(p => ({ ...p, id_curso: e.target.value }))}>
+                          <option value="">Seleccionar curso...</option>
+                          {cursos.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <button style={{ ...s.btnPri, fontSize: '12px', padding: '6px 14px', opacity: agregandoHijo ? 0.7 : 1 }} onClick={agregarHijo} disabled={agregandoHijo}>
+                        {agregandoHijo ? 'Guardando...' : 'Crear y vincular'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {cargandoHijos ? (
+                  <div style={{ fontSize: '12px', color: 'var(--color-foreground)', opacity: 0.4, textAlign: 'center', padding: '10px' }}>Cargando hijos...</div>
+                ) : hijosApoderado.length === 0 ? (
+                  <div style={{ fontSize: '12px', color: 'var(--color-foreground)', opacity: 0.4, textAlign: 'center', padding: '10px' }}>Sin hijos vinculados</div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {hijosApoderado.map(h => (
+                      <div key={h.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--color-muted)', borderRadius: '8px', padding: '8px 12px', border: '1px solid var(--color-border)' }}>
+                        <div>
+                          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-foreground)' }}>{h.nombre_completo}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--color-foreground)', opacity: 0.5 }}>{h.nombre_curso || 'Sin curso'}{h.rut ? ` · ${h.rut}` : ''}</div>
+                        </div>
+                        <button style={{ ...s.btnDanger, fontSize: '11px', padding: '4px 8px' }} onClick={() => desvincularHijo(h.id)}>Desvincular</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '16px' }}>
               <button style={s.btnSec} onClick={cerrar}>Cancelar</button>

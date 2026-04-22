@@ -12,7 +12,8 @@ import {
   UserPlus,
   User as UserIcon,
   BookUser,
-  Settings
+  Settings,
+  NotebookPen
 } from 'lucide-react';
 
 // Atomic Components
@@ -35,6 +36,7 @@ const NAV_ITEMS = {
     { label: 'Horarios',         icon: Calendar,        path: '/horarios' },
     { label: 'Calendario',       icon: CalendarDays,    path: '/calendario' },
     { label: 'Muro de Avisos',   icon: Bell,            path: '/muro-avisos' },
+    { label: 'Anotaciones',      icon: NotebookPen,     path: '/anotaciones' },
     { label: 'Nuevo Usuario',    icon: UserPlus,        path: '/registro' },
     { label: 'Mi Perfil',        icon: Settings,        path: '/perfil' },
   ],
@@ -45,6 +47,7 @@ const NAV_ITEMS = {
     { label: 'Horarios',       icon: Calendar,        path: '/horarios' },
     { label: 'Calendario',     icon: CalendarDays,    path: '/calendario' },
     { label: 'Muro de Avisos', icon: Bell,            path: '/muro-avisos' },
+    { label: 'Anotaciones',    icon: NotebookPen,     path: '/anotaciones' },
     { label: 'Mi Perfil',      icon: Settings,        path: '/perfil' },
   ],
   apoderado: [
@@ -54,6 +57,7 @@ const NAV_ITEMS = {
     { label: 'Horarios',       icon: Calendar,        path: '/horarios' },
     { label: 'Calendario',     icon: CalendarDays,    path: '/calendario' },
     { label: 'Muro de Avisos', icon: Bell,            path: '/muro-avisos' },
+    { label: 'Anotaciones',    icon: NotebookPen,     path: '/anotaciones' },
     { label: 'Mi Perfil',      icon: Settings,        path: '/perfil' },
   ],
   alumno: [
@@ -77,6 +81,7 @@ const TITULO_POR_RUTA = {
   '/registro':     'Registro de Usuarios',
   '/alumnos':      'Gestión de Alumnos',
   '/perfil':       'Mi Perfil',
+  '/anotaciones':  'Libro de Anotaciones',
 };
 
 function iniciales(nombre = '') {

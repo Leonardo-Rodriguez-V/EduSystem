@@ -14,7 +14,8 @@ const obtenerAsistenciaPorCursoYFecha = async (req, res) => {
          al.nombre_completo,
          al.rut,
          asi.estado,
-         asi.id AS id_asistencia
+         asi.id AS id_asistencia,
+         asi.justificacion
        FROM alumnos al
        LEFT JOIN asistencia asi
          ON asi.id_alumno = al.id
@@ -116,9 +117,20 @@ const obtenerResumenPorCurso = async (req, res) => {
   }
 };
 
-// GET /api/asistencia/resumen-cursos — asistencia % agrupada por curso
+// GET /api/asistencia/resumen-cursos?mes=3&anio=2026
 const obtenerResumenPorTodosLosCursos = async (req, res) => {
+  const { mes, anio } = req.query;
   try {
+    const valores = [];
+    let filtroFecha = '';
+    if (mes && anio) {
+      filtroFecha = `AND EXTRACT(MONTH FROM asi.fecha) = $1 AND EXTRACT(YEAR FROM asi.fecha) = $2`;
+      valores.push(parseInt(mes), parseInt(anio));
+    } else if (anio) {
+      filtroFecha = `AND EXTRACT(YEAR FROM asi.fecha) = $1`;
+      valores.push(parseInt(anio));
+    }
+
     const respuesta = await pool.query(`
       SELECT
         c.id,
@@ -129,10 +141,10 @@ const obtenerResumenPorTodosLosCursos = async (req, res) => {
         COUNT(asi.id)::int AS total
       FROM cursos c
       LEFT JOIN alumnos al ON al.id_curso = c.id
-      LEFT JOIN asistencia asi ON asi.id_alumno = al.id
+      LEFT JOIN asistencia asi ON asi.id_alumno = al.id ${filtroFecha}
       GROUP BY c.id, c.nombre
       ORDER BY c.nombre
-    `);
+    `, valores);
     const rows = respuesta.rows.map(r => ({
       ...r,
       porcentaje: r.total > 0 ? Math.round((r.presentes / r.total) * 1000) / 10 : 0,
@@ -164,11 +176,90 @@ const obtenerAsistenciaGlobal = async (req, res) => {
   }
 };
 
+// PUT /api/asistencia/:id/justificar
+const justificarAsistencia = async (req, res) => {
+  const { id } = req.params;
+  const { justificacion } = req.body;
+  try {
+    const respuesta = await pool.query(
+      `UPDATE asistencia SET justificacion = $1 WHERE id = $2 RETURNING *`,
+      [justificacion || null, id]
+    );
+    if (respuesta.rows.length === 0) return res.status(404).json({ error: 'Registro no encontrado' });
+    res.status(200).json(respuesta.rows[0]);
+  } catch (error) {
+    console.error('Error al justificar asistencia:', error);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+};
+
+// GET /api/asistencia/analitica/riesgo?limite=75
+const obtenerAlumnosEnRiesgoAsistencia = async (req, res) => {
+  const limite = req.query.limite || 75;
+  try {
+    const respuesta = await pool.query(`
+      SELECT 
+        al.id, 
+        al.nombre_completo, 
+        c.nombre AS nombre_curso,
+        COUNT(CASE WHEN asi.estado = 'presente' THEN 1 END)::int AS presentes,
+        COUNT(asi.id)::int AS total_clases,
+        CASE 
+          WHEN COUNT(asi.id) > 0 THEN ROUND((COUNT(CASE WHEN asi.estado = 'presente' THEN 1 END)::float / COUNT(asi.id)) * 100)
+          ELSE 100 
+        END AS porcentaje
+      FROM alumnos al
+      JOIN cursos c ON al.id_curso = c.id
+      LEFT JOIN asistencia asi ON asi.id_alumno = al.id
+      GROUP BY al.id, al.nombre_completo, c.nombre
+      HAVING 
+        COUNT(asi.id) > 5 AND 
+        (COUNT(CASE WHEN asi.estado = 'presente' THEN 1 END)::float / COUNT(asi.id)) * 100 < $1
+      ORDER BY porcentaje ASC
+      LIMIT 10
+    `, [limite]);
+    res.json(respuesta.rows);
+  } catch (error) {
+    console.error('Error al obtener alumnos en riesgo de asistencia:', error);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+};
+
+// GET /api/asistencia/analitica/top
+const obtenerMejoresAsistencias = async (req, res) => {
+  try {
+    const respuesta = await pool.query(`
+      SELECT 
+        al.id, 
+        al.nombre_completo, 
+        c.nombre AS nombre_curso,
+        CASE 
+          WHEN COUNT(asi.id) > 0 THEN ROUND((COUNT(CASE WHEN asi.estado = 'presente' THEN 1 END)::float / COUNT(asi.id)) * 100)
+          ELSE 0 
+        END AS porcentaje
+      FROM alumnos al
+      JOIN cursos c ON al.id_curso = c.id
+      LEFT JOIN asistencia asi ON asi.id_alumno = al.id
+      GROUP BY al.id, al.nombre_completo, c.nombre
+      HAVING COUNT(asi.id) > 5
+      ORDER BY porcentaje DESC
+      LIMIT 10
+    `);
+    res.json(respuesta.rows);
+  } catch (error) {
+    console.error('Error al obtener mejores asistencias:', error);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+};
+
 module.exports = {
   obtenerAsistenciaPorCursoYFecha,
   obtenerAsistenciaPorAlumno,
   guardarAsistencia,
+  justificarAsistencia,
   obtenerResumenPorCurso,
   obtenerAsistenciaGlobal,
   obtenerResumenPorTodosLosCursos,
+  obtenerAlumnosEnRiesgoAsistencia,
+  obtenerMejoresAsistencias,
 };

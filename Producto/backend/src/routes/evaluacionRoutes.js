@@ -11,4 +11,10 @@ router.get('/curso/:id_curso', evaluacionController.obtenerEvaluacionesPorCurso)
 // POST /api/evaluaciones
 router.post('/', evaluacionController.crearEvaluacion);
 
+// PUT /api/evaluaciones/:id
+router.put('/:id', evaluacionController.actualizarEvaluacion);
+
+// DELETE /api/evaluaciones/:id
+router.delete('/:id', evaluacionController.eliminarEvaluacion);
+
 module.exports = router;

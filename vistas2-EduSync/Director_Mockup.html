@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduSync – Vista Director</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif}
+  :root{--pri:#1565C0;--pri-dark:#0D47A1;--pri-mid:#1976D2;--pri-light:#42A5F5;--bg:#E3F2FD;--bg2:#BBDEFB;--txt:#0D47A1;--gray1:#F5F7FA;--gray2:#E8EDF2;--gray3:#B0BEC5;--gray4:#607D8B;--success:#2E7D32;--warning:#F57F17;--danger:#C62828;}
+  body{display:flex;min-height:100vh;background:#F0F4F8}
+  .sidebar{width:240px;min-height:100vh;background:var(--pri-dark);display:flex;flex-direction:column;position:fixed;left:0;top:0;z-index:100}
+  .sidebar-logo{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,.15)}
+  .sidebar-logo .app{font-size:22px;font-weight:700;color:#fff;letter-spacing:.5px}
+  .sidebar-logo .role{font-size:11px;color:var(--bg2);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+  .sidebar-user{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:10px}
+  .avatar{width:38px;height:38px;border-radius:50%;background:var(--pri-light);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--pri-dark);font-size:14px;flex-shrink:0}
+  .user-info .name{font-size:13px;font-weight:600;color:#fff}
+  .user-info .email{font-size:11px;color:var(--bg2)}
+  .nav{flex:1;padding:10px 0}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:11px 18px;cursor:pointer;color:rgba(255,255,255,.75);font-size:13.5px;transition:all .2s;border-left:3px solid transparent}
+  .nav-item:hover{background:rgba(255,255,255,.08);color:#fff}
+  .nav-item.active{background:rgba(255,255,255,.13);color:#fff;border-left-color:var(--pri-light)}
+  .nav-icon{font-size:17px;width:20px;text-align:center}
+  .nav-badge{margin-left:auto;background:var(--pri-light);color:var(--pri-dark);font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px}
+  .sidebar-bottom{padding:12px 16px;border-top:1px solid rgba(255,255,255,.1)}
+  .logout{display:flex;align-items:center;gap:10px;padding:9px 8px;cursor:pointer;color:rgba(255,255,255,.6);font-size:13px;border-radius:6px;transition:.2s}
+  .logout:hover{background:rgba(255,255,255,.07);color:#fff}
+  .main{margin-left:240px;flex:1;display:flex;flex-direction:column;min-height:100vh}
+  .topbar{background:#fff;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--gray2);position:sticky;top:0;z-index:50}
+  .topbar-title{font-size:18px;font-weight:600;color:#1A2B4A}
+  .topbar-right{display:flex;align-items:center;gap:14px}
+  .notif-btn{position:relative;background:var(--gray1);border:none;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+  .notif-dot{position:absolute;top:5px;right:5px;width:8px;height:8px;background:#E53935;border-radius:50%}
+  .date-chip{font-size:12px;color:var(--gray4);background:var(--gray1);padding:6px 12px;border-radius:20px}
+  .content{padding:24px 28px;flex:1}
+  .page{display:none}.page.active{display:block}
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+  .kpi-card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left:4px solid var(--pri)}
+  .kpi-card.green{border-left-color:var(--success)}.kpi-card.orange{border-left-color:#F57F17}.kpi-card.red{border-left-color:var(--danger)}
+  .kpi-label{font-size:12px;color:var(--gray4);font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+  .kpi-value{font-size:32px;font-weight:700;color:#1A2B4A;margin:6px 0 4px}
+  .kpi-sub{font-size:12px;color:var(--gray4)}.kpi-icon{font-size:28px;float:right;margin-top:-4px}
+  .section-row{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
+  .card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+  .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .card-title{font-size:15px;font-weight:600;color:#1A2B4A}
+  .card-action{font-size:12px;color:var(--pri);cursor:pointer;font-weight:500}
+  .bar-chart{display:flex;align-items:flex-end;gap:8px;height:100px}
+  .bar-group{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+  .bar{width:100%;border-radius:4px 4px 0 0;background:var(--pri);opacity:.85}
+  .bar-lbl{font-size:10px;color:var(--gray4)}.bar-val{font-size:10px;color:var(--txt);font-weight:600}
+  .tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+  .tbl th{text-align:left;padding:10px 12px;font-size:11.5px;font-weight:600;color:var(--gray4);text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--gray2)}
+  .tbl td{padding:11px 12px;border-bottom:1px solid var(--gray2);color:#2D3A4A;vertical-align:middle}
+  .tbl tr:last-child td{border-bottom:none}.tbl tr:hover td{background:#F7FAFD}
+  .badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600}
+  .badge-active{background:#E8F5E9;color:var(--success)}.badge-inactive{background:#FFEBEE;color:var(--danger)}
+  .badge-pending{background:#FFF8E1;color:#F57F17}.badge-dir{background:#E3F2FD;color:var(--pri)}
+  .badge-prof{background:#E8F5E9;color:var(--success)}.badge-alum{background:#FFF3E0;color:#E65100}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;border:none;cursor:pointer;font-size:13.5px;font-weight:600;transition:.2s}
+  .btn-pri{background:var(--pri);color:#fff}.btn-pri:hover{background:var(--pri-dark)}
+  .btn-sec{background:var(--gray2);color:#2D3A4A}.btn-sm{padding:6px 12px;font-size:12px}
+  .btn-icon{background:none;border:1px solid var(--gray2);padding:6px 10px;border-radius:6px;cursor:pointer;color:var(--gray4);font-size:13px}
+  .filter-bar{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+  .search-box{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--gray2);border-radius:8px;padding:8px 14px;flex:1;max-width:320px}
+  .search-box input{border:none;outline:none;font-size:13.5px;width:100%;color:#2D3A4A}
+  select.form-sel{padding:8px 14px;border:1px solid var(--gray2);border-radius:8px;font-size:13px;color:#2D3A4A;background:#fff;outline:none;cursor:pointer}
+  .form-group{margin-bottom:16px}
+  .form-label{font-size:12.5px;font-weight:600;color:var(--gray4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:block}
+  .form-input{width:100%;padding:9px 14px;border:1px solid var(--gray2);border-radius:8px;font-size:13.5px;outline:none;transition:.2s;color:#2D3A4A}
+  .form-input:focus{border-color:var(--pri);box-shadow:0 0 0 3px rgba(21,101,192,.1)}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+  .page-title{font-size:20px;font-weight:700;color:#1A2B4A}.page-sub{font-size:13px;color:var(--gray4);margin-top:2px}
+  .settings-section{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+  .settings-title{font-size:15px;font-weight:600;color:#1A2B4A;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--gray2)}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--gray2)}
+  .toggle-row:last-child{border-bottom:none}.toggle-lbl{font-size:13.5px;color:#2D3A4A}.toggle-sub{font-size:12px;color:var(--gray4)}
+  .toggle{width:40px;height:22px;border-radius:11px;background:var(--pri);position:relative;cursor:pointer}
+  .toggle.off{background:var(--gray3)}.toggle::after{content:'';position:absolute;top:3px;right:3px;width:16px;height:16px;border-radius:50%;background:#fff}
+  .toggle.off::after{right:auto;left:3px}
+  .progress{height:8px;background:var(--gray2);border-radius:4px;overflow:hidden;margin-top:6px}
+  .progress-bar{height:100%;background:var(--pri);border-radius:4px}
+  .report-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+  .report-card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.06);border:2px solid transparent;cursor:pointer;transition:.2s}
+  .report-card:hover,.report-card.sel{border-color:var(--pri);background:#EEF5FF}
+  .report-card-icon{font-size:32px;margin-bottom:8px}.report-card-title{font-size:14px;font-weight:600;color:#1A2B4A}
+  .report-card-desc{font-size:12px;color:var(--gray4);margin-top:4px}
+  .modal-hint{background:var(--bg);border:1px dashed var(--pri);border-radius:8px;padding:12px;font-size:12.5px;color:var(--txt);margin-top:12px}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo"><div class="app">EduSync</div><div class="role">Portal Director</div></div>
+  <div class="sidebar-user"><div class="avatar">CM</div><div class="user-info"><div class="name">Carlos Mendoza</div><div class="email">c.mendoza@edusync.cl</div></div></div>
+  <nav class="nav">
+    <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">&#9782;</span> Dashboard</div>
+    <div class="nav-item" onclick="showPage('usuarios',this)"><span class="nav-icon">&#128101;</span> Gestion Usuarios</div>
+    <div class="nav-item" onclick="showPage('cursos',this)"><span class="nav-icon">&#128218;</span> Cursos y Asignaturas</div>
+    <div class="nav-item" onclick="showPage('reportes',this)"><span class="nav-icon">&#128202;</span> Reportes<span class="nav-badge">3</span></div>
+    <div class="nav-item" onclick="showPage('config',this)"><span class="nav-icon">&#9881;</span> Configuracion</div>
+  </nav>
+  <div class="sidebar-bottom"><div class="logout"><span>&#128275;</span> Cerrar sesion</div></div>
+</aside>
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">Dashboard</div>
+    <div class="topbar-right"><span class="date-chip">Martes 24 Mar 2026</span><button class="notif-btn">&#128276;<span class="notif-dot"></span></button></div>
+  </div>
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header"><div><div class="page-title">Bienvenido, Director Mendoza</div><div class="page-sub">Resumen general del establecimiento</div></div><div style="display:flex;gap:10px"><button class="btn btn-sec btn-sm">Exportar</button><button class="btn btn-pri btn-sm">Nuevo aviso</button></div></div>
+      <div class="kpi-grid">
+        <div class="kpi-card"><span class="kpi-icon">&#128100;</span><div class="kpi-label">Total Alumnos</div><div class="kpi-value">1,245</div><div class="kpi-sub">+12 desde agosto</div></div>
+        <div class="kpi-card green"><span class="kpi-icon">&#128203;</span><div class="kpi-label">Docentes Activos</div><div class="kpi-value">87</div><div class="kpi-sub">3 permisos activos</div></div>
+        <div class="kpi-card orange"><span class="kpi-icon">&#128200;</span><div class="kpi-label">Asistencia Promedio</div><div class="kpi-value">94.2%</div><div class="kpi-sub">+1.3% vs mes anterior</div></div>
+        <div class="kpi-card red"><span class="kpi-icon">&#128218;</span><div class="kpi-label">Cursos Activos</div><div class="kpi-value">48</div><div class="kpi-sub">6 niveles, 8 paralelos</div></div>
+      </div>
+      <div class="section-row">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Asistencia semanal (%)</span><span class="card-action">Ver detalle &rsaquo;</span></div>
+          <div class="bar-chart">
+            <div class="bar-group"><div class="bar-val">95%</div><div class="bar" style="height:90px"></div><div class="bar-lbl">Lun</div></div>
+            <div class="bar-group"><div class="bar-val">93%</div><div class="bar" style="height:82px"></div><div class="bar-lbl">Mar</div></div>
+            <div class="bar-group"><div class="bar-val">97%</div><div class="bar" style="height:95px"></div><div class="bar-lbl">Mie</div></div>
+            <div class="bar-group"><div class="bar-val">91%</div><div class="bar" style="height:75px"></div><div class="bar-lbl">Jue</div></div>
+            <div class="bar-group"><div class="bar-val">88%</div><div class="bar" style="height:65px;opacity:.5"></div><div class="bar-lbl">Vie</div></div>
+          </div>
+          <div style="font-size:11px;color:var(--gray4);margin-top:8px">Semana del 18 al 24 de Marzo 2026</div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Alertas y notificaciones</span><span class="card-action">Ver todas &rsaquo;</span></div>
+          <table class="tbl">
+            <tr><td><span style="color:#E53935">&#9679;</span> &nbsp;3B - Asistencia bajo 85% esta semana</td><td><span class="badge badge-pending">Urgente</span></td></tr>
+            <tr><td><span style="color:#F57F17">&#9679;</span> &nbsp;Prof. Gonzalez - 2 inasistencias sin notificar</td><td><span class="badge badge-pending">Aviso</span></td></tr>
+            <tr><td><span style="color:#1565C0">&#9679;</span> &nbsp;5A - Promedio notas bajo a 4.9</td><td><span class="badge badge-dir">Info</span></td></tr>
+            <tr><td><span style="color:var(--success)">&#9679;</span> &nbsp;Consejo escolar - 28 Mar, 15:00 h</td><td><span class="badge badge-active">Pronto</span></td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Rendimiento por nivel</span><span class="card-action">Exportar &rsaquo;</span></div>
+        <table class="tbl">
+          <thead><tr><th>Nivel</th><th>Cursos</th><th>Alumnos</th><th>Asistencia</th><th>Promedio Notas</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr><td>1° Basico</td><td>3</td><td>82</td><td><div>96%</div><div class="progress"><div class="progress-bar" style="width:96%"></div></div></td><td>6.2</td><td><span class="badge badge-active">Bien</span></td></tr>
+            <tr><td>3° Basico</td><td>3</td><td>79</td><td><div>94%</div><div class="progress"><div class="progress-bar" style="width:94%"></div></div></td><td>5.8</td><td><span class="badge badge-active">Bien</span></td></tr>
+            <tr><td>5° Basico</td><td>4</td><td>105</td><td><div>91%</div><div class="progress"><div class="progress-bar" style="width:91%"></div></div></td><td>5.4</td><td><span class="badge badge-pending">Revisar</span></td></tr>
+            <tr><td>1° Medio</td><td>4</td><td>115</td><td><div>87%</div><div class="progress"><div class="progress-bar" style="width:87%;background:#E57373"></div></div></td><td>4.9</td><td><span class="badge badge-inactive">Critico</span></td></tr>
+            <tr><td>3° Medio</td><td>4</td><td>112</td><td><div>95%</div><div class="progress"><div class="progress-bar" style="width:95%"></div></div></td><td>6.0</td><td><span class="badge badge-active">Bien</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- USUARIOS -->
+    <div class="page" id="page-usuarios">
+      <div class="page-header"><div><div class="page-title">Gestion de Usuarios</div><div class="page-sub">Administra docentes, apoderados y personal</div></div><button class="btn btn-pri" onclick="toggleModal('modal-user')">+ Nuevo Usuario</button></div>
+      <div class="filter-bar">
+        <div class="search-box"><span>&#128269;</span><input type="text" placeholder="Buscar por nombre o email..."></div>
+        <select class="form-sel"><option>Todos los roles</option><option>Director</option><option>Profesor</option><option>Apoderado</option></select>
+        <select class="form-sel"><option>Todos los estados</option><option>Activo</option><option>Inactivo</option></select>
+        <button class="btn btn-sec btn-sm">Exportar CSV</button>
+      </div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Ultimo acceso</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Carlos Mendoza</strong></td><td>c.mendoza@edusync.cl</td><td><span class="badge badge-dir">Director</span></td><td>Hoy 08:45</td><td><span class="badge badge-active">Activo</span></td><td><button class="btn-icon">&#9998;</button></td></tr>
+            <tr><td>Ana Garcia</td><td>a.garcia@edusync.cl</td><td><span class="badge badge-prof">Profesor</span></td><td>Hoy 07:30</td><td><span class="badge badge-active">Activo</span></td><td><button class="btn-icon">&#9998;</button></td></tr>
+            <tr><td>Roberto Nunez</td><td>r.nunez@edusync.cl</td><td><span class="badge badge-prof">Profesor</span></td><td>Ayer 16:20</td><td><span class="badge badge-active">Activo</span></td><td><button class="btn-icon">&#9998;</button></td></tr>
+            <tr><td>Maria Torres</td><td>m.torres@edusync.cl</td><td><span class="badge badge-prof">Profesor</span></td><td>20/03/2026</td><td><span class="badge badge-pending">Permiso</span></td><td><button class="btn-icon">&#9998;</button></td></tr>
+            <tr><td>Luis Herrera</td><td>l.herrera@gmail.com</td><td><span class="badge badge-alum">Apoderado</span></td><td>22/03/2026</td><td><span class="badge badge-active">Activo</span></td><td><button class="btn-icon">&#9998;</button></td></tr>
+            <tr><td>Sofia Pinto</td><td>s.pinto@gmail.com</td><td><span class="badge badge-alum">Apoderado</span></td><td>19/03/2026</td><td><span class="badge badge-active">Activo</span></td><td><button class="btn-icon">&#9998;</button></td></tr>
+            <tr><td>Jorge Salinas</td><td>j.salinas@edusync.cl</td><td><span class="badge badge-prof">Profesor</span></td><td>01/03/2026</td><td><span class="badge badge-inactive">Inactivo</span></td><td><button class="btn-icon">&#9998;</button></td></tr>
+          </tbody>
+        </table>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;font-size:13px;color:var(--gray4)"><span>Mostrando 7 de 174 usuarios</span><div style="display:flex;gap:6px"><button class="btn btn-sec btn-sm">Anterior</button><button class="btn btn-pri btn-sm">Siguiente</button></div></div>
+      </div>
+      <div class="card" id="modal-user" style="display:none;margin-top:20px;border:2px solid var(--pri)">
+        <div class="card-header"><span class="card-title">Nuevo Usuario</span><span style="cursor:pointer;color:var(--gray4);font-size:18px" onclick="toggleModal('modal-user')">&#10005;</span></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" placeholder="Ej. Ana Garcia"></div>
+          <div class="form-group"><label class="form-label">Apellido</label><input class="form-input" placeholder="Ej. Torres"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Email</label><input class="form-input" placeholder="usuario@edusync.cl"></div>
+          <div class="form-group"><label class="form-label">Rol</label><select class="form-input"><option>Profesor</option><option>Apoderado</option><option>UTP</option><option>Director</option></select></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:4px"><button class="btn btn-pri">Crear usuario</button><button class="btn btn-sec" onclick="toggleModal('modal-user')">Cancelar</button></div>
+        <div class="modal-hint">Se enviara un email de bienvenida con las credenciales generadas automaticamente.</div>
+      </div>
+    </div>
+
+    <!-- CURSOS -->
+    <div class="page" id="page-cursos">
+      <div class="page-header"><div><div class="page-title">Cursos y Asignaturas</div><div class="page-sub">Gestiona la estructura academica del establecimiento</div></div><div style="display:flex;gap:10px"><button class="btn btn-sec btn-sm">+ Asignatura</button><button class="btn btn-pri btn-sm">+ Nuevo Curso</button></div></div>
+      <div class="card">
+        <table class="tbl">
+          <thead><tr><th>Curso</th><th>Nivel</th><th>Profesor Jefe</th><th>Alumnos</th><th>Asignaturas</th><th>Asistencia</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr><td><strong>1°A</strong></td><td>1° Basico</td><td>Ana Garcia</td><td>27</td><td>8</td><td>96%</td><td><span class="badge badge-active">Activo</span></td></tr>
+            <tr><td><strong>1°B</strong></td><td>1° Basico</td><td>Roberto Nunez</td><td>28</td><td>8</td><td>94%</td><td><span class="badge badge-active">Activo</span></td></tr>
+            <tr><td><strong>3°A</strong></td><td>3° Basico</td><td>Maria Torres</td><td>25</td><td>9</td><td>91%</td><td><span class="badge badge-pending">Sub. Jefa</span></td></tr>
+            <tr><td><strong>5°A</strong></td><td>5° Basico</td><td>Luis Vera</td><td>32</td><td>10</td><td>88%</td><td><span class="badge badge-active">Activo</span></td></tr>
+            <tr><td><strong>1°M-A</strong></td><td>1° Medio</td><td>Jorge Salinas</td><td>35</td><td>13</td><td>87%</td><td><span class="badge badge-inactive">Sin prof.</span></td></tr>
+            <tr><td><strong>4°M-A</strong></td><td>4° Medio</td><td>Sergio Leal</td><td>29</td><td>14</td><td>97%</td><td><span class="badge badge-active">Activo</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- REPORTES -->
+    <div class="page" id="page-reportes">
+      <div class="page-header"><div><div class="page-title">Reportes y Estadisticas</div><div class="page-sub">Genera reportes de asistencia, notas y rendimiento</div></div></div>
+      <div class="report-grid">
+        <div class="report-card sel" onclick="selReport(this)"><div class="report-card-icon">&#128202;</div><div class="report-card-title">Asistencia Mensual</div><div class="report-card-desc">Detalle de asistencia por curso y alumno</div></div>
+        <div class="report-card" onclick="selReport(this)"><div class="report-card-icon">&#128203;</div><div class="report-card-title">Calificaciones</div><div class="report-card-desc">Notas y promedios por curso y asignatura</div></div>
+        <div class="report-card" onclick="selReport(this)"><div class="report-card-icon">&#128101;</div><div class="report-card-title">Rendimiento Docente</div><div class="report-card-desc">Asistencia y actividad de profesores</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:16px">Parametros del reporte</div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Curso</label><select class="form-input"><option>Todos los cursos</option><option>1°A</option><option>3°A</option></select></div>
+          <div class="form-group"><label class="form-label">Periodo</label><select class="form-input"><option>Marzo 2026</option><option>1er Semestre 2026</option></select></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Formato</label><select class="form-input"><option>PDF</option><option>Excel (.xlsx)</option></select></div>
+          <div class="form-group"><label class="form-label">Incluir grafico</label><select class="form-input"><option>Si, incluir graficos</option><option>Solo tabla</option></select></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:4px"><button class="btn btn-pri">Generar reporte</button><button class="btn btn-sec">Vista previa</button></div>
+      </div>
+      <div class="card" style="margin-top:20px">
+        <div class="card-header"><span class="card-title">Ultimos reportes generados</span></div>
+        <table class="tbl">
+          <thead><tr><th>Reporte</th><th>Periodo</th><th>Fecha</th><th>Descargar</th></tr></thead>
+          <tbody>
+            <tr><td>Asistencia Mensual – Todos</td><td>Febrero 2026</td><td>01/03/2026</td><td><button class="btn btn-sec btn-sm">PDF</button></td></tr>
+            <tr><td>Calificaciones 4°M-A</td><td>Jun 2025</td><td>15/07/2025</td><td><button class="btn btn-sec btn-sm">Excel</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CONFIG -->
+    <div class="page" id="page-config">
+      <div class="page-header"><div><div class="page-title">Configuracion del Sistema</div><div class="page-sub">Ajustes generales del establecimiento</div></div><button class="btn btn-pri">Guardar cambios</button></div>
+      <div class="settings-section">
+        <div class="settings-title">Datos del Establecimiento</div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Nombre del colegio</label><input class="form-input" value="Colegio San Pedro de Atacama"></div>
+          <div class="form-group"><label class="form-label">RBD</label><input class="form-input" value="14552-3"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Direccion</label><input class="form-input" value="Av. Atacama 1200, Calama"></div>
+          <div class="form-group"><label class="form-label">Telefono</label><input class="form-input" value="+56 55 234 5678"></div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title">Periodos Academicos 2026</div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Inicio 1er Semestre</label><input type="date" class="form-input" value="2026-03-02"></div>
+          <div class="form-group"><label class="form-label">Fin 1er Semestre</label><input type="date" class="form-input" value="2026-07-10"></div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title">Notificaciones y Alertas</div>
+        <div class="toggle-row"><div><div class="toggle-lbl">Alertas de asistencia critica</div><div class="toggle-sub">Notificar cuando un curso baje del 85%</div></div><div class="toggle"></div></div>
+        <div class="toggle-row"><div><div class="toggle-lbl">Reporte semanal automatico</div><div class="toggle-sub">Enviar resumen cada lunes a las 08:00 hrs</div></div><div class="toggle"></div></div>
+        <div class="toggle-row"><div><div class="toggle-lbl">Emails a apoderados</div><div class="toggle-sub">Permitir comunicaciones automaticas a apoderados</div></div><div class="toggle"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function showPage(id,el){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById('page-'+id).classList.add('active');el.classList.add('active');const t={dashboard:'Dashboard',usuarios:'Gestion de Usuarios',cursos:'Cursos y Asignaturas',reportes:'Reportes',config:'Configuracion'};document.getElementById('topbar-title').textContent=t[id]||id;}
+function toggleModal(id){const el=document.getElementById(id);el.style.display=el.style.display==='none'?'block':'none';}
+function selReport(el){document.querySelectorAll('.report-card').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');}
+</script>
+</body>
+</html>

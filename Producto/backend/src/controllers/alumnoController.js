@@ -129,5 +129,55 @@ const obtenerAlumnosPorApoderado = async (req, res) => {
   }
 };
 
-module.exports = { obtenerAlumnos, obtenerAlumnoPorId, crearAlumno, actualizarAlumno, eliminarAlumno, obtenerAlumnosPorApoderado };
+// POST /api/alumnos/con-apoderado
+// Crea un alumno y lo vincula al apoderado en apoderado_alumno (transacción)
+const crearAlumnoConApoderado = async (req, res) => {
+  const { nombre_completo, rut, fecha_nacimiento, id_curso, id_apoderado } = req.body;
+  if (!nombre_completo || !id_curso || !id_apoderado) {
+    return res.status(400).json({ error: 'nombre_completo, id_curso e id_apoderado son obligatorios' });
+  }
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const alumnoRes = await client.query(
+      'INSERT INTO alumnos (nombre_completo, rut, fecha_nacimiento, id_curso) VALUES ($1, $2, $3, $4) RETURNING *',
+      [nombre_completo, rut || null, fecha_nacimiento || null, id_curso]
+    );
+    const alumno = alumnoRes.rows[0];
+    await client.query(
+      'INSERT INTO apoderado_alumno (id_apoderado, id_alumno) VALUES ($1, $2)',
+      [id_apoderado, alumno.id]
+    );
+    await client.query('COMMIT');
+    // Adjuntar nombre_curso para la respuesta
+    const cursoRes = await pool.query('SELECT nombre FROM cursos WHERE id = $1', [id_curso]);
+    alumno.nombre_curso = cursoRes.rows[0]?.nombre || null;
+    res.status(201).json(alumno);
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error al crear alumno con apoderado:', error);
+    if (error.code === '23505') return res.status(409).json({ error: 'El RUT ya está registrado' });
+    res.status(500).json({ error: 'Error del servidor', detalle: error.message });
+  } finally {
+    client.release();
+  }
+};
+
+// DELETE /api/alumnos/:id/apoderado/:id_apoderado
+// Solo desvincula la relación, no elimina el alumno
+const desvincularAlumnoApoderado = async (req, res) => {
+  const { id, id_apoderado } = req.params;
+  try {
+    await pool.query(
+      'DELETE FROM apoderado_alumno WHERE id_alumno = $1 AND id_apoderado = $2',
+      [id, id_apoderado]
+    );
+    res.status(200).json({ mensaje: 'Alumno desvinculado correctamente' });
+  } catch (error) {
+    console.error('Error al desvincular alumno:', error);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+};
+
+module.exports = { obtenerAlumnos, obtenerAlumnoPorId, crearAlumno, crearAlumnoConApoderado, desvincularAlumnoApoderado, actualizarAlumno, eliminarAlumno, obtenerAlumnosPorApoderado };
 

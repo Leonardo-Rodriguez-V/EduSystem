@@ -17,6 +17,12 @@ router.put('/:id', notaController.actualizarNota);
 // GET /api/notas/promedio-cursos — antes de /:id
 router.get('/promedio-cursos', notaController.obtenerPromedioPorCurso);
 
+// GET /api/notas/analitica/riesgo
+router.get('/analitica/riesgo', notaController.obtenerAlumnosEnRiesgoAcademico);
+
+// GET /api/notas/analitica/top
+router.get('/analitica/top', notaController.obtenerMejoresPromedios);
+
 // GET /api/notas/config/asignaturas?id_profesor=...&id_curso=...
 router.get('/config/asignaturas', notaController.obtenerAsignaturasPorProfesorYCurso);
 

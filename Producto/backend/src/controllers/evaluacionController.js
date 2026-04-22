@@ -56,8 +56,40 @@ const obtenerEvaluacionesPendientes = async (req, res) => {
   }
 };
 
+// PUT /api/evaluaciones/:id
+const actualizarEvaluacion = async (req, res) => {
+  const { id } = req.params;
+  const { id_asignatura, titulo, descripcion, fecha } = req.body;
+  try {
+    const respuesta = await pool.query(
+      `UPDATE evaluaciones SET id_asignatura=$1, titulo=$2, descripcion=$3, fecha=$4 WHERE id=$5 RETURNING *`,
+      [id_asignatura, titulo, descripcion, fecha, id]
+    );
+    if (respuesta.rows.length === 0) return res.status(404).json({ error: 'Evaluación no encontrada' });
+    res.status(200).json(respuesta.rows[0]);
+  } catch (error) {
+    console.error('Error al actualizar evaluación:', error);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+};
+
+// DELETE /api/evaluaciones/:id
+const eliminarEvaluacion = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const respuesta = await pool.query('DELETE FROM evaluaciones WHERE id=$1 RETURNING id', [id]);
+    if (respuesta.rows.length === 0) return res.status(404).json({ error: 'Evaluación no encontrada' });
+    res.status(200).json({ mensaje: 'Evaluación eliminada' });
+  } catch (error) {
+    console.error('Error al eliminar evaluación:', error);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+};
+
 module.exports = {
   obtenerEvaluacionesPorCurso,
   crearEvaluacion,
+  actualizarEvaluacion,
+  eliminarEvaluacion,
   obtenerEvaluacionesPendientes,
 };

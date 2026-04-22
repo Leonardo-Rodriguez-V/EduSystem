@@ -12,6 +12,7 @@ import PortalApoderado from './pages/PortalApoderado';
 import NotasHijo from './pages/NotasHijo';
 import Alumnos from './pages/Alumnos';
 import Perfil from './pages/Perfil';
+import Anotaciones from './pages/Anotaciones';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import { NotificationProvider } from './context/NotificationContext';
@@ -94,6 +95,12 @@ function App() {
         <Route path="/perfil" element={
           <ProtectedRoute>
             <Layout><Perfil /></Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/anotaciones" element={
+          <ProtectedRoute allowedRoles={['director', 'profesor', 'apoderado']}>
+            <Layout><Anotaciones /></Layout>
           </ProtectedRoute>
         } />
 

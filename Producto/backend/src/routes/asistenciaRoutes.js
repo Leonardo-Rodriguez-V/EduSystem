@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const asistenciaController = require('../controllers/asistenciaController');
 
+// PUT /api/asistencia/:id/justificar
+router.put('/:id/justificar', asistenciaController.justificarAsistencia);
+
 // GET /api/asistencia?id_curso=1&fecha=2026-03-20
 router.get('/', asistenciaController.obtenerAsistenciaPorCursoYFecha);
 
@@ -10,6 +13,12 @@ router.get('/global', asistenciaController.obtenerAsistenciaGlobal);
 
 // GET /api/asistencia/resumen-cursos
 router.get('/resumen-cursos', asistenciaController.obtenerResumenPorTodosLosCursos);
+
+// GET /api/asistencia/analitica/riesgo
+router.get('/analitica/riesgo', asistenciaController.obtenerAlumnosEnRiesgoAsistencia);
+
+// GET /api/asistencia/analitica/top
+router.get('/analitica/top', asistenciaController.obtenerMejoresAsistencias);
 
 // GET /api/asistencia/resumen?id_curso=1
 router.get('/resumen', asistenciaController.obtenerResumenPorCurso);

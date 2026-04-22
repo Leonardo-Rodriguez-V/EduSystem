@@ -49,6 +49,9 @@ export default function PortalApoderado() {
   const [avisos,           setAvisos]           = useState([]);
   const [cargando,         setCargando]         = useState(true);
   const [cargandoDetalle,  setCargandoDetalle]  = useState(false);
+  const [justModal,        setJustModal]        = useState(null); // asistencia a justificar
+  const [justTexto,        setJustTexto]        = useState('');
+  const [guardandoJust,    setGuardandoJust]    = useState(false);
 
   useEffect(() => {
     if (!usuario.id) return;
@@ -89,6 +92,28 @@ export default function PortalApoderado() {
   const asistColor = Number(pctAsistencia) < 85 ? '#ef4444' : '#10b981';
   const [notaBg, notaText] = colorNota(promN);
 
+  const abrirJustificar = (as) => {
+    setJustModal(as);
+    setJustTexto(as.justificacion || '');
+  };
+
+  const guardarJustificacion = async () => {
+    if (!justModal || !justTexto.trim()) return;
+    setGuardandoJust(true);
+    try {
+      const res = await apiFetch(`/asistencia/${justModal.id}/justificar`, {
+        method: 'PUT',
+        body: JSON.stringify({ justificacion: justTexto }),
+      });
+      if (res?.ok) {
+        setAsistencias(prev => prev.map(a => a.id === justModal.id ? { ...a, justificacion: justTexto } : a));
+        setJustModal(null);
+      }
+    } finally {
+      setGuardandoJust(false);
+    }
+  };
+
   if (cargando) return (
     <div style={{ padding: '100px', textAlign: 'center' }}>
       <div style={{ width: '40px', height: '40px', border: '3px solid var(--color-border)', borderTopColor: 'var(--color-primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
@@ -109,6 +134,36 @@ export default function PortalApoderado() {
 
   return (
     <div style={s.container}>
+
+      {/* Modal justificar inasistencia */}
+      {justModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+          onClick={() => setJustModal(null)}>
+          <div style={{ background: 'var(--color-surface)', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '440px', border: '1px solid var(--color-border)', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--color-foreground)', marginBottom: '6px' }}>Justificar inasistencia</div>
+            <div style={{ fontSize: '12px', color: 'var(--color-foreground)', opacity: 0.5, marginBottom: '18px' }}>
+              Fecha: {new Date(justModal.fecha + 'T12:00:00').toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </div>
+            <textarea
+              value={justTexto}
+              onChange={e => setJustTexto(e.target.value)}
+              placeholder="Ej: El alumno tuvo una consulta médica, se adjunta certificado..."
+              style={{ width: '100%', minHeight: '100px', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--color-border)', background: 'var(--color-muted)', color: 'var(--color-foreground)', fontSize: '13px', outline: 'none', resize: 'vertical', boxSizing: 'border-box', marginBottom: '18px' }}
+            />
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setJustModal(null)} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--color-border)', background: 'transparent', color: 'var(--color-foreground)', fontWeight: 600, cursor: 'pointer', fontSize: '13px' }}>
+                Cancelar
+              </button>
+              <button onClick={guardarJustificacion} disabled={guardandoJust || !justTexto.trim()}
+                style={{ padding: '8px 20px', borderRadius: '8px', border: 'none', background: 'var(--color-primary)', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '13px', opacity: (guardandoJust || !justTexto.trim()) ? 0.6 : 1 }}>
+                {guardandoJust ? 'Guardando...' : 'Guardar justificación'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <h1 style={s.pageTitle}>Portal del Apoderado</h1>
       <p style={s.pageSub}>Información académica en tiempo real</p>
 
@@ -233,21 +288,35 @@ export default function PortalApoderado() {
           {asistencias.length === 0 ? (
             <p style={{ color: 'var(--color-foreground)', opacity: 0.35, fontSize: '13px', fontStyle: 'italic', textAlign: 'center', padding: '20px' }}>Sin registros de asistencia</p>
           ) : (
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '8px' }}>
-              {asistencias.slice(0, 21).map(as => {
-                const c = colorEstado(as.estado);
-                return (
-                  <div key={as.id} title={`${as.fecha}: ${as.estado}`}
-                    style={{
-                      width: '40px', height: '40px', borderRadius: '12px',
-                      background: c.bg, color: c.text,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '12px', fontWeight: 900,
-                    }}>
-                    {as.estado[0].toUpperCase()}
-                  </div>
-                );
-              })}
+            <div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px', marginBottom: '12px' }}>
+                {asistencias.slice(0, 21).map(as => {
+                  const c = colorEstado(as.estado);
+                  const esAusente = as.estado === 'ausente';
+                  const justificada = esAusente && as.justificacion;
+                  return (
+                    <div key={as.id}
+                      title={as.justificacion ? `Justificado: ${as.justificacion}` : `${as.fecha}: ${as.estado}`}
+                      onClick={() => esAusente ? abrirJustificar(as) : undefined}
+                      style={{
+                        width: '44px', height: '44px', borderRadius: '12px',
+                        background: justificada ? 'rgba(99,102,241,0.15)' : c.bg,
+                        color: justificada ? 'var(--color-primary)' : c.text,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '12px', fontWeight: 900,
+                        cursor: esAusente ? 'pointer' : 'default',
+                        border: justificada ? '2px solid var(--color-primary)' : '2px solid transparent',
+                        position: 'relative',
+                        transition: 'all 0.15s',
+                      }}>
+                      {justificada ? 'J' : as.estado[0].toUpperCase()}
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--color-foreground)', opacity: 0.45, fontWeight: 600 }}>
+                Haz clic en una <span style={{ color: 'var(--color-destructive)', fontWeight: 700 }}>A</span> para justificar la inasistencia · <span style={{ color: 'var(--color-primary)', fontWeight: 700 }}>J</span> = justificada
+              </div>
             </div>
           )}
         </motion.div>

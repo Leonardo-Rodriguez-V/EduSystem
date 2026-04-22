@@ -10,8 +10,12 @@ router.get('/apoderado/:id_apoderado', alumnoController.obtenerAlumnosPorApodera
 router.get('/:id', alumnoController.obtenerAlumnoPorId);
 // POST /api/alumnos
 router.post('/', alumnoController.crearAlumno);
+// POST /api/alumnos/con-apoderado — crea alumno y vincula a apoderado
+router.post('/con-apoderado', alumnoController.crearAlumnoConApoderado);
 // PUT /api/alumnos/:id
 router.put('/:id', alumnoController.actualizarAlumno);
+// DELETE /api/alumnos/:id/apoderado/:id_apoderado — desvincular sin eliminar
+router.delete('/:id/apoderado/:id_apoderado', alumnoController.desvincularAlumnoApoderado);
 // DELETE /api/alumnos/:id
 router.delete('/:id', alumnoController.eliminarAlumno);
 

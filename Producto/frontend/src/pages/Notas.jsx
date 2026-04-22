@@ -1,17 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  XAxis, YAxis, CartesianGrid, Tooltip, 
+  ResponsiveContainer, AreaChart, Area
+} from 'recharts';
 import apiFetch from '../utils/api';
 import { 
-  Plus, 
-  Edit3, 
-  Trash2, 
-  X, 
-  GraduationCap,
-  ClipboardList,
-  ChevronDown,
+  Plus,
+  Edit3,
+  Trash2,
+  X,
   TrendingUp,
   Users,
-  Target
+  Target,
+  AlertTriangle,
+  Award,
+  BarChart3,
+  LayoutGrid
 } from 'lucide-react';
 
 /* ── Sugerencias de Estilos Rich Aesthetic ── */
@@ -106,6 +111,7 @@ function colorNota(n) {
 
 export default function Notas() {
   const usuario = (() => { try { return JSON.parse(localStorage.getItem('usuario')); } catch { return {}; } })();
+  const esDirector = usuario.rol === 'director';
 
   const [listaCursos, setListaCursos] = useState([]);
   const [curso,      setCurso]      = useState(null);
@@ -120,6 +126,7 @@ export default function Notas() {
   const [cargando,   setCargando]   = useState(true);
   const [guardando,  setGuardando]  = useState(false);
   const [mensaje,    setMensaje]    = useState({ texto: '', tipo: '' });
+  const [directorModo, setDirectorModo] = useState(esDirector);
 
   useEffect(() => {
     const url = usuario.rol === 'profesor' ? `/cursos?id_profesor=${usuario.id}` : '/cursos';
@@ -249,7 +256,7 @@ export default function Notas() {
 
   return (
     <div style={s.container}>
-      {/* Premium Header */}
+      {/* Premium Header with Toggle */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -258,133 +265,178 @@ export default function Notas() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px' }}>
           <div>
             <h1 style={{ fontSize: '32px', fontWeight: 900, color: 'var(--color-foreground)', margin: 0, letterSpacing: '-0.02em' }}>
-              Libro de Clases <span style={{ color: 'var(--color-primary)', opacity: 0.5 }}>/</span> {curso?.nombre}
+              {directorModo ? 'Analítica Académica' : (
+                <>Libro de Clases <span style={{ color: 'var(--color-primary)', opacity: 0.5 }}>/</span> {curso?.nombre}</>
+              )}
             </h1>
             <p style={{ fontSize: '14px', fontWeight: 600, color: '#64748b', marginTop: '4px' }}>
-              Gestión de rendimiento académico y promedios en tiempo real
+              {directorModo ? 'Rendimiento institucional y detección temprana de riesgos' : 'Gestión de rendimiento académico y promedios en tiempo real'}
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <select
-              value={curso?.id || ''}
-              onChange={(e) => setCurso(listaCursos.find(c => c.id === parseInt(e.target.value)))}
-              style={s.select}
-            >
-              {listaCursos.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-            </select>
-            {asignaturas.length > 0 && (
-              <select
-                value={asigSel?.id || ''}
-                onChange={(e) => setAsigSel(asignaturas.find(a => a.id === parseInt(e.target.value)))}
-                style={s.select}
-              >
-                {asignaturas.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
-              </select>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+            {esDirector && (
+              <div style={{ display: 'flex', background: 'var(--color-muted)', padding: '4px', borderRadius: '14px', gap: '4px' }}>
+                <button 
+                  onClick={() => setDirectorModo(true)}
+                  style={{
+                    padding: '8px 16px', borderRadius: '10px', border: 'none', fontSize: '12px', fontWeight: 800, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s',
+                    background: directorModo ? 'var(--color-surface)' : 'transparent',
+                    color: directorModo ? 'var(--color-primary)' : 'var(--color-foreground)',
+                    boxShadow: directorModo ? '0 2px 8px rgba(0,0,0,0.1)' : 'none'
+                  }}
+                >
+                  <BarChart3 size={16} /> Dashboard
+                </button>
+                <button 
+                  onClick={() => setDirectorModo(false)}
+                  style={{
+                    padding: '8px 16px', borderRadius: '10px', border: 'none', fontSize: '12px', fontWeight: 800, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s',
+                    background: !directorModo ? 'var(--color-surface)' : 'transparent',
+                    color: !directorModo ? 'var(--color-primary)' : 'var(--color-foreground)',
+                    boxShadow: !directorModo ? '0 2px 8px rgba(0,0,0,0.1)' : 'none'
+                  }}
+                >
+                  <LayoutGrid size={16} /> Gestión
+                </button>
+              </div>
+            )}
+
+            {!directorModo && (
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <select
+                  value={curso?.id || ''}
+                  onChange={(e) => setCurso(listaCursos.find(c => c.id === parseInt(e.target.value)))}
+                  style={s.select}
+                >
+                  {listaCursos.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                </select>
+                {asignaturas.length > 0 && (
+                  <select
+                    value={asigSel?.id || ''}
+                    onChange={(e) => setAsigSel(asignaturas.find(a => a.id === parseInt(e.target.value)))}
+                    style={s.select}
+                  >
+                    {asignaturas.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
+                  </select>
+                )}
+              </div>
             )}
           </div>
         </div>
       </motion.div>
 
-      {/* Bento Stats */}
-      <div style={s.bentoGrid}>
-        <div className="clay-card" style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}>
-          <TrendingUp style={{ position: 'absolute', right: '-10px', bottom: '-10px', width: '80px', height: '80px', opacity: 0.05, color: 'var(--color-primary)' }} />
-          <span style={s.label}>Promedio General</span>
-          <div style={{ fontSize: '42px', fontWeight: 900, color: colorNota(Number(promedioG))[1], marginTop: '8px' }}>{promedioG}</div>
-          <div style={{ fontSize: '12px', fontWeight: 700, opacity: 0.5, marginTop: '4px' }}>Rendimiento global del curso</div>
-        </div>
-        <div className="clay-card" style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}>
-          <Users style={{ position: 'absolute', right: '-10px', bottom: '-10px', width: '80px', height: '80px', opacity: 0.05, color: 'var(--color-secondary)' }} />
-          <span style={s.label}>Estudiantes</span>
-          <div style={{ fontSize: '42px', fontWeight: 900, color: 'var(--color-foreground)', marginTop: '8px' }}>{alumnos.length}</div>
-          <div style={{ fontSize: '12px', fontWeight: 700, opacity: 0.5, marginTop: '4px' }}>Alumnos matriculados activos</div>
-        </div>
-        <div className="clay-card" style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}>
-          <Target style={{ position: 'absolute', right: '-10px', bottom: '-10px', width: '80px', height: '80px', opacity: 0.05, color: 'var(--color-accent)' }} />
-          <span style={s.label}>Asignatura</span>
-          <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--color-foreground)', marginTop: '20px', textTransform: 'uppercase' }}>{asigSel?.nombre || 'General'}</div>
-          <div style={{ fontSize: '12px', fontWeight: 700, opacity: 0.5, marginTop: '4px' }}>Contexto de evaluación actual</div>
-        </div>
-      </div>
-
-      {/* List Header */}
-      <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr 1fr 100px 140px', padding: '0 24px 12px', fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-        <span>Pos</span>
-        <span>Estudiante</span>
-        <span>Calificaciones</span>
-        <span style={{ textAlign: 'center' }}>Promedio</span>
-        <span style={{ textAlign: 'right' }}>Acciones</span>
-      </div>
-
-      {/* Alumnos List */}
-      <motion.div 
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        key={curso?.id + (asigSel?.id || '')}
-      >
-        {cargando ? (
-           Array(5).fill(0).map((_, i) => (
-             <div key={i} className="skeleton" style={{ height: '80px', borderRadius: '24px', marginBottom: '16px' }}></div>
-           ))
+      <AnimatePresence mode="wait">
+        {directorModo ? (
+          <motion.div key="analytics" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <NotasAnalytics />
+          </motion.div>
         ) : (
-          alumnos.map((a, i) => {
-            const ns = notas[a.id] || [];
-            const prom = promedio(a.id);
-            const [bg, color] = colorNota(Number(prom));
+          <motion.div key="operational" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
+            {/* Bento Stats */}
+            <div style={s.bentoGrid}>
+              <div className="clay-card" style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}>
+                <TrendingUp style={{ position: 'absolute', right: '-10px', bottom: '-10px', width: '80px', height: '80px', opacity: 0.05, color: 'var(--color-primary)' }} />
+                <span style={s.label}>Promedio General</span>
+                <div style={{ fontSize: '42px', fontWeight: 900, color: colorNota(Number(promedioG))[1], marginTop: '8px' }}>{promedioG}</div>
+                <div style={{ fontSize: '12px', fontWeight: 700, opacity: 0.5, marginTop: '4px' }}>Rendimiento global del curso</div>
+              </div>
+              <div className="clay-card" style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}>
+                <Users style={{ position: 'absolute', right: '-10px', bottom: '-10px', width: '80px', height: '80px', opacity: 0.05, color: 'var(--color-secondary)' }} />
+                <span style={s.label}>Estudiantes</span>
+                <div style={{ fontSize: '42px', fontWeight: 900, color: 'var(--color-foreground)', marginTop: '8px' }}>{alumnos.length}</div>
+                <div style={{ fontSize: '12px', fontWeight: 700, opacity: 0.5, marginTop: '4px' }}>Alumnos matriculados activos</div>
+              </div>
+              <div className="clay-card" style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}>
+                <Target style={{ position: 'absolute', right: '-10px', bottom: '-10px', width: '80px', height: '80px', opacity: 0.05, color: 'var(--color-accent)' }} />
+                <span style={s.label}>Asignatura</span>
+                <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--color-foreground)', marginTop: '20px', textTransform: 'uppercase' }}>{asigSel?.nombre || 'General'}</div>
+                <div style={{ fontSize: '12px', fontWeight: 700, opacity: 0.5, marginTop: '4px' }}>Contexto de evaluación actual</div>
+              </div>
+            </div>
 
-            return (
-              <motion.div 
-                key={a.id} 
-                variants={itemVariants}
-                style={s.cardRow}
-                className="clay-card"
-              >
-                <div style={{ width: '80px', fontSize: '18px', fontWeight: 900, color: 'var(--color-primary)', opacity: 0.3 }}>
-                  {(i + 1).toString().padStart(2, '0')}
-                </div>
-                
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--color-foreground)' }}>{a.nombre_completo}</div>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', marginTop: '2px' }}>RUT: {a.rut}</div>
-                </div>
+            {/* List Header */}
+            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr 1fr 100px 140px', padding: '0 24px 12px', fontSize: '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+              <span>Pos</span>
+              <span>Estudiante</span>
+              <span>Calificaciones</span>
+              <span style={{ textAlign: 'center' }}>Promedio</span>
+              <span style={{ textAlign: 'right' }}>Acciones</span>
+            </div>
 
-                <div style={{ flex: 1, display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {ns.map(n => (
-                    <motion.div
-                      key={n.id}
-                      whileHover={{ scale: 1.1, y: -2 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => abrirModal(a, n)}
-                      style={{ ...s.badge(...colorNota(n.calificacion)), cursor: 'pointer' }}
+            {/* Alumnos List */}
+            <motion.div 
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              key={curso?.id + (asigSel?.id || '')}
+            >
+              {cargando ? (
+                Array(5).fill(0).map((_, i) => (
+                  <div key={i} className="skeleton" style={{ height: '80px', borderRadius: '24px', marginBottom: '16px' }}></div>
+                ))
+              ) : (
+                alumnos.map((a, i) => {
+                  const ns = notas[a.id] || [];
+                  const prom = promedio(a.id);
+                  const [bg, color] = colorNota(Number(prom));
+
+                  return (
+                    <motion.div 
+                      key={a.id} 
+                      variants={itemVariants}
+                      style={s.cardRow}
+                      className="clay-card"
                     >
-                      {parseFloat(n.calificacion).toFixed(1)}
+                      <div style={{ width: '80px', fontSize: '18px', fontWeight: 900, color: 'var(--color-primary)', opacity: 0.3 }}>
+                        {(i + 1).toString().padStart(2, '0')}
+                      </div>
+                      
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--color-foreground)' }}>{a.nombre_completo}</div>
+                        <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', marginTop: '2px' }}>RUT: {a.rut}</div>
+                      </div>
+
+                      <div style={{ flex: 1, display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        {ns.map(n => (
+                          <motion.div
+                            key={n.id}
+                            whileHover={{ scale: 1.1, y: -2 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => abrirModal(a, n)}
+                            style={{ ...s.badge(...colorNota(n.calificacion)), cursor: 'pointer' }}
+                          >
+                            {parseFloat(n.calificacion).toFixed(1)}
+                          </motion.div>
+                        ))}
+                        {ns.length === 0 && <span style={{ color: '#cbd5e1', fontSize: '12px', fontStyle: 'italic', fontWeight: 600 }}>Sin registros</span>}
+                      </div>
+
+                      <div style={{ width: '100px', display: 'flex', justifyContent: 'center' }}>
+                        {prom ? (
+                          <div style={{ ...s.badge(bg, color), width: '48px', height: '48px', fontSize: '16px', borderRadius: '16px' }}>{prom}</div>
+                        ) : <span style={{ color: '#cbd5e1' }}>—</span>}
+                      </div>
+
+                      <div style={{ width: '140px', textAlign: 'right' }}>
+                        <button 
+                          className="clay-button" 
+                          style={{ padding: '10px 16px', fontSize: '12px' }} 
+                          onClick={() => abrirModal(a)}
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </div>
                     </motion.div>
-                  ))}
-                  {ns.length === 0 && <span style={{ color: '#cbd5e1', fontSize: '12px', fontStyle: 'italic', fontWeight: 600 }}>Sin registros</span>}
-                </div>
-
-                <div style={{ width: '100px', display: 'flex', justifyContent: 'center' }}>
-                  {prom ? (
-                    <div style={{ ...s.badge(bg, color), width: '48px', height: '48px', fontSize: '16px', borderRadius: '16px' }}>{prom}</div>
-                  ) : <span style={{ color: '#cbd5e1' }}>—</span>}
-                </div>
-
-                <div style={{ width: '140px', textAlign: 'right' }}>
-                   <button 
-                    className="clay-button" 
-                    style={{ padding: '10px 16px', fontSize: '12px' }} 
-                    onClick={() => abrirModal(a)}
-                   >
-                     <Plus size={16} />
-                   </button>
-                </div>
-              </motion.div>
-            );
-          })
+                  );
+                })
+              )}
+            </motion.div>
+          </motion.div>
         )}
-      </motion.div>
+      </AnimatePresence>
 
       {/* Modal Premium */}
       <AnimatePresence>
@@ -458,6 +510,158 @@ export default function Notas() {
           </div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+function NotasAnalytics() {
+  const [promediosCursos, setPromediosCursos] = useState([]);
+  const [riesgoAcademico, setRiesgoAcademico] = useState([]);
+  const [topPromedios, setTopPromedios] = useState([]);
+  const [cargando, setCargando] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setCargando(true);
+      try {
+        const [resProm, resRiesgo, resTop] = await Promise.all([
+          apiFetch('/notas/promedio-cursos').then(r => r?.json()),
+          apiFetch('/notas/analitica/riesgo').then(r => r?.json()),
+          apiFetch('/notas/analitica/top').then(r => r?.json())
+        ]);
+
+        if (Array.isArray(resProm)) setPromediosCursos(resProm);
+        if (Array.isArray(resRiesgo)) setRiesgoAcademico(resRiesgo);
+        if (Array.isArray(resTop)) setTopPromedios(resTop);
+      } catch (err) {
+        console.error('Error fetching grades analytics:', err);
+      } finally {
+        setCargando(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (cargando) return (
+     <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '32px' }}>
+       <div className="skeleton" style={{ height: '450px', borderRadius: '32px' }}></div>
+       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+         <div className="skeleton" style={{ height: '215px', borderRadius: '32px' }}></div>
+         <div className="skeleton" style={{ height: '215px', borderRadius: '32px' }}></div>
+       </div>
+     </div>
+  );
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '32px' }}>
+      {/* Gráfico de Tendencias por Curso */}
+      <div className="clay-card" style={{ gridColumn: 'span 8', padding: '32px', minHeight: '450px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 900 }}>Promedio por Nivel</h3>
+            <p style={{ margin: '4px 0 0', fontSize: '13px', fontWeight: 700, color: '#64748b' }}>Comparativa de rendimiento académico institucional</p>
+          </div>
+          <div style={{ background: 'rgba(99,102,241,0.1)', padding: '10px 16px', borderRadius: '12px', color: 'var(--color-primary)', fontWeight: 800, fontSize: '13px' }}>
+            Hoy
+          </div>
+        </div>
+        
+        <ResponsiveContainer width="100%" height={320}>
+          <AreaChart data={promediosCursos}>
+            <defs>
+              <linearGradient id="colorProm" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+            <XAxis dataKey="nombre" axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 700, fill: '#64748b' }} />
+            <YAxis domain={[1, 7]} axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 700, fill: '#64748b' }} />
+            <Tooltip 
+              contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }}
+            />
+            <Area type="monotone" dataKey="promedio" stroke="var(--color-primary)" strokeWidth={4} fillOpacity={1} fill="url(#colorProm)" />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Alertas y Top */}
+      <div style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+        {/* Top Alumnos */}
+        <div className="clay-card" style={{ padding: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+            <div style={{ background: '#dcfce7', padding: '8px', borderRadius: '10px' }}>
+              <Award size={20} color="#15803d" />
+            </div>
+            <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 900 }}>Excelencia Académica</h4>
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {topPromedios.slice(0, 5).map((est, i) => (
+              <div key={est.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: 'var(--color-muted)', borderRadius: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 900, opacity: 0.2 }}>{i+1}</div>
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: 800 }}>{est.nombre_completo.split(' ')[0]} {est.nombre_completo.split(' ')[1]}</div>
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748b' }}>{est.nombre_curso}</div>
+                  </div>
+                </div>
+                <div style={{ fontSize: '16px', fontWeight: 900, color: '#15803d' }}>{parseFloat(est.promedio).toFixed(1)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Riesgo Académico */}
+        <div className="clay-card" style={{ padding: '24px', border: '2px solid rgba(239, 68, 68, 0.1)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+            <div style={{ background: '#fee2e2', padding: '8px', borderRadius: '10px' }}>
+              <AlertTriangle size={20} color="#b91c1c" />
+            </div>
+            <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 900 }}>Riesgo de Evaluación</h4>
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {riesgoAcademico.length === 0 ? (
+              <div style={{ textAlign: 'center', opacity: 0.3, fontSize: '12px', padding: '20px' }}>Sin alertas de riesgo</div>
+            ) : riesgoAcademico.slice(0, 5).map(est => (
+              <div key={est.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '16px' }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 800 }}>{est.nombre_completo.split(' ')[0]} {est.nombre_completo.split(' ')[1]}</div>
+                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#b91c1c' }}>{est.nombre_curso}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '16px', fontWeight: 900, color: '#b91c1c' }}>{parseFloat(est.promedio).toFixed(1)}</div>
+                  <div style={{ fontSize: '9px', fontWeight: 800, color: '#ef4444' }}>{est.reprobadas} INS.</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Resumen por Cursos (Tabla Analítica) */}
+      <div className="clay-card" style={{ gridColumn: 'span 12', padding: '32px' }}>
+        <h3 style={{ margin: '0 0 24px', fontSize: '18px', fontWeight: 900 }}>Semáforo de Rendimiento por Curso</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+          {promediosCursos.map(c => {
+            const prom = Number(c.promedio);
+            const color = prom >= 6 ? '#10b981' : prom >= 4 ? '#f59e0b' : '#ef4444';
+            return (
+              <div key={c.id} style={{ padding: '20px', background: 'var(--color-muted)', borderRadius: '24px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{ width: '50px', height: '50px', borderRadius: '16px', background: 'var(--color-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--clay-shadow)' }}>
+                  <TrendingUp size={24} color={color} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '14px', fontWeight: 800 }}>{c.nombre}</div>
+                  <div style={{ fontSize: '11px', fontWeight: 700, opacity: 0.5 }}>{c.aprobados} apr. / {c.reprobados} repr.</div>
+                </div>
+                <div style={{ fontSize: '24px', fontWeight: 900, color }}>{prom.toFixed(1)}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

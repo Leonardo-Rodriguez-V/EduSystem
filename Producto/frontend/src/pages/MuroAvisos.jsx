@@ -30,7 +30,10 @@ export default function MuroAvisos() {
   const [enviando,        setEnviando]        = useState(false);
   const [mensaje,         setMensaje]         = useState({ texto: '', tipo: '' });
   const [cargando,        setCargando]        = useState(true);
-  const [confirmId,       setConfirmId]       = useState(null); // id aviso a eliminar
+  const [confirmId,       setConfirmId]       = useState(null);
+  const [editAviso,       setEditAviso]       = useState(null); // aviso que se está editando
+  const [editForm,        setEditForm]        = useState({ titulo: '', contenido: '' });
+  const [guardandoEdit,   setGuardandoEdit]   = useState(false);
 
   // 1. Cargar cursos según rol
   useEffect(() => {
@@ -100,6 +103,31 @@ export default function MuroAvisos() {
     }
   };
 
+  const abrirEditar = (aviso) => {
+    setEditAviso(aviso);
+    setEditForm({ titulo: aviso.titulo, contenido: aviso.mensaje || aviso.contenido || '' });
+  };
+
+  const guardarEdicion = async () => {
+    if (!editForm.titulo.trim() || !editForm.contenido.trim()) return;
+    setGuardandoEdit(true);
+    try {
+      const res = await apiFetch(`/avisos/${editAviso.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ titulo: editForm.titulo, contenido: editForm.contenido }),
+      });
+      if (res?.ok) {
+        setAvisos(prev => prev.map(a => a.id === editAviso.id
+          ? { ...a, titulo: editForm.titulo, mensaje: editForm.contenido }
+          : a
+        ));
+        setEditAviso(null);
+      }
+    } finally {
+      setGuardandoEdit(false);
+    }
+  };
+
   const eliminar = async (id) => {
     const res = await apiFetch(`/avisos/${id}`, { method: 'DELETE' });
     if (res?.ok) {
@@ -112,6 +140,9 @@ export default function MuroAvisos() {
     if (!f) return '';
     return new Date(f).toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
+
+  const overlayStyle = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' };
+  const modalStyle  = { background: 'var(--color-surface)', borderRadius: '14px', padding: '28px', width: '100%', maxWidth: '520px', boxShadow: '0 8px 40px rgba(0,0,0,0.18)', border: '1px solid var(--color-border)' };
 
   return (
     <div>
@@ -176,6 +207,29 @@ export default function MuroAvisos() {
         </div>
       )}
 
+      {/* Modal editar aviso */}
+      {editAviso && (
+        <div style={overlayStyle} onClick={() => setEditAviso(null)}>
+          <div style={modalStyle} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: '17px', fontWeight: 700, color: 'var(--color-foreground)', marginBottom: '20px' }}>Editar aviso</div>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={s.label}>Título</label>
+              <input style={s.input} value={editForm.titulo} onChange={e => setEditForm(p => ({ ...p, titulo: e.target.value }))} />
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={s.label}>Contenido</label>
+              <textarea style={s.textarea} value={editForm.contenido} onChange={e => setEditForm(p => ({ ...p, contenido: e.target.value }))} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button style={s.btnCancel} onClick={() => setEditAviso(null)}>Cancelar</button>
+              <button style={{ ...s.btnPri, opacity: guardandoEdit ? 0.7 : 1 }} onClick={guardarEdicion} disabled={guardandoEdit}>
+                {guardandoEdit ? 'Guardando...' : 'Guardar cambios'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Lista de avisos */}
       {cargando ? (
         <div style={{ textAlign: 'center', padding: '60px 20px' }}>
@@ -208,9 +262,9 @@ export default function MuroAvisos() {
                   </div>
                 </div>
 
-                {/* Botón eliminar con confirmación inline */}
+                {/* Botones editar / eliminar con confirmación inline */}
                 {puedePublicar && (
-                  <div style={{ flexShrink: 0 }}>
+                  <div style={{ flexShrink: 0, display: 'flex', gap: '6px', alignItems: 'center' }}>
                     {confirmId === aviso.id ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(220,38,38,0.08)', padding: '6px 10px', borderRadius: '8px', border: '1px solid rgba(220,38,38,0.2)' }}>
                         <span style={{ fontSize: '12px', color: 'var(--color-destructive)', fontWeight: 600 }}>¿Eliminar?</span>
@@ -218,7 +272,10 @@ export default function MuroAvisos() {
                         <button style={s.btnCancel} onClick={() => setConfirmId(null)}>No</button>
                       </div>
                     ) : (
-                      <button style={s.btnDanger} onClick={() => setConfirmId(aviso.id)}>Eliminar</button>
+                      <>
+                        <button style={s.btnCancel} onClick={() => abrirEditar(aviso)}>Editar</button>
+                        <button style={s.btnDanger} onClick={() => setConfirmId(aviso.id)}>Eliminar</button>
+                      </>
                     )}
                   </div>
                 )}

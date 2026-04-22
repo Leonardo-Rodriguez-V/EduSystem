@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduSync – Portal Apoderado</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #FFF3E0; display: flex; height: 100vh; overflow: hidden; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 260px; min-width: 260px;
+    background: linear-gradient(180deg, #BF360C 0%, #E65100 100%);
+    color: #fff; display: flex; flex-direction: column;
+    box-shadow: 3px 0 12px rgba(0,0,0,0.2);
+  }
+  .sidebar-header {
+    padding: 22px 18px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+  }
+  .sidebar-header .logo { font-size: 22px; font-weight: 700; letter-spacing: 1px; }
+  .sidebar-header .role-badge {
+    display: inline-block; margin-top: 6px;
+    background: rgba(255,255,255,0.2); border-radius: 12px;
+    padding: 3px 10px; font-size: 11px; font-weight: 600; text-transform: uppercase;
+  }
+  .user-info {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .user-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; flex-shrink: 0;
+  }
+  .user-name { font-size: 13px; font-weight: 600; }
+  .user-sub { font-size: 11px; opacity: 0.75; }
+
+  /* CHILD SWITCHER */
+  .child-switcher {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+  }
+  .child-switcher-title {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; opacity: 0.7; margin-bottom: 8px;
+  }
+  .child-btn {
+    width: 100%; display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 8px; border: none;
+    cursor: pointer; margin-bottom: 6px; text-align: left;
+    transition: background 0.2s;
+    background: rgba(255,255,255,0.1); color: #fff;
+  }
+  .child-btn:hover { background: rgba(255,255,255,0.2); }
+  .child-btn.active { background: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.5); }
+  .child-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; flex-shrink: 0;
+  }
+  .child-info { flex: 1; }
+  .child-name { font-size: 12px; font-weight: 600; }
+  .child-grade { font-size: 10px; opacity: 0.8; }
+  .child-indicator { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* SIDEBAR NAV */
+  nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+  nav a {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 18px; color: rgba(255,255,255,0.85);
+    text-decoration: none; font-size: 13.5px;
+    transition: all 0.2s; cursor: pointer;
+  }
+  nav a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  nav a.active { background: rgba(255,255,255,0.2); color: #fff; font-weight: 600; border-left: 3px solid #fff; }
+  nav a .icon { font-size: 17px; width: 20px; text-align: center; }
+  .notif-badge {
+    margin-left: auto; background: #FF5252; color: #fff;
+    border-radius: 10px; padding: 1px 7px; font-size: 10px; font-weight: 700;
+  }
+  .sidebar-footer {
+    padding: 14px 18px; border-top: 1px solid rgba(255,255,255,0.15);
+    font-size: 12px; opacity: 0.6;
+  }
+
+  /* MAIN */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar {
+    background: #fff; padding: 0 28px;
+    height: 58px; display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .topbar-title { font-size: 18px; font-weight: 700; color: #333; }
+  .topbar-child-tag {
+    display: flex; align-items: center; gap: 8px;
+    background: #FFF3E0; border: 1px solid #FFB74D;
+    border-radius: 20px; padding: 5px 14px;
+  }
+  .topbar-child-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .topbar-child-name { font-size: 13px; font-weight: 600; color: #E65100; }
+  .topbar-actions { display: flex; gap: 10px; align-items: center; }
+  .icon-btn {
+    background: #FFF3E0; border: none; border-radius: 8px;
+    width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 17px; position: relative; transition: background 0.2s;
+  }
+  .icon-btn:hover { background: #FFE0B2; }
+  .badge-dot {
+    position: absolute; top: 5px; right: 5px;
+    width: 8px; height: 8px; background: #FF5252; border-radius: 50%;
+  }
+
+  .content { flex: 1; overflow-y: auto; padding: 24px 28px; }
+
+  /* PAGE SECTIONS */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: #fff; border-radius: 12px;
+    padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    margin-bottom: 20px;
+  }
+  .card-title { font-size: 15px; font-weight: 700; color: #333; margin-bottom: 14px; }
+
+  /* KPI ROW */
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .kpi-card {
+    background: #fff; border-radius: 12px; padding: 16px 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    border-left: 4px solid #E65100;
+  }
+  .kpi-label { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .kpi-value { font-size: 26px; font-weight: 700; color: #333; margin: 4px 0; }
+  .kpi-sub { font-size: 11px; color: #aaa; }
+
+  /* GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* CHILD SUMMARY CARDS */
+  .child-summary-card {
+    background: #fff; border-radius: 12px; padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    border-top: 4px solid #ccc;
+  }
+  .child-summary-card.pedro { border-top-color: #1565C0; }
+  .child-summary-card.maria { border-top-color: #2E7D32; }
+  .child-summary-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .child-summary-avatar {
+    width: 46px; height: 46px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700; color: #fff;
+  }
+  .cs-name { font-size: 15px; font-weight: 700; color: #333; }
+  .cs-grade { font-size: 12px; color: #888; }
+  .cs-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+  .cs-stat { background: #F5F5F5; border-radius: 8px; padding: 10px 12px; }
+  .cs-stat-label { font-size: 10px; color: #888; font-weight: 600; text-transform: uppercase; }
+  .cs-stat-value { font-size: 20px; font-weight: 700; margin-top: 2px; }
+  .cs-alert {
+    margin-top: 12px; padding: 8px 12px; border-radius: 8px;
+    font-size: 12px; display: flex; align-items: center; gap: 6px;
+  }
+  .cs-alert.danger { background: #FFEBEE; color: #C62828; }
+  .cs-alert.warn { background: #FFF8E1; color: #F57F17; }
+  .cs-alert.ok { background: #E8F5E9; color: #1B5E20; }
+
+  /* UPCOMING EVENTS */
+  .event-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid #F5F5F5;
+  }
+  .event-date {
+    width: 42px; height: 42px; border-radius: 10px;
+    background: #FFF3E0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .event-day { font-size: 16px; font-weight: 700; color: #E65100; }
+  .event-month { font-size: 9px; color: #888; text-transform: uppercase; }
+  .event-desc { font-size: 13px; color: #333; }
+  .event-meta { font-size: 11px; color: #888; }
+  .event-tag {
+    margin-left: auto; padding: 3px 8px; border-radius: 10px;
+    font-size: 10px; font-weight: 600;
+  }
+
+  /* NOTAS */
+  .child-toggle-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .child-toggle-btn {
+    padding: 7px 16px; border-radius: 20px; border: 2px solid #ddd;
+    background: #fff; cursor: pointer; font-size: 12px; font-weight: 600;
+    transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+  }
+  .child-toggle-btn.active-pedro { border-color: #1565C0; background: #E3F2FD; color: #1565C0; }
+  .child-toggle-btn.active-maria { border-color: #2E7D32; background: #E8F5E9; color: #2E7D32; }
+
+  .subject-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .subject-card {
+    background: #fff; border-radius: 10px; padding: 16px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+    border-left: 4px solid #E65100;
+  }
+  .subject-card.danger { border-left-color: #C62828; }
+  .subject-card.warn { border-left-color: #F57F17; }
+  .subject-card.ok { border-left-color: #2E7D32; }
+  .subject-name { font-size: 12px; font-weight: 700; color: #555; margin-bottom: 6px; }
+  .subject-nota { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+  .subject-card.danger .subject-nota { color: #C62828; }
+  .subject-card.warn .subject-nota { color: #F57F17; }
+  .subject-card.ok .subject-nota { color: #2E7D32; }
+  .subject-bar-bg { background: #EEE; border-radius: 4px; height: 6px; margin-bottom: 4px; }
+  .subject-bar { height: 6px; border-radius: 4px; }
+  .subject-meta { font-size: 10px; color: #aaa; }
+  .prom-banner {
+    background: #FFF3E0; border: 1px solid #FFB74D;
+    border-radius: 10px; padding: 12px 16px; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .prom-value { font-size: 28px; font-weight: 700; color: #E65100; }
+  .prom-label { font-size: 13px; color: #666; }
+  .alert-banner {
+    padding: 10px 14px; border-radius: 8px;
+    font-size: 12px; display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+  }
+  .alert-banner.danger { background: #FFEBEE; color: #C62828; border: 1px solid #EF9A9A; }
+  .alert-banner.info { background: #E3F2FD; color: #1565C0; border: 1px solid #90CAF9; }
+
+  /* ASISTENCIA */
+  .asistencia-kpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .calendar-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 4px; margin-top: 10px;
+  }
+  .cal-header { text-align: center; font-size: 11px; font-weight: 700; color: #888; padding: 4px; }
+  .cal-day {
+    aspect-ratio: 1; border-radius: 6px; display: flex;
+    align-items: center; justify-content: center; font-size: 11px; font-weight: 600;
+  }
+  .cal-day.P { background: #E8F5E9; color: #2E7D32; }
+  .cal-day.A { background: #FFEBEE; color: #C62828; }
+  .cal-day.J { background: #FFF8E1; color: #F57F17; }
+  .cal-day.empty { background: transparent; }
+  .cal-day.feriado { background: #F3E5F5; color: #7B1FA2; }
+  .cal-legend { display: flex; gap: 14px; margin-top: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #666; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+
+  /* JUSTIFY FORM */
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 12px; font-weight: 600; color: #555; margin-bottom: 5px; display: block; }
+  .form-input, .form-select, .form-textarea {
+    width: 100%; padding: 9px 12px;
+    border: 1px solid #ddd; border-radius: 8px;
+    font-size: 13px; font-family: inherit;
+    transition: border-color 0.2s;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    outline: none; border-color: #E65100;
+  }
+  .form-textarea { height: 80px; resize: vertical; }
+  .btn {
+    padding: 9px 20px; border-radius: 8px; border: none;
+    cursor: pointer; font-size: 13px; font-weight: 600;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: #E65100; color: #fff; }
+  .btn-primary:hover { background: #BF360C; }
+  .btn-outline { background: #fff; border: 2px solid #E65100; color: #E65100; }
+  .btn-outline:hover { background: #FFF3E0; }
+  .btn-sm { padding: 5px 12px; font-size: 11px; }
+
+  /* ABSENCE TABLE */
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #F5F5F5; padding: 10px 12px; text-align: left; font-size: 12px; color: #666; font-weight: 700; }
+  td { padding: 10px 12px; border-bottom: 1px solid #F5F5F5; font-size: 13px; }
+  .status-badge {
+    display: inline-block; padding: 2px 9px; border-radius: 10px;
+    font-size: 10px; font-weight: 700;
+  }
+  .status-badge.P { background: #E8F5E9; color: #2E7D32; }
+  .status-badge.A { background: #FFEBEE; color: #C62828; }
+  .status-badge.J { background: #FFF8E1; color: #F57F17; }
+
+  /* MENSAJES */
+  .msg-layout { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
+  .msg-tabs { display: flex; gap: 2px; margin-bottom: 12px; }
+  .msg-tab {
+    padding: 7px 14px; border-radius: 8px; border: none;
+    cursor: pointer; font-size: 12px; font-weight: 600;
+    background: #F5F5F5; color: #666; transition: all 0.2s;
+  }
+  .msg-tab.active { background: #E65100; color: #fff; }
+  .msg-list { display: flex; flex-direction: column; gap: 4px; }
+  .msg-item {
+    padding: 10px 12px; border-radius: 8px; cursor: pointer;
+    transition: background 0.2s; border: 1px solid transparent;
+  }
+  .msg-item:hover { background: #FFF3E0; }
+  .msg-item.selected { background: #FFF3E0; border-color: #FFB74D; }
+  .msg-item.unread .msg-sender { font-weight: 700; }
+  .msg-sender { font-size: 13px; color: #333; }
+  .msg-subject { font-size: 11px; color: #666; margin-top: 2px; }
+  .msg-date { font-size: 10px; color: #aaa; }
+  .unread-dot {
+    width: 7px; height: 7px; background: #E65100;
+    border-radius: 50%; display: inline-block; margin-right: 5px;
+  }
+
+  .msg-detail { padding: 20px; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+  .msg-detail-header { border-bottom: 1px solid #F5F5F5; padding-bottom: 14px; margin-bottom: 14px; }
+  .msg-detail-subject { font-size: 16px; font-weight: 700; color: #333; margin-bottom: 6px; }
+  .msg-detail-meta { font-size: 12px; color: #888; }
+  .msg-detail-body { font-size: 13.5px; color: #444; line-height: 1.7; }
+
+  .compose-panel { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+  .compose-title { font-size: 15px; font-weight: 700; color: #333; margin-bottom: 14px; }
+
+  /* DOCUMENTOS */
+  .doc-list { display: flex; flex-direction: column; gap: 8px; }
+  .doc-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px; background: #fff; border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    transition: box-shadow 0.2s; cursor: pointer;
+  }
+  .doc-item:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
+  .doc-icon {
+    width: 38px; height: 38px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .doc-icon.pdf { background: #FFEBEE; }
+  .doc-icon.img { background: #E3F2FD; }
+  .doc-name { font-size: 13px; font-weight: 600; color: #333; }
+  .doc-meta { font-size: 11px; color: #888; }
+  .doc-date { margin-left: auto; font-size: 11px; color: #aaa; }
+  .new-tag {
+    background: #FFEBEE; color: #C62828; border-radius: 10px;
+    padding: 2px 7px; font-size: 10px; font-weight: 700; margin-left: 8px;
+  }
+
+  /* SECTION HEADER */
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .section-title { font-size: 17px; font-weight: 700; color: #333; }
+
+  /* NOTIF TOAST */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: #333; color: #fff; padding: 12px 18px;
+    border-radius: 10px; font-size: 13px; z-index: 999;
+    display: none; box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  }
+  .toast.show { display: flex; align-items: center; gap: 8px; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">🎓 EduSync</div>
+    <span class="role-badge">Portal Apoderado</span>
+  </div>
+
+  <div class="user-info">
+    <div class="user-avatar">CR</div>
+    <div>
+      <div class="user-name">Carmen Ramírez</div>
+      <div class="user-sub">2 pupilos registrados</div>
+    </div>
+  </div>
+
+  <!-- CHILD SWITCHER -->
+  <div class="child-switcher">
+    <div class="child-switcher-title">Seleccionar Pupilo</div>
+    <button class="child-btn active" id="btn-pedro" onclick="selectChild('pedro', this)">
+      <div class="child-avatar" style="background:#1565C0">P</div>
+      <div class="child-info">
+        <div class="child-name">Pedro Ramírez</div>
+        <div class="child-grade">3° Año B</div>
+      </div>
+      <div class="child-indicator" style="background:#4FC3F7"></div>
+    </button>
+    <button class="child-btn" id="btn-maria" onclick="selectChild('maria', this)">
+      <div class="child-avatar" style="background:#2E7D32">M</div>
+      <div class="child-info">
+        <div class="child-name">María Herrera</div>
+        <div class="child-grade">1° Año A</div>
+      </div>
+      <div class="child-indicator" style="background:#A5D6A7"></div>
+    </button>
+  </div>
+
+  <nav>
+    <a class="active" onclick="showPage('resumen')"><span class="icon">🏠</span> Resumen Familiar</a>
+    <a onclick="showPage('notas')"><span class="icon">📊</span> Notas y Rendimiento</a>
+    <a onclick="showPage('asistencia')"><span class="icon">📅</span> Asistencia</a>
+    <a onclick="showPage('mensajes')"><span class="icon">✉️</span> Mensajes <span class="notif-badge">3</span></a>
+    <a onclick="showPage('documentos')"><span class="icon">📁</span> Documentos <span class="notif-badge">2</span></a>
+  </nav>
+
+  <div class="sidebar-footer">
+    EduSync v2.0 · 2025<br>Portal Apoderado
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="page-title">Resumen Familiar</div>
+    <div class="topbar-child-tag">
+      <div class="topbar-child-dot" id="child-dot" style="background:#1565C0"></div>
+      <span class="topbar-child-name" id="child-tag-name">Pedro Ramírez · 3°B</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn" title="Notificaciones">
+        🔔
+        <span class="badge-dot"></span>
+      </button>
+      <button class="icon-btn" title="Perfil">👤</button>
+      <button class="icon-btn" title="Cerrar sesión">🚪</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- PAGE: RESUMEN -->
+    <div class="page active" id="page-resumen">
+      <div class="section-header" style="margin-bottom:20px">
+        <div class="section-title">📋 Resumen de Mis Pupilos</div>
+        <span style="font-size:12px;color:#888">Actualizado: hoy 08:45</span>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:20px">
+        <!-- Pedro card -->
+        <div class="child-summary-card pedro">
+          <div class="child-summary-header">
+            <div class="child-summary-avatar" style="background:#1565C0">P</div>
+            <div>
+              <div class="cs-name">Pedro Ramírez</div>
+              <div class="cs-grade">3° Año B · Colegio San Marcos</div>
+            </div>
+          </div>
+          <div class="cs-stats">
+            <div class="cs-stat">
+              <div class="cs-stat-label">Promedio</div>
+              <div class="cs-stat-value" style="color:#E65100">5.4</div>
+            </div>
+            <div class="cs-stat">
+              <div class="cs-stat-label">Asistencia</div>
+              <div class="cs-stat-value" style="color:#2E7D32">88%</div>
+            </div>
+            <div class="cs-stat">
+              <div class="cs-stat-label">Ausencias</div>
+              <div class="cs-stat-value" style="color:#C62828">4</div>
+            </div>
+            <div class="cs-stat">
+              <div class="cs-stat-label">Asignaturas</div>
+              <div class="cs-stat-value" style="color:#333">7</div>
+            </div>
+          </div>
+          <div class="cs-alert warn">⚠️ Nota baja en Inglés (3.8) — requiere atención</div>
+          <div class="cs-alert ok" style="margin-top:6px">✅ Asistencia dentro del rango aceptable</div>
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button class="btn btn-outline btn-sm" onclick="selectChild('pedro',document.getElementById('btn-pedro'));showPage('notas')">Ver Notas</button>
+            <button class="btn btn-outline btn-sm" onclick="selectChild('pedro',document.getElementById('btn-pedro'));showPage('asistencia')">Ver Asistencia</button>
+          </div>
+        </div>
+
+        <!-- Maria card -->
+        <div class="child-summary-card maria">
+          <div class="child-summary-header">
+            <div class="child-summary-avatar" style="background:#2E7D32">M</div>
+            <div>
+              <div class="cs-name">María Herrera</div>
+              <div class="cs-grade">1° Año A · Colegio San Marcos</div>
+            </div>
+          </div>
+          <div class="cs-stats">
+            <div class="cs-stat">
+              <div class="cs-stat-label">Promedio</div>
+              <div class="cs-stat-value" style="color:#2E7D32">6.2</div>
+            </div>
+            <div class="cs-stat">
+              <div class="cs-stat-label">Asistencia</div>
+              <div class="cs-stat-value" style="color:#2E7D32">95%</div>
+            </div>
+            <div class="cs-stat">
+              <div class="cs-stat-label">Ausencias</div>
+              <div class="cs-stat-value" style="color:#F57F17">1</div>
+            </div>
+            <div class="cs-stat">
+              <div class="cs-stat-label">Asignaturas</div>
+              <div class="cs-stat-value" style="color:#333">7</div>
+            </div>
+          </div>
+          <div class="cs-alert ok">✅ Excelente rendimiento académico</div>
+          <div class="cs-alert ok" style="margin-top:6px">✅ Asistencia sobresaliente (95%)</div>
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button class="btn btn-outline btn-sm" onclick="selectChild('maria',document.getElementById('btn-maria'));showPage('notas')">Ver Notas</button>
+            <button class="btn btn-outline btn-sm" onclick="selectChild('maria',document.getElementById('btn-maria'));showPage('asistencia')">Ver Asistencia</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upcoming events -->
+      <div class="card">
+        <div class="card-title">📆 Próximas Actividades y Eventos</div>
+        <div class="event-item">
+          <div class="event-date"><div class="event-day">28</div><div class="event-month">Mar</div></div>
+          <div>
+            <div class="event-desc">Reunión de Apoderados — 3°B</div>
+            <div class="event-meta">19:00 hrs · Sala A-203</div>
+          </div>
+          <span class="event-tag" style="background:#E3F2FD;color:#1565C0">Pedro</span>
+        </div>
+        <div class="event-item">
+          <div class="event-date"><div class="event-day">30</div><div class="event-month">Mar</div></div>
+          <div>
+            <div class="event-desc">Prueba de Matemáticas — Unidad 3</div>
+            <div class="event-meta">08:30 hrs · 3° Año B</div>
+          </div>
+          <span class="event-tag" style="background:#E3F2FD;color:#1565C0">Pedro</span>
+        </div>
+        <div class="event-item">
+          <div class="event-date"><div class="event-day">02</div><div class="event-month">Abr</div></div>
+          <div>
+            <div class="event-desc">Presentación de Ciencias — Proyecto Final</div>
+            <div class="event-meta">10:00 hrs · 1° Año A</div>
+          </div>
+          <span class="event-tag" style="background:#E8F5E9;color:#2E7D32">María</span>
+        </div>
+        <div class="event-item" style="border-bottom:none">
+          <div class="event-date"><div class="event-day">07</div><div class="event-month">Abr</div></div>
+          <div>
+            <div class="event-desc">Jornada de Orientación Vocacional</div>
+            <div class="event-meta">Todo el día · Auditorio principal</div>
+          </div>
+          <span class="event-tag" style="background:#FFF3E0;color:#E65100">Ambos</span>
+        </div>
+      </div>
+
+      <!-- Quick notifications -->
+      <div class="card">
+        <div class="card-title">🔔 Notificaciones Recientes</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px;background:#FFEBEE;border-radius:8px">
+            <span>⚠️</span>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:#C62828">Nota baja registrada</div>
+              <div style="font-size:11px;color:#888">Pedro · Inglés: 3.8 · Ayer 15:30</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px;background:#E8F5E9;border-radius:8px">
+            <span>✅</span>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:#2E7D32">Asistencia registrada</div>
+              <div style="font-size:11px;color:#888">María · Presente hoy · 08:15</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px;background:#E3F2FD;border-radius:8px">
+            <span>✉️</span>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:#1565C0">Mensaje del Profesor González</div>
+              <div style="font-size:11px;color:#888">Re: Situación académica de Pedro · Hoy 09:10</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: NOTAS -->
+    <div class="page" id="page-notas">
+      <div class="section-header">
+        <div class="section-title">📊 Notas y Rendimiento</div>
+      </div>
+
+      <div class="child-toggle-row">
+        <button class="child-toggle-btn active-pedro" id="toggle-pedro" onclick="toggleNotasChild('pedro', this)">
+          <div style="width:14px;height:14px;border-radius:50%;background:#1565C0"></div>
+          Pedro Ramírez · 3°B
+        </button>
+        <button class="child-toggle-btn" id="toggle-maria" onclick="toggleNotasChild('maria', this)">
+          <div style="width:14px;height:14px;border-radius:50%;background:#2E7D32"></div>
+          María Herrera · 1°A
+        </button>
+      </div>
+
+      <!-- Pedro notas -->
+      <div id="notas-pedro">
+        <div class="prom-banner">
+          <div class="prom-value">5.4</div>
+          <div>
+            <div class="prom-label" style="font-weight:700">Promedio General</div>
+            <div style="font-size:11px;color:#888">Pedro Ramírez · 3° Año B · 2025</div>
+          </div>
+        </div>
+        <div class="alert-banner danger">
+          ⚠️ <strong>Inglés 3.8</strong> — Nota bajo el mínimo de aprobación (4.0). Considere contactar al profesor.
+        </div>
+        <div class="subject-grid">
+          <div class="subject-card danger">
+            <div class="subject-name">INGLÉS</div>
+            <div class="subject-nota">3.8</div>
+            <div class="subject-bar-bg"><div class="subject-bar" style="width:44%;background:#C62828"></div></div>
+            <div class="subject-meta">Última nota: 3.5 · Prueba 15 Mar</div>
+          </div>
+          <div class="subject-card warn">
+            <div class="subject-name">HISTORIA</div>
+            <div class="subject-nota">4.6</div>
+            <div class="subject-bar-bg"><div class="subject-bar" style="width:60%;background:#F57F17"></div></div>
+            <div class="subject-meta">Última nota: 5.0 · Prueba 18 Mar</div>
+          </div>
+          <div class="subject-card ok">
+            <div class="subject-name">MATEMÁTICAS</div>
+            <div class="subject-nota">5.8</div>
+            <div class="subject-bar-bg"><div class="subject-bar" style="width:78%;background:#2E7D32"></div></div>
+            <div class="subject-meta">Última nota: 6.0 · Prueba 20 Mar</div>
+          </div>
+          <div class="subject-card ok">
+            <div class="subject-name">CIENCIAS</div>
+            <div class="subject-nota">6.0</div>
+            <div class="subject-bar-bg"><div class="subject-bar" style="width:82%;background:#2E7D32"></div></div>
+            <div class="subject-meta">Última nota: 5.8 · Trabajo 12 Mar</div>
+          </div>
+          <div class="subject-card ok">
+            <div class="subject-name">CASTELLANO</div>
+            <div class="subject-nota">5.5</div>
+            <div class="subject-bar-bg"><div class="subject-bar" style="width:74%;background:#2E7D32"></div></div>
+            <div class="subject-meta">Última nota: 5.2 · Prueba 10 Mar</div>
+          </div>
+          <div class="subject-card ok">
+            <div class="subject-name">ED. FÍSICA</div>
+            <div class="subject-nota">6.5</div>
+            <div class="subject-bar-bg"><div class="subject-bar" style="width:90%;background:#2E7D32"></div></div>
+            <div class="subject-meta">Última nota: 7.0 · Evaluación 08 Mar</div>
+          </div>
+          <div class="subject-card warn">
+            <div class="subject-name">ARTES</div>
+            <div class="subject-nota">4.8</div>
+            <div class="subject-bar-bg"><div class="subject-bar" style="width:62%;background:#F57F17"></div></div>
+            <div class="subject-meta">Última nota: 4.5 · Proyecto 14 Mar</div>
+          </div>
+        </div>
+        <div style="margin-top:14px;text-align:right">
+          <button class="btn btn-primary" onclick="showPage('mensajes');showToast('💬 Redirigiendo a Mensajes...')">
+            Contactar Prof. de Inglés
+          </button>
+        </div>
+      </div>
+
+      <!-- Maria notas -->
+      <div id="notas-maria" style="display:none">
+        <div class="prom-banner">
+          <div class="prom-value" style="color:#2E7D32">6.2</div>
+          <div>
+            <div class="prom-label" style="font-weight:700">Promedio General</div>
+            <div style="font-size:11px;color:#888">María Herrera · 1° Año A · 2025</div>
+          </div>
+        </div>
+        <div class="alert-banner info">
+          ℹ️ <strong>Excelente desempeño</strong> — María mantiene un promedio destacado en todas las asignaturas.
+        </div>
+        <div class="subject-grid">
+          <div class="subject-card ok">
+            <div class="subject-name">MATEMÁTICAS</div>
+            <div class="subject-nota">6.5</div>
+            <div class="subject-bar-bg"><div class="subject-bar" style="width:88%;background:#2E7D32"></div></div>
+            <div class="subject-meta">Última nota: 6.8 · Prueba 20 Mar</div>
+          </div>
+          <div class="subject-card ok">
+            <div class="subject-name">CASTELLANO</div>
+            <div class="subject-nota">6.0</div>
+            <div class="subject-bar-bg"><div class="subject-bar" style="width:82%;background:#2E7D32"></div></div>
+            <div class="subject-meta">Última nota: 5.8 · Prueba 18 Mar</div>
+          </div>
+          <div class="subject-card ok">
+            <div class="subject-name">CIENCIAS</div>
+            <div class="subject-nota">6.3</div>
+            <div class="subject-bar-bg"><div class="subject-bar" style="width:85%;background:#2E7D32"></div></div>
+            <div class="subject-meta">Última nota: 6.5 · Trabajo 17 Mar</div>
+          </div>
+          <div class="subject-card ok">
+            <div class="subject-name">HISTORIA</div>
+            <div class="subject-nota">5.9</div>
+            <div class="subject-bar-bg"><div class="subject-bar" style="width:79%;background:#2E7D32"></div></div>
+            <div class="subject-meta">Última nota: 6.0 · Prueba 14 Mar</div>
+          </div>
+          <div class="subject-card ok">
+            <div class="subject-name">INGLÉS</div>
+            <div class="subject-nota">6.8</div>
+            <div class="subject-bar-bg"><div class="subject-bar" style="width:93%;background:#2E7D32"></div></div>
+            <div class="subject-meta">Última nota: 7.0 · Prueba 12 Mar</div>
+          </div>
+          <div class="subject-card ok">
+            <div class="subject-name">ED. FÍSICA</div>
+            <div class="subject-nota">6.0</div>
+            <div class="subject-bar-bg"><div class="subject-bar" style="width:82%;background:#2E7D32"></div></div>
+            <div class="subject-meta">Última nota: 6.0 · Evaluación 10 Mar</div>
+          </div>
+          <div class="subject-card ok">
+            <div class="subject-name">ARTES</div>
+            <div class="subject-nota">5.5</div>
+            <div class="subject-bar-bg"><div class="subject-bar" style="width:74%;background:#2E7D32"></div></div>
+            <div class="subject-meta">Última nota: 5.8 · Proyecto 08 Mar</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: ASISTENCIA -->
+    <div class="page" id="page-asistencia">
+      <div class="section-header">
+        <div class="section-title">📅 Asistencia</div>
+      </div>
+
+      <!-- KPIs dinámicos según hijo -->
+      <div class="asistencia-kpi" id="asistencia-kpis">
+        <div class="kpi-card">
+          <div class="kpi-label">% Asistencia</div>
+          <div class="kpi-value" id="kpi-pct">88%</div>
+          <div class="kpi-sub">Marzo 2025</div>
+        </div>
+        <div class="kpi-card" style="border-left-color:#2E7D32">
+          <div class="kpi-label">Días Presentes</div>
+          <div class="kpi-value" id="kpi-pres" style="color:#2E7D32">18</div>
+          <div class="kpi-sub">De 22 días hábiles</div>
+        </div>
+        <div class="kpi-card" style="border-left-color:#C62828">
+          <div class="kpi-label">Ausencias</div>
+          <div class="kpi-value" id="kpi-aus" style="color:#C62828">4</div>
+          <div class="kpi-sub" id="kpi-aus-sub">2 justificadas · 2 sin justificar</div>
+        </div>
+        <div class="kpi-card" style="border-left-color:#F57F17">
+          <div class="kpi-label">Justificadas</div>
+          <div class="kpi-value" id="kpi-just" style="color:#F57F17">2</div>
+          <div class="kpi-sub">Este mes</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Calendar -->
+        <div class="card">
+          <div class="card-title">📆 Calendario de Asistencia — Marzo 2025</div>
+          <div class="calendar-grid">
+            <div class="cal-header">Lun</div>
+            <div class="cal-header">Mar</div>
+            <div class="cal-header">Mié</div>
+            <div class="cal-header">Jue</div>
+            <div class="cal-header">Vie</div>
+            <div class="cal-header">Sáb</div>
+            <div class="cal-header">Dom</div>
+
+            <div class="cal-day empty"></div>
+            <div class="cal-day empty"></div>
+            <div class="cal-day empty"></div>
+            <div class="cal-day empty"></div>
+            <div class="cal-day empty"></div>
+            <div class="cal-day empty" style="background:#F9F9F9;color:#ccc">1</div>
+            <div class="cal-day empty" style="background:#F9F9F9;color:#ccc">2</div>
+            <div class="cal-day P">3</div>
+            <div class="cal-day P">4</div>
+            <div class="cal-day P">5</div>
+            <div class="cal-day P">6</div>
+            <div class="cal-day P">7</div>
+            <div class="cal-day empty" style="background:#F9F9F9;color:#ccc">8</div>
+            <div class="cal-day empty" style="background:#F9F9F9;color:#ccc">9</div>
+            <div class="cal-day P">10</div>
+            <div class="cal-day P">11</div>
+            <div class="cal-day A">12</div>
+            <div class="cal-day P">13</div>
+            <div class="cal-day P">14</div>
+            <div class="cal-day empty" style="background:#F9F9F9;color:#ccc">15</div>
+            <div class="cal-day empty" style="background:#F9F9F9;color:#ccc">16</div>
+            <div class="cal-day P">17</div>
+            <div class="cal-day A">18</div>
+            <div class="cal-day J">19</div>
+            <div class="cal-day P">20</div>
+            <div class="cal-day P">21</div>
+            <div class="cal-day empty" style="background:#F9F9F9;color:#ccc">22</div>
+            <div class="cal-day empty" style="background:#F9F9F9;color:#ccc">23</div>
+            <div class="cal-day P">24</div>
+            <div class="cal-day P">25</div>
+            <div class="cal-day A">26</div>
+            <div class="cal-day J">27</div>
+            <div class="cal-day P">28</div>
+          </div>
+          <div class="cal-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#E8F5E9"></div>Presente (P)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#FFEBEE"></div>Ausente (A)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#FFF8E1"></div>Justificado (J)</div>
+          </div>
+        </div>
+
+        <!-- Justify form -->
+        <div class="card">
+          <div class="card-title">📝 Justificar Inasistencia</div>
+          <div class="form-group">
+            <label class="form-label">Pupilo</label>
+            <select class="form-select" id="justify-child">
+              <option>Pedro Ramírez — 3° Año B</option>
+              <option>María Herrera — 1° Año A</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha de Inasistencia</label>
+            <input type="date" class="form-input" value="2025-03-26">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Motivo</label>
+            <select class="form-select">
+              <option>Enfermedad</option>
+              <option>Urgencia familiar</option>
+              <option>Cita médica</option>
+              <option>Otro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Descripción</label>
+            <textarea class="form-textarea" placeholder="Describa brevemente el motivo de la inasistencia..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Documento adjunto (opcional)</label>
+            <input type="text" class="form-input" placeholder="Certificado médico, orden médica...">
+          </div>
+          <button class="btn btn-primary" onclick="showToast('✅ Justificación enviada al colegio')">
+            Enviar Justificación
+          </button>
+        </div>
+      </div>
+
+      <!-- Registro de ausencias -->
+      <div class="card">
+        <div class="card-title">📋 Registro de Inasistencias — <span id="reg-child-name">Pedro Ramírez</span></div>
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Día</th>
+              <th>Estado</th>
+              <th>Motivo</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="absence-table">
+            <tr>
+              <td>12 Mar 2025</td>
+              <td>Miércoles</td>
+              <td><span class="status-badge A">Ausente</span></td>
+              <td style="color:#888">Sin justificar</td>
+              <td><button class="btn btn-outline btn-sm" onclick="showToast('📝 Formulario de justificación abierto')">Justificar</button></td>
+            </tr>
+            <tr>
+              <td>18 Mar 2025</td>
+              <td>Martes</td>
+              <td><span class="status-badge A">Ausente</span></td>
+              <td style="color:#888">Sin justificar</td>
+              <td><button class="btn btn-outline btn-sm" onclick="showToast('📝 Formulario de justificación abierto')">Justificar</button></td>
+            </tr>
+            <tr>
+              <td>19 Mar 2025</td>
+              <td>Miércoles</td>
+              <td><span class="status-badge J">Justificado</span></td>
+              <td>Cita médica</td>
+              <td><span style="font-size:11px;color:#aaa">Aprobado</span></td>
+            </tr>
+            <tr>
+              <td>27 Mar 2025</td>
+              <td>Jueves</td>
+              <td><span class="status-badge J">Justificado</span></td>
+              <td>Urgencia familiar</td>
+              <td><span style="font-size:11px;color:#aaa">Pendiente</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PAGE: MENSAJES -->
+    <div class="page" id="page-mensajes">
+      <div class="section-header">
+        <div class="section-title">✉️ Mensajes</div>
+        <button class="btn btn-primary" onclick="toggleCompose()">+ Nuevo Mensaje</button>
+      </div>
+
+      <!-- Compose panel -->
+      <div class="compose-panel" id="compose-panel" style="margin-bottom:20px;display:none">
+        <div class="compose-title">✏️ Redactar Mensaje</div>
+        <div class="grid-2" style="gap:14px;margin-bottom:10px">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Para (Profesor)</label>
+            <select class="form-select">
+              <option>Prof. González — Inglés (3°B)</option>
+              <option>Prof. Martínez — Matemáticas (3°B)</option>
+              <option>Prof. Torres — Castellano (1°A)</option>
+              <option>Dirección del Colegio</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Referente a</label>
+            <select class="form-select">
+              <option>Pedro Ramírez — 3°B</option>
+              <option>María Herrera — 1°A</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Asunto</label>
+          <input type="text" class="form-input" placeholder="Asunto del mensaje...">
+        </div>
+        <div class="form-group">
+          <textarea class="form-textarea" style="height:100px" placeholder="Escriba su mensaje aquí..."></textarea>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" onclick="showToast('✅ Mensaje enviado al profesor');toggleCompose()">Enviar Mensaje</button>
+          <button class="btn btn-outline" onclick="toggleCompose()">Cancelar</button>
+        </div>
+      </div>
+
+      <div class="msg-layout">
+        <!-- Message list -->
+        <div>
+          <div class="msg-tabs">
+            <button class="msg-tab active" onclick="setMsgTab(this,'recibidos')">Recibidos</button>
+            <button class="msg-tab" onclick="setMsgTab(this,'enviados')">Enviados</button>
+            <button class="msg-tab" onclick="setMsgTab(this,'circulares')">Circulares</button>
+          </div>
+
+          <div class="msg-list" id="msg-recibidos">
+            <div class="msg-item unread selected" onclick="selectMsg(this, 'msg1')">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div class="msg-sender"><span class="unread-dot"></span>Prof. González</div>
+                <div class="msg-date">Hoy 09:10</div>
+              </div>
+              <div class="msg-subject">Re: Situación de Pedro en Inglés</div>
+            </div>
+            <div class="msg-item unread" onclick="selectMsg(this, 'msg2')">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div class="msg-sender"><span class="unread-dot"></span>Dirección</div>
+                <div class="msg-date">Ayer 14:20</div>
+              </div>
+              <div class="msg-subject">Reunión de Apoderados - 28 Mar</div>
+            </div>
+            <div class="msg-item unread" onclick="selectMsg(this, 'msg3')">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div class="msg-sender"><span class="unread-dot"></span>Prof. Torres</div>
+                <div class="msg-date">Lunes 11:45</div>
+              </div>
+              <div class="msg-subject">Avance de María en Castellano</div>
+            </div>
+            <div class="msg-item" onclick="selectMsg(this, 'msg4')">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div class="msg-sender">Prof. Martínez</div>
+                <div class="msg-date">Viernes</div>
+              </div>
+              <div class="msg-subject">Recordatorio: Prueba de Matemáticas</div>
+            </div>
+          </div>
+
+          <div class="msg-list" id="msg-enviados" style="display:none">
+            <div class="msg-item" onclick="selectMsg(this,'env1')">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div class="msg-sender">→ Prof. González</div>
+                <div class="msg-date">Ayer 10:00</div>
+              </div>
+              <div class="msg-subject">Consulta sobre nota de Pedro</div>
+            </div>
+          </div>
+
+          <div class="msg-list" id="msg-circulares" style="display:none">
+            <div class="msg-item" onclick="selectMsg(this,'cir1')">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div class="msg-sender">📢 Colegio San Marcos</div>
+                <div class="msg-date">22 Mar</div>
+              </div>
+              <div class="msg-subject">Circular N°4 – Acto 18 de Abril</div>
+            </div>
+            <div class="msg-item" onclick="selectMsg(this,'cir2')">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div class="msg-sender">📢 Inspectoría</div>
+                <div class="msg-date">15 Mar</div>
+              </div>
+              <div class="msg-subject">Normas de Convivencia 2025</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Message detail -->
+        <div class="msg-detail" id="msg-detail">
+          <div class="msg-detail-header">
+            <div class="msg-detail-subject">Re: Situación de Pedro en Inglés</div>
+            <div class="msg-detail-meta">De: Prof. González · Para: Carmen Ramírez · Hoy 09:10</div>
+          </div>
+          <div class="msg-detail-body" id="msg-body">
+            Estimada Sra. Carmen Ramírez,<br><br>
+            Le escribo para informarle sobre el rendimiento de Pedro en la asignatura de Inglés. Actualmente su promedio es de 3.8, lo cual está por debajo del mínimo de aprobación (4.0).<br><br>
+            He notado que Pedro tiene dificultades con la comprensión lectora en inglés. Le recomendaría reforzar en casa con lecturas cortas y ejercicios de vocabulario básico.<br><br>
+            Si desea conversar personalmente, le propongo una reunión el jueves 27 de marzo a las 16:00 hrs en la sala de profesores.<br><br>
+            Quedo atento a su respuesta.<br>
+            <strong>Prof. Ricardo González</strong><br>
+            Profesor de Inglés – 3° Año B
+          </div>
+          <div style="margin-top:16px;display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="toggleCompose();showToast('✏️ Respondiendo mensaje...')">Responder</button>
+            <button class="btn btn-outline btn-sm" onclick="showToast('📋 Mensaje marcado como leído')">Marcar como leído</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: DOCUMENTOS -->
+    <div class="page" id="page-documentos">
+      <div class="section-header">
+        <div class="section-title">📁 Documentos</div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Circulares -->
+        <div class="card">
+          <div class="card-title">📢 Circulares del Colegio</div>
+          <div class="doc-list">
+            <div class="doc-item">
+              <div class="doc-icon pdf">📄</div>
+              <div>
+                <div class="doc-name">Circular N°4 – Acto 18 de Abril <span class="new-tag">NUEVA</span></div>
+                <div class="doc-meta">Colegio San Marcos · PDF · 245 KB</div>
+              </div>
+              <div class="doc-date">22 Mar</div>
+            </div>
+            <div class="doc-item">
+              <div class="doc-icon pdf">📄</div>
+              <div>
+                <div class="doc-name">Normas de Convivencia 2025 <span class="new-tag">NUEVA</span></div>
+                <div class="doc-meta">Inspectoría · PDF · 1.2 MB</div>
+              </div>
+              <div class="doc-date">15 Mar</div>
+            </div>
+            <div class="doc-item">
+              <div class="doc-icon pdf">📄</div>
+              <div>
+                <div class="doc-name">Circular N°3 – Vacaciones de Invierno</div>
+                <div class="doc-meta">Dirección · PDF · 180 KB</div>
+              </div>
+              <div class="doc-date">08 Mar</div>
+            </div>
+            <div class="doc-item">
+              <div class="doc-icon pdf">📄</div>
+              <div>
+                <div class="doc-name">Calendario Escolar 2025</div>
+                <div class="doc-meta">Secretaría · PDF · 320 KB</div>
+              </div>
+              <div class="doc-date">03 Mar</div>
+            </div>
+            <div class="doc-item">
+              <div class="doc-icon pdf">📄</div>
+              <div>
+                <div class="doc-name">Reglamento de Evaluación 2025</div>
+                <div class="doc-meta">UTP · PDF · 680 KB</div>
+              </div>
+              <div class="doc-date">28 Feb</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Documents per child -->
+        <div class="card">
+          <div class="card-title">📎 Documentos por Pupilo</div>
+          <div style="display:flex;gap:8px;margin-bottom:14px">
+            <button class="child-toggle-btn active-pedro" id="doc-pedro" onclick="toggleDocChild('pedro',this)">
+              Pedro R.
+            </button>
+            <button class="child-toggle-btn" id="doc-maria" onclick="toggleDocChild('maria',this)">
+              María H.
+            </button>
+          </div>
+
+          <div id="docs-pedro">
+            <div class="doc-list">
+              <div class="doc-item">
+                <div class="doc-icon pdf">📄</div>
+                <div>
+                  <div class="doc-name">Boletín de Notas – Feb 2025</div>
+                  <div class="doc-meta">UTP · PDF · 410 KB</div>
+                </div>
+                <div class="doc-date">28 Feb</div>
+              </div>
+              <div class="doc-item">
+                <div class="doc-icon img">🖼️</div>
+                <div>
+                  <div class="doc-name">Certificado Médico – 19 Mar</div>
+                  <div class="doc-meta">Dr. Alvarez · JPG · 890 KB</div>
+                </div>
+                <div class="doc-date">19 Mar</div>
+              </div>
+              <div class="doc-item">
+                <div class="doc-icon pdf">📄</div>
+                <div>
+                  <div class="doc-name">Certificado de Matrícula 2025</div>
+                  <div class="doc-meta">Secretaría · PDF · 215 KB</div>
+                </div>
+                <div class="doc-date">15 Ene</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="docs-maria" style="display:none">
+            <div class="doc-list">
+              <div class="doc-item">
+                <div class="doc-icon pdf">📄</div>
+                <div>
+                  <div class="doc-name">Boletín de Notas – Feb 2025</div>
+                  <div class="doc-meta">UTP · PDF · 390 KB</div>
+                </div>
+                <div class="doc-date">28 Feb</div>
+              </div>
+              <div class="doc-item">
+                <div class="doc-icon pdf">📄</div>
+                <div>
+                  <div class="doc-name">Certificado de Matrícula 2025</div>
+                  <div class="doc-meta">Secretaría · PDF · 215 KB</div>
+                </div>
+                <div class="doc-date">15 Ene</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span id="toast-msg"></span>
+</div>
+
+<script>
+  let currentChild = 'pedro';
+
+  // Child data
+  const childData = {
+    pedro: {
+      name: 'Pedro Ramírez',
+      grade: '3°B',
+      color: '#1565C0',
+      dot: '#1565C0',
+      kpi: { pct: '88%', pres: '18', aus: '4', just: '2', ausSub: '2 justificadas · 2 sin justificar' }
+    },
+    maria: {
+      name: 'María Herrera',
+      grade: '1°A',
+      color: '#2E7D32',
+      dot: '#2E7D32',
+      kpi: { pct: '95%', pres: '21', aus: '1', just: '1', ausSub: '1 justificada · 0 sin justificar' }
+    }
+  };
+
+  function selectChild(child, el) {
+    currentChild = child;
+    const data = childData[child];
+
+    // Update sidebar buttons
+    document.querySelectorAll('.child-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+
+    // Update topbar
+    document.getElementById('child-dot').style.background = data.dot;
+    document.getElementById('child-tag-name').textContent = data.name + ' · ' + data.grade;
+
+    // Update asistencia KPIs
+    document.getElementById('kpi-pct').textContent = data.kpi.pct;
+    document.getElementById('kpi-pres').textContent = data.kpi.pres;
+    document.getElementById('kpi-aus').textContent = data.kpi.aus;
+    document.getElementById('kpi-just').textContent = data.kpi.just;
+    document.getElementById('kpi-aus-sub').textContent = data.kpi.ausSub;
+
+    // Update absence table name
+    document.getElementById('reg-child-name').textContent = data.name;
+
+    // Update justify form
+    document.getElementById('justify-child').value = child === 'pedro'
+      ? 'Pedro Ramírez — 3° Año B'
+      : 'María Herrera — 1° Año A';
+
+    // Sync notas toggle
+    if (child === 'pedro') {
+      document.getElementById('notas-pedro').style.display = '';
+      document.getElementById('notas-maria').style.display = 'none';
+      document.getElementById('toggle-pedro').className = 'child-toggle-btn active-pedro';
+      document.getElementById('toggle-maria').className = 'child-toggle-btn';
+    } else {
+      document.getElementById('notas-pedro').style.display = 'none';
+      document.getElementById('notas-maria').style.display = '';
+      document.getElementById('toggle-pedro').className = 'child-toggle-btn';
+      document.getElementById('toggle-maria').className = 'child-toggle-btn active-maria';
+    }
+
+    showToast('👤 Viendo datos de ' + data.name);
+  }
+
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+
+    const titles = {
+      resumen: 'Resumen Familiar',
+      notas: 'Notas y Rendimiento',
+      asistencia: 'Asistencia',
+      mensajes: 'Mensajes',
+      documentos: 'Documentos'
+    };
+    document.getElementById('page-title').textContent = titles[id] || id;
+
+    document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+    const navMap = {
+      resumen: 0, notas: 1, asistencia: 2, mensajes: 3, documentos: 4
+    };
+    const navLinks = document.querySelectorAll('nav a');
+    if (navMap[id] !== undefined) navLinks[navMap[id]].classList.add('active');
+  }
+
+  function toggleNotasChild(child, btn) {
+    currentChild = child;
+    if (child === 'pedro') {
+      document.getElementById('notas-pedro').style.display = '';
+      document.getElementById('notas-maria').style.display = 'none';
+      document.getElementById('toggle-pedro').className = 'child-toggle-btn active-pedro';
+      document.getElementById('toggle-maria').className = 'child-toggle-btn';
+      // sync sidebar
+      document.querySelectorAll('.child-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('btn-pedro').classList.add('active');
+      document.getElementById('child-dot').style.background = '#1565C0';
+      document.getElementById('child-tag-name').textContent = 'Pedro Ramírez · 3°B';
+    } else {
+      document.getElementById('notas-pedro').style.display = 'none';
+      document.getElementById('notas-maria').style.display = '';
+      document.getElementById('toggle-pedro').className = 'child-toggle-btn';
+      document.getElementById('toggle-maria').className = 'child-toggle-btn active-maria';
+      document.querySelectorAll('.child-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('btn-maria').classList.add('active');
+      document.getElementById('child-dot').style.background = '#2E7D32';
+      document.getElementById('child-tag-name').textContent = 'María Herrera · 1°A';
+    }
+  }
+
+  function setMsgTab(btn, tab) {
+    document.querySelectorAll('.msg-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    ['recibidos','enviados','circulares'].forEach(t => {
+      document.getElementById('msg-' + t).style.display = (t === tab) ? '' : 'none';
+    });
+  }
+
+  function selectMsg(el, msgId) {
+    document.querySelectorAll('.msg-item').forEach(m => m.classList.remove('selected'));
+    el.classList.add('selected');
+    // Could update detail panel here based on msgId
+  }
+
+  function toggleCompose() {
+    const panel = document.getElementById('compose-panel');
+    panel.style.display = panel.style.display === 'none' ? '' : 'none';
+  }
+
+  function toggleDocChild(child, btn) {
+    document.getElementById('docs-pedro').style.display = child === 'pedro' ? '' : 'none';
+    document.getElementById('docs-maria').style.display = child === 'maria' ? '' : 'none';
+    document.getElementById('doc-pedro').className = 'child-toggle-btn' + (child === 'pedro' ? ' active-pedro' : '');
+    document.getElementById('doc-maria').className = 'child-toggle-btn' + (child === 'maria' ? ' active-maria' : '');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+</script>
+</body>
+</html>
