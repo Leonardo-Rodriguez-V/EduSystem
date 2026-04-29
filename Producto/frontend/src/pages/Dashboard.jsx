@@ -37,6 +37,30 @@ const s = {
   badge:      (bg, color) => ({ display: 'inline-flex', padding: '6px 14px', borderRadius: '14px', fontSize: '11px', fontWeight: 800, background: bg, color, boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)' }),
 };
 
+// Función auxiliar para ordenamiento lógico de cursos
+const ordenarCursos = (lista) => {
+  if (!Array.isArray(lista)) return [];
+  return [...lista].sort((a, b) => {
+    const getLetter = (name) => {
+      const n = (name || '').trim().toUpperCase();
+      if (n.endsWith(' B')) return 'B';
+      return 'A'; // Por defecto sección A
+    };
+    const getLevelWeight = (name) => {
+      const n = (name || '').toLowerCase();
+      if (n.includes('pre-kínder') || n.includes('nt1')) return 1;
+      if (n.includes('kínder') || n.includes('nt2')) return 2;
+      if (n.includes('básico')) return 10 + (parseInt(n) || 0);
+      if (n.includes('medio'))  return 30 + (parseInt(n) || 0);
+      return 99;
+    };
+    const letterA = getLetter(a.nombre || a.nombreCompleto);
+    const letterB = getLetter(b.nombre || b.nombreCompleto);
+    if (letterA !== letterB) return letterA.localeCompare(letterB);
+    return getLevelWeight(a.nombre || a.nombreCompleto) - getLevelWeight(b.nombre || b.nombreCompleto);
+  });
+};
+
 export default function Dashboard() {
   const [cursos, setCursos]   = useState([]);
   const [alumnos, setAlumnos] = useState([]);
@@ -55,15 +79,15 @@ export default function Dashboard() {
       : '/cursos';
 
     apiFetch(fetchCursos).then(r => r?.json()).catch(() => []).then(async (c) => {
-      const cursosData = Array.isArray(c) ? c : [];
-      setCursos(cursosData);
+      const sortedData = ordenarCursos(c);
+      setCursos(sortedData);
 
       if (usuario.rol === 'director') {
         const a = await apiFetch('/alumnos').then(r => r?.json()).catch(() => []);
         setAlumnos(Array.isArray(a) ? a : []);
-      } else if (usuario.rol === 'profesor' && cursosData.length > 0) {
+      } else if (usuario.rol === 'profesor' && sortedData.length > 0) {
         const resultados = await Promise.all(
-          cursosData.map(curso =>
+          sortedData.map(curso =>
             apiFetch(`/alumnos?id_curso=${curso.id}`).then(r => r?.json()).catch(() => [])
           )
         );
@@ -101,7 +125,16 @@ function DashboardDirector({ usuario, cursos, totalAlumnos, cargando }) {
 
   const cargarAsistencia = (mes, anio) => {
     apiFetch(`/asistencia/resumen-cursos?mes=${mes}&anio=${anio}`).then(r => r?.json()).then(d => {
-      if (Array.isArray(d)) setStatsAsist(d.map(c => ({ nombre: c.nombre.length > 8 ? c.nombre.slice(0, 8) + '…' : c.nombre, porcentaje: c.porcentaje, nombreCompleto: c.nombre, presentes: c.presentes, total: c.total })));
+      if (Array.isArray(d)) {
+        const sorted = ordenarCursos(d.map(c => ({ ...c, nombreCompleto: c.nombre })));
+        setStatsAsist(sorted.map(c => ({
+          nombre: c.nombre.length > 8 ? c.nombre.slice(0, 8) + '…' : c.nombre,
+          porcentaje: c.porcentaje,
+          nombreCompleto: c.nombre,
+          presentes: c.presentes,
+          total: c.total
+        })));
+      }
     }).catch(() => {});
   };
 
@@ -113,14 +146,17 @@ function DashboardDirector({ usuario, cursos, totalAlumnos, cargando }) {
     cargarAsistencia(filtroMes, filtroAnio);
 
     apiFetch('/notas/promedio-cursos').then(r => r?.json()).then(d => {
-      if (Array.isArray(d)) setStatsNotas(d.map(c => ({
-        nombre: c.nombre.length > 8 ? c.nombre.slice(0, 8) + '…' : c.nombre,
-        promedio: c.promedio ? parseFloat(c.promedio) : null,
-        aprobados: c.aprobados || 0,
-        reprobados: c.reprobados || 0,
-        total_notas: c.total_notas,
-        nombreCompleto: c.nombre,
-      })));
+      if (Array.isArray(d)) {
+        const sorted = ordenarCursos(d.map(c => ({ ...c, nombreCompleto: c.nombre })));
+        setStatsNotas(sorted.map(c => ({
+          nombre: c.nombre.length > 8 ? c.nombre.slice(0, 8) + '…' : c.nombre,
+          promedio: c.promedio ? parseFloat(c.promedio) : null,
+          aprobados: c.aprobados || 0,
+          reprobados: c.reprobados || 0,
+          total_notas: c.total_notas,
+          nombreCompleto: c.nombre,
+        })));
+      }
     }).catch(() => {});
   }, []);
 

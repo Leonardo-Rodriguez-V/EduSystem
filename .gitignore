@@ -6,3 +6,15 @@ Producto/backend/node_modules/
 Producto/backend/.env
 Producto/frontend/node_modules/
 Producto/frontend/dist/
+
+# Herramientas internas Claude
+.agents/
+.claude/
+
+# Directorios externos / no del proyecto
+antigravity-awesome-skills-main/
+claude-code-workflows-main/
+
+# Archivos temporales y reportes
+load_report.txt
+*.js旋
