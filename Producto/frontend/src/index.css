@@ -145,12 +145,12 @@ h1, h2, h3, h4 {
 /* ─── Landing Page Utilities ──────────────────────────────── */
 
 .landing-glass-card {
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-radius: 20px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
 
 .landing-section {
@@ -192,6 +192,57 @@ h1, h2, h3, h4 {
 .landing-btn-outline:hover {
   border-color: rgba(255, 255, 255, 0.7);
   background: rgba(255, 255, 255, 0.05);
+}
+
+/* ─── Orbes flotantes (CSS puro, más performante) ──────── */
+.orbe {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  z-index: 0;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.orbe-1 {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, #4f46e5, #302b63);
+  top: 5%; left: 5%;
+  animation: flotar 10s infinite ease-in-out;
+}
+
+.orbe-2 {
+  width: 420px; height: 420px;
+  background: radial-gradient(circle, #818cf8, #1e1b4b);
+  top: 35%; right: -5%;
+  animation: flotar 13s infinite ease-in-out reverse;
+}
+
+.orbe-3 {
+  width: 350px; height: 350px;
+  background: radial-gradient(circle, rgba(234,88,12,0.7), transparent);
+  top: 60%; left: 30%;
+  animation: flotar 9s infinite ease-in-out 2s;
+}
+
+.orbe-4 {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, #4f46e5, #0f0c29);
+  top: 78%; left: -8%;
+  animation: flotar 11s infinite ease-in-out 1s;
+}
+
+.orbe-5 {
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, #818cf8, transparent);
+  top: 85%; right: 8%;
+  animation: flotar 8s infinite ease-in-out 3s;
+}
+
+@keyframes flotar {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(30px, -50px) scale(1.1); }
+  100% { transform: translate(0, 0) scale(1); }
 }
 
 /* Responsive Navbar */
