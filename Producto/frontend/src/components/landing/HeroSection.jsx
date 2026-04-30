@@ -2,12 +2,6 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 
-const ORBS = [
-  { w: 520, h: 520, top: '-12%', left: '-8%',   color: 'rgba(79,70,229,0.28)',  delay: 0   },
-  { w: 420, h: 420, top: '58%',  right: '-6%',   color: 'rgba(129,140,248,0.2)', delay: 1.5 },
-  { w: 320, h: 320, top: '28%',  left: '42%',    color: 'rgba(234,88,12,0.10)',  delay: 3   },
-];
-
 function DashboardMockup() {
   return (
     <div style={{ padding: 16 }}>
@@ -77,26 +71,10 @@ export default function HeroSection() {
   return (
     <section id="inicio" style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, var(--color-bg-deep) 0%, var(--color-bg-mid) 55%, var(--color-bg-end) 100%)',
+      background: 'transparent',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: '100px 32px 80px',
-      position: 'relative', overflow: 'hidden',
     }}>
-
-      {/* Orbes animados */}
-      {ORBS.map((orb, i) => (
-        <motion.div key={i}
-          animate={{ scale: [1, 1.12, 1], opacity: [0.7, 1, 0.7] }}
-          transition={{ duration: 6, repeat: Infinity, delay: orb.delay, ease: 'easeInOut' }}
-          style={{
-            position: 'absolute',
-            width: orb.w, height: orb.h, borderRadius: '50%',
-            background: `radial-gradient(circle, ${orb.color}, transparent 70%)`,
-            top: orb.top, left: orb.left, right: orb.right,
-            filter: 'blur(42px)', pointerEvents: 'none',
-          }}
-        />
-      ))}
 
       {/* Contenido */}
       <div style={{

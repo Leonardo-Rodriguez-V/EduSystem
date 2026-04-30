@@ -10,10 +10,7 @@ const FEATURES = [
 
 export default function FeaturesSection() {
   return (
-    <section id="features" style={{
-      background: 'linear-gradient(180deg, var(--color-bg-end) 0%, #1a1a3e 100%)',
-      padding: '90px 32px',
-    }}>
+    <section id="features" style={{ background: 'transparent', padding: '90px 32px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
         {/* Encabezado */}

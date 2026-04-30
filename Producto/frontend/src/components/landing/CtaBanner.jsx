@@ -6,7 +6,7 @@ export default function CtaBanner() {
   const navigate = useNavigate();
 
   return (
-    <section style={{ background: '#1a1a3e', padding: '0 32px 80px' }}>
+    <section style={{ background: 'transparent', padding: '0 32px 80px' }}>
       <motion.div
         className="landing-glass-card"
         initial={{ opacity: 0, y: 24 }}

@@ -27,7 +27,7 @@ const ROLES = [
 
 export default function RolesSection() {
   return (
-    <section id="roles" style={{ background: '#1a1a3e', padding: '90px 32px' }}>
+    <section id="roles" style={{ background: 'transparent', padding: '90px 32px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
         {/* Encabezado */}
