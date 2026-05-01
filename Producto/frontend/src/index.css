@@ -1,5 +1,7 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Crimson+Pro:wght@400;600;700&display=swap');
+/* Fuentes cargadas en index.html via <link> para compatibilidad con PostCSS */
+
+
 
 :root {
   --color-primary: #4f46e5;
@@ -142,16 +144,162 @@ h1, h2, h3, h4 {
   transition: all 0.5s ease;
 }
 
-/* ─── Landing Page Utilities ──────────────────────────────── */
-
-.landing-glass-card {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+/* ─── Landing: Fondo fijo ──────────────────────────────────── */
+.landing-root {
+  background: linear-gradient(135deg, #0f0c29 0%, #302b63 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  color: #ffffff;
 }
+
+/* ─── Glass Premium (Lovable) ──────────────────────────────── */
+.glass {
+  position: relative;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0.08) 100%);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 20px;
+  box-shadow:
+    0 8px 32px 0 rgba(0,0,0,0.35),
+    inset 0 1px 0 0 rgba(255,255,255,0.25),
+    inset 0 -1px 0 0 rgba(255,255,255,0.05);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+  overflow: hidden;
+}
+
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, transparent 40%);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.glass > * { position: relative; z-index: 1; }
+
+.glass:hover {
+  border-color: rgba(255,255,255,0.35);
+  box-shadow:
+    0 12px 48px 0 rgba(79,70,229,0.35),
+    inset 0 1px 0 0 rgba(255,255,255,0.35),
+    inset 0 -1px 0 0 rgba(255,255,255,0.05);
+  transform: translateY(-2px);
+}
+
+/* ─── Texto translúcido ────────────────────────────────────── */
+.text-translucent { color: rgba(255,255,255,0.7); }
+
+/* ─── Botones landing ──────────────────────────────────────── */
+.btn-primary {
+  background: #4f46e5;
+  color: #ffffff;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(79,70,229,0.4);
+  font-family: inherit;
+}
+.btn-primary:hover {
+  background: #6366f1;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(79,70,229,0.6);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: #ffffff;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 700;
+  border: 1px solid rgba(255,255,255,0.4);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+.btn-ghost:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.8);
+}
+
+/* ─── Orb glow de fondo ────────────────────────────────────── */
+.orb-glow {
+  position: absolute;
+  border-radius: 50%;
+  background: #4f46e5;
+  filter: blur(90px);
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* ─── Burbujas 3D (efecto vidrio real) ─────────────────────── */
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.15) 12%, transparent 30%),
+    radial-gradient(circle at 70% 80%, rgba(168,85,247,0.5) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(79,70,229,0.85) 0%, rgba(49,46,129,0.7) 60%, rgba(15,12,41,0.9) 100%);
+  box-shadow:
+    inset 0 0 40px rgba(139,92,246,0.5),
+    inset -10px -20px 50px rgba(15,12,41,0.6),
+    0 10px 40px rgba(79,70,229,0.4),
+    0 0 60px rgba(139,92,246,0.25);
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+/* ─── Animaciones float (4 trayectorias distintas) ─────────── */
+@keyframes float-1 {
+  0%   { transform: translate(0,0) scale(1); }
+  25%  { transform: translate(80px,-40px) scale(1.08); }
+  50%  { transform: translate(120px,-100px) scale(1.15); }
+  75%  { transform: translate(40px,-60px) scale(1.05); }
+  100% { transform: translate(0,0) scale(1); }
+}
+@keyframes float-2 {
+  0%   { transform: translate(0,0) scale(1); }
+  25%  { transform: translate(-60px,70px) scale(1.1); }
+  50%  { transform: translate(-110px,30px) scale(1.18); }
+  75%  { transform: translate(-40px,-50px) scale(1.05); }
+  100% { transform: translate(0,0) scale(1); }
+}
+@keyframes float-3 {
+  0%   { transform: translate(0,0) scale(1); }
+  25%  { transform: translate(50px,60px) scale(0.95); }
+  50%  { transform: translate(-30px,110px) scale(1.1); }
+  75%  { transform: translate(-70px,40px) scale(1.05); }
+  100% { transform: translate(0,0) scale(1); }
+}
+@keyframes float-4 {
+  0%   { transform: translate(0,0) scale(1); }
+  33%  { transform: translate(-50px,-70px) scale(1.1); }
+  66%  { transform: translate(70px,-40px) scale(0.95); }
+  100% { transform: translate(0,0) scale(1); }
+}
+@keyframes float-mockup {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-16px); }
+}
+
+.animate-float-1 { animation: float-1 22s ease-in-out infinite; }
+.animate-float-2 { animation: float-2 26s ease-in-out infinite; }
+.animate-float-3 { animation: float-3 24s ease-in-out infinite; }
+.animate-float-4 { animation: float-4 28s ease-in-out infinite; }
+.animate-float-mockup { animation: float-mockup 6s ease-in-out infinite; }
+
+/* Responsive Navbar */
+@media (max-width: 768px) {
+  .nav-desktop { display: none !important; }
+  .nav-mobile-btn { display: flex !important; }
+}
+
 
 .landing-section {
   padding: 80px 32px;
@@ -199,7 +347,7 @@ h1, h2, h3, h4 {
   position: absolute;
   border-radius: 50%;
   filter: blur(60px);
-  z-index: 0;
+  z-index: -1;
   opacity: 0.6;
   pointer-events: none;
 }

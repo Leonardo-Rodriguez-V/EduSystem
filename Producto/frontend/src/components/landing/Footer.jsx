@@ -1,55 +1,29 @@
 import { GraduationCap } from 'lucide-react';
 
-const LINKS = ['Inicio', 'Características', 'Roles', 'Contacto'];
-const HREFS = { 'Inicio': '#inicio', 'Características': '#features', 'Roles': '#roles', 'Contacto': '#contacto' };
-
 export default function Footer() {
   return (
-    <footer id="contacto" style={{
-      background: 'linear-gradient(180deg, #1a1a3e 0%, var(--color-bg-deep) 100%)',
-      borderTop: '1px solid rgba(255,255,255,0.07)',
-      padding: '36px 32px',
-    }}>
+    <footer style={{ position: 'relative', padding: '40px 24px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
       <div style={{
-        maxWidth: 1200, margin: '0 auto',
-        display: 'flex', justifyContent: 'space-between',
-        alignItems: 'center', flexWrap: 'wrap', gap: 24,
+        margin: '0 auto', maxWidth: 1200,
+        display: 'flex', flexWrap: 'wrap',
+        alignItems: 'center', justifyContent: 'space-between', gap: 24,
+        fontSize: 14,
       }}>
-
-        {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div className="aura-orb" style={{
-            width: 34, height: 34, borderRadius: 10,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}>
-            <GraduationCap size={18} color="white" />
-          </div>
-          <span style={{ color: '#fff', fontWeight: 800, fontSize: 17, letterSpacing: '-0.3px' }}>
-            EduSystem
+        <a href="#inicio" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', color: '#fff', fontWeight: 700, fontSize: 18 }}>
+          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 8, background: '#4f46e5' }}>
+            <GraduationCap size={16} color="white" />
           </span>
-        </div>
-
-        {/* Links de navegación */}
-        <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap' }}>
-          {LINKS.map((label) => (
-            <a
-              key={label}
-              href={HREFS[label]}
-              style={{
-                color: 'rgba(255,255,255,0.4)', fontSize: 13,
-                textDecoration: 'none', transition: 'color 0.2s',
-              }}
+          EduSystem
+        </a>
+        <p className="text-translucent">© {new Date().getFullYear()} EduSystem. Todos los derechos reservados.</p>
+        <div style={{ display: 'flex', gap: 24 }}>
+          {['Privacidad', 'Términos', 'Contacto'].map((l) => (
+            <a key={l} href="#" className="text-translucent" style={{ textDecoration: 'none', transition: 'color 0.2s' }}
               onMouseEnter={e => e.target.style.color = '#fff'}
-              onMouseLeave={e => e.target.style.color = 'rgba(255,255,255,0.4)'}
-            >
-              {label}
+              onMouseLeave={e => e.target.style.color = ''}>
+              {l}
             </a>
           ))}
-        </div>
-
-        {/* Copyright */}
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.28)', fontWeight: 500 }}>
-          © {new Date().getFullYear()} EduSystem · Sistema de Gestión Escolar
         </div>
       </div>
     </footer>
