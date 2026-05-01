@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { GraduationCap, CheckSquare, Info, X } from 'lucide-react';
 import {
   LayoutDashboard,
   Users,
@@ -121,8 +122,7 @@ export default function Layout({ children }) {
   const navItems = NAV_ITEMS[usuario?.rol] || [];
   const tituloPagina = TITULO_POR_RUTA[location.pathname] || 'EduSync';
 
-  // AI-OS Aura Logic
-  const { notifications, hasNew, clearNew } = useNotifications();
+  const { notifications, toasts, hasNew, clearNew, dismissToast } = useNotifications();
   const { 
     isOpen: auraOpen, 
     toggleAura, 
@@ -168,12 +168,15 @@ export default function Layout({ children }) {
         transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
       }}>
 
-        <Topbar 
+        <Topbar
           sidebarAbierto={sidebarAbierto}
           setSidebarAbierto={setSidebarAbierto}
           tema={tema}
           toggleTema={toggleTema}
           tituloPagina={tituloPagina}
+          notifications={notifications}
+          hasNew={hasNew}
+          clearNew={clearNew}
         />
 
         <main style={{ padding: '0 32px 32px' }}>
@@ -202,13 +205,59 @@ export default function Layout({ children }) {
       </div>
 
       <AuraOrb onClick={handleToggleAura} hasNotification={hasNew} />
-      <AuraPanel 
-        isOpen={auraOpen} 
-        onClose={toggleAura} 
+      <AuraPanel
+        isOpen={auraOpen}
+        onClose={toggleAura}
         messages={auraMessages}
         sendMessage={sendAuraMessage}
         typing={isAuraTyping}
       />
+
+      {/* Toasts de notificaciones en tiempo real */}
+      <div style={{ position: 'fixed', bottom: '24px', left: '24px', zIndex: 1000, display: 'flex', flexDirection: 'column-reverse', gap: '10px' }}>
+        <AnimatePresence>
+          {toasts.map(toast => {
+            const tipo = toast.type === 'grade'
+              ? { icon: GraduationCap, color: '#6366f1', bg: 'rgba(99,102,241,0.12)', border: 'rgba(99,102,241,0.3)' }
+              : toast.type === 'attendance'
+              ? { icon: CheckSquare,   color: '#10b981', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)' }
+              : { icon: Info,          color: '#0ea5e9', bg: 'rgba(14,165,233,0.12)', border: 'rgba(14,165,233,0.3)' };
+            const Icono = tipo.icon;
+            return (
+              <motion.div
+                key={toast.id}
+                initial={{ opacity: 0, x: -40, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: -40, scale: 0.95 }}
+                transition={{ duration: 0.25 }}
+                style={{
+                  background: 'var(--color-surface)',
+                  border: `1px solid ${tipo.border}`,
+                  borderLeft: `4px solid ${tipo.color}`,
+                  borderRadius: '16px',
+                  padding: '12px 16px',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.14)',
+                  display: 'flex', alignItems: 'flex-start', gap: '12px',
+                  maxWidth: '320px', minWidth: '260px',
+                }}
+              >
+                <div style={{ background: tipo.bg, borderRadius: '8px', padding: '7px', flexShrink: 0 }}>
+                  <Icono size={16} color={tipo.color} />
+                </div>
+                <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: 'var(--color-foreground)', flex: 1, lineHeight: 1.4 }}>
+                  {toast.mensaje}
+                </p>
+                <button
+                  onClick={() => dismissToast(toast.id)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', color: 'var(--color-foreground)', opacity: 0.4, flexShrink: 0 }}
+                >
+                  <X size={14} />
+                </button>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
