@@ -1,20 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const evaluacionController = require('../controllers/evaluacionController');
+const { verificarToken, verificarRol } = require('../middleware/auth');
 
-// GET /api/evaluaciones/pendientes?id_profesor=X — debe ir antes de /curso/:id_curso
-router.get('/pendientes', evaluacionController.obtenerEvaluacionesPendientes);
+// Consultas: cualquier usuario autenticado
+router.get('/pendientes',      verificarToken, evaluacionController.obtenerEvaluacionesPendientes);
+router.get('/curso/:id_curso', verificarToken, evaluacionController.obtenerEvaluacionesPorCurso);
 
-// GET /api/evaluaciones/curso/:id_curso
-router.get('/curso/:id_curso', evaluacionController.obtenerEvaluacionesPorCurso);
-
-// POST /api/evaluaciones
-router.post('/', evaluacionController.crearEvaluacion);
-
-// PUT /api/evaluaciones/:id
-router.put('/:id', evaluacionController.actualizarEvaluacion);
-
-// DELETE /api/evaluaciones/:id
-router.delete('/:id', evaluacionController.eliminarEvaluacion);
+// Escritura: solo director y profesor
+router.post('/',    verificarToken, verificarRol('director', 'profesor'), evaluacionController.crearEvaluacion);
+router.put('/:id',  verificarToken, verificarRol('director', 'profesor'), evaluacionController.actualizarEvaluacion);
+router.delete('/:id', verificarToken, verificarRol('director', 'profesor'), evaluacionController.eliminarEvaluacion);
 
 module.exports = router;

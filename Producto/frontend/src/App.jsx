@@ -9,7 +9,6 @@ import Notas from './pages/Notas';
 import MuroAvisos from './pages/MuroAvisos';
 import Horarios from './pages/Horarios';
 import Calendario from './pages/Calendario';
-import PortalApoderado from './pages/PortalApoderado';
 import NotasHijo from './pages/NotasHijo';
 import Alumnos from './pages/Alumnos';
 import Perfil from './pages/Perfil';
@@ -46,7 +45,7 @@ function App() {
         <Route path="/notas" element={
           <ProtectedRoute allowedRoles={['director', 'profesor', 'apoderado']}>
             <Layout>
-              {usuario?.rol === 'apoderado' ? <PortalApoderado /> : <Notas />}
+              {usuario?.rol === 'apoderado' ? <NotasHijo /> : <Notas />}
             </Layout>
           </ProtectedRoute>
         } />
@@ -105,8 +104,8 @@ function App() {
           </ProtectedRoute>
         } />
 
-        {/* Ruta raíz */}
-        <Route path="/" element={<LandingPage />} />
+        {/* Ruta raíz — redirige al dashboard si ya hay sesión */}
+        <Route path="/" element={usuario ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </Router>
