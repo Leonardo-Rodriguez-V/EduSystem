@@ -300,21 +300,44 @@ async function main() {
     console.log('   4° Medio      : 23 bloques (+ Taller JEC + Consejo de Curso)');
     console.log('   Viernes Media : salida 13:30 (solo B0-B2)\n');
 
-    let finalSchedule = null;
-    let attempts      = 0;
-    const MAX         = 5000;
+    const cursosA = cursos.filter(c => !c.nombre.endsWith(' B'));
+    const cursosB = cursos.filter(c => c.nombre.endsWith(' B'));
+    
+    let finalScheduleA = null;
+    let finalScheduleB = null;
+    const MAX = 10000;
 
-    while (attempts < MAX) {
-      attempts++;
-      finalSchedule = generateSchedule(cursos, asignaturas, asignaciones);
-      if (finalSchedule) {
-        console.log(`✅ Solución 100% limpia encontrada en el intento #${attempts}`);
+    console.log(`\nGenerando horario para Track A (${cursosA.length} cursos)...`);
+    let attemptsA = 0;
+    while (attemptsA < MAX) {
+      attemptsA++;
+      finalScheduleA = generateSchedule(cursosA, asignaturas, asignaciones);
+      if (finalScheduleA) {
+        console.log(`✅ Track A: Solución 100% limpia en el intento #${attemptsA}`);
         break;
       }
-      if (attempts % 500 === 0) console.log(`   ... intento ${attempts}/${MAX}`);
+      if (attemptsA % 500 === 0) console.log(`   ... intento A ${attemptsA}/${MAX}`);
     }
 
-    if (!finalSchedule) throw new Error(`Sin solución tras ${MAX} intentos. Revisa las asignaciones.`);
+    console.log(`\nGenerando horario para Track B (${cursosB.length} cursos)...`);
+    let attemptsB = 0;
+    if (cursosB.length > 0) {
+      while (attemptsB < MAX) {
+        attemptsB++;
+        finalScheduleB = generateSchedule(cursosB, asignaturas, asignaciones);
+        if (finalScheduleB) {
+          console.log(`✅ Track B: Solución 100% limpia en el intento #${attemptsB}`);
+          break;
+        }
+        if (attemptsB % 500 === 0) console.log(`   ... intento B ${attemptsB}/${MAX}`);
+      }
+    }
+
+    if (!finalScheduleA || (cursosB.length > 0 && !finalScheduleB)) {
+      throw new Error(`Sin solución. Track A intentos: ${attemptsA}, Track B intentos: ${attemptsB}`);
+    }
+
+    const finalSchedule = [...finalScheduleA, ...(finalScheduleB || [])];
 
     // Insertar horario final
     let insertados = 0;
@@ -333,7 +356,7 @@ async function main() {
     console.log(`\n📊 RESUMEN:`);
     console.log(`   Bloques insertados : ${insertados}`);
     console.log(`   Cursos procesados  : ${cursos.length}`);
-    console.log(`   Intentos usados    : ${attempts}`);
+    console.log(`   Intentos usados    : ${attemptsA + attemptsB}`);
     console.log(`\n💡 Para exportar a Word: npm run export:horario`);
 
   } catch (e) {

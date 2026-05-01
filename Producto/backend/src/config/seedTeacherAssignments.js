@@ -65,17 +65,17 @@ async function main() {
       'Comprensión del Entorno Sociocultural', 'Pensamiento Matemático',
     ];
     for (const s of parvSubjs) {
-      await assign('claudia.morales@edusync.cl', 'Pre-Kínder (NT1)', s);
-      await assign('patricia.vega@edusync.cl',   'Kínder (NT2)',     s);
+      await assign('claudia.morales@edusync.cl', 'Pre-Kínder (NT1) A', s);
+      await assign('patricia.vega@edusync.cl',   'Kínder (NT2) A',     s);
     }
 
     // ─── 1°–4° BÁSICO ──────────────────────────────────────────────────────────
     console.log('📚 1°–4° Básico...');
     const basicaMenorMap = {
-      '1° Básico': 'maria.gonzalez@edusync.cl',
-      '2° Básico': 'carmen.lopez@edusync.cl',
-      '3° Básico': 'rosa.martinez@edusync.cl',
-      '4° Básico': 'isabel.hernandez@edusync.cl',
+      '1° Básico A': 'maria.gonzalez@edusync.cl',
+      '2° Básico A': 'carmen.lopez@edusync.cl',
+      '3° Básico A': 'rosa.martinez@edusync.cl',
+      '4° Básico A': 'isabel.hernandez@edusync.cl',
     };
     const basicaMenorSubjs = [
       'Lenguaje y Comunicación', 'Matemática', 'Ciencias Naturales',
@@ -90,13 +90,13 @@ async function main() {
 
     // ─── 5°–8° BÁSICO ──────────────────────────────────────────────────────────
     console.log('📚 5°–8° Básico...');
-    const basicaMayorCursos = ['5° Básico', '6° Básico', '7° Básico', '8° Básico'];
+    const basicaMayorCursos = ['5° Básico A', '6° Básico A', '7° Básico A', '8° Básico A'];
 
     const jefesBasicaMayor = [
-      { correo: 'carlos.perez@edusync.cl',   asig: 'Matemática',                              jefeEn: '5° Básico' },
-      { correo: 'jorge.ramirez@edusync.cl',  asig: 'Lengua y Literatura',                     jefeEn: '6° Básico' },
-      { correo: 'luis.soto@edusync.cl',      asig: 'Historia, Geografía y Ciencias Sociales', jefeEn: '7° Básico' },
-      { correo: 'rodrigo.flores@edusync.cl', asig: 'Ciencias Naturales',                      jefeEn: '8° Básico' },
+      { correo: 'carlos.perez@edusync.cl',   asig: 'Matemática',                              jefeEn: '5° Básico A' },
+      { correo: 'jorge.ramirez@edusync.cl',  asig: 'Lengua y Literatura',                     jefeEn: '6° Básico A' },
+      { correo: 'luis.soto@edusync.cl',      asig: 'Historia, Geografía y Ciencias Sociales', jefeEn: '7° Básico A' },
+      { correo: 'rodrigo.flores@edusync.cl', asig: 'Ciencias Naturales',                      jefeEn: '8° Básico A' },
     ];
     for (const j of jefesBasicaMayor) {
       for (const c of basicaMayorCursos) {
@@ -121,24 +121,24 @@ async function main() {
 
     // ─── 1°–4° MEDIO ───────────────────────────────────────────────────────────
     console.log('📚 1°–4° Medio...');
-    const mediaCursos = ['1° Medio', '2° Medio', '3° Medio', '4° Medio'];
+    const mediaCursos = ['1° Medio A', '2° Medio A', '3° Medio A', '4° Medio A'];
 
     // Jefes de curso: cada uno enseña su asignatura principal en los 4 cursos de Media
     // Ana Gómez — jefe 1° Medio, Lengua y Literatura en todos los Medios
     for (const c of mediaCursos) await assign('ana@edusync.com', c, 'Lengua y Literatura');
-    await assign('ana@edusync.com', '1° Medio', 'Orientación');
-
+    await assign('ana@edusync.com', '1° Medio A', 'Orientación');
+ 
     // Verónica Naranjo — jefe 2° Medio, Artes Visuales en todos los Medios
     for (const c of mediaCursos) await assign('veronica.naranjo@edusync.cl', c, 'Artes Visuales');
-    await assign('veronica.naranjo@edusync.cl', '2° Medio', 'Orientación');
-
+    await assign('veronica.naranjo@edusync.cl', '2° Medio A', 'Orientación');
+ 
     // Pablo Silva — jefe 3° Medio, Matemática en todos los Medios
     for (const c of mediaCursos) await assign('pablo.silva@edusync.cl', c, 'Matemática');
-    await assign('pablo.silva@edusync.cl', '3° Medio', 'Orientación');
-
+    await assign('pablo.silva@edusync.cl', '3° Medio A', 'Orientación');
+ 
     // Diego Rojas — jefe 4° Medio, Historia en todos los Medios
     for (const c of mediaCursos) await assign('diego.rojas@edusync.cl', c, 'Historia, Geografía y Ciencias Sociales');
-    await assign('diego.rojas@edusync.cl', '4° Medio', 'Orientación');
+    await assign('diego.rojas@edusync.cl', '4° Medio A', 'Orientación');
 
     // Especialistas de Media (enseñan su asignatura en los 4 cursos)
     const espMedia = [
@@ -152,8 +152,8 @@ async function main() {
     for (const e of espMedia) {
       for (const c of mediaCursos) await assign(e.correo, c, e.asig);
     }
-    await assign('francisca.sepulveda@edusync.cl', '3° Medio', 'Educación Ciudadana');
-    await assign('francisca.sepulveda@edusync.cl', '4° Medio', 'Educación Ciudadana');
+    await assign('francisca.sepulveda@edusync.cl', '3° Medio A', 'Educación Ciudadana');
+    await assign('francisca.sepulveda@edusync.cl', '4° Medio A', 'Educación Ciudadana');
 
     await client.query('COMMIT');
     console.log(`\n✅ Asignaciones completadas: ${ok} insertados, ${skip} omitidos.`);

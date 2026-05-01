@@ -155,20 +155,20 @@ async function seedEscuela() {
 
     // ===== 3. INSERTAR CURSOS =====
     const cursosData = [
-      { nombre: 'Pre-Kínder (NT1)', prof: 'claudia.morales@edusync.cl' },
-      { nombre: 'Kínder (NT2)',     prof: 'patricia.vega@edusync.cl' },
-      { nombre: '1° Básico',        prof: 'maria.gonzalez@edusync.cl' },
-      { nombre: '2° Básico',        prof: 'carmen.lopez@edusync.cl' },
-      { nombre: '3° Básico',        prof: 'rosa.martinez@edusync.cl' },
-      { nombre: '4° Básico',        prof: 'isabel.hernandez@edusync.cl' },
-      { nombre: '5° Básico',        prof: 'carlos.perez@edusync.cl' },
-      { nombre: '6° Básico',        prof: 'jorge.ramirez@edusync.cl' },
-      { nombre: '7° Básico',        prof: 'luis.soto@edusync.cl' },
-      { nombre: '8° Básico',        prof: 'rodrigo.flores@edusync.cl' },
-      { nombre: '2° Medio',         prof: 'veronica.naranjo@edusync.cl' },
-      { nombre: '3° Medio',         prof: 'pablo.silva@edusync.cl' },
-      { nombre: '4° Medio',         prof: 'diego.rojas@edusync.cl' },
-      { nombre: '1° Medio',         prof: 'ana@edusync.com' },
+      { nombre: 'Pre-Kínder (NT1) A', prof: 'claudia.morales@edusync.cl' },
+      { nombre: 'Kínder (NT2) A',     prof: 'patricia.vega@edusync.cl' },
+      { nombre: '1° Básico A',        prof: 'maria.gonzalez@edusync.cl' },
+      { nombre: '2° Básico A',        prof: 'carmen.lopez@edusync.cl' },
+      { nombre: '3° Básico A',        prof: 'rosa.martinez@edusync.cl' },
+      { nombre: '4° Básico A',        prof: 'isabel.hernandez@edusync.cl' },
+      { nombre: '5° Básico A',        prof: 'carlos.perez@edusync.cl' },
+      { nombre: '6° Básico A',        prof: 'jorge.ramirez@edusync.cl' },
+      { nombre: '7° Básico A',        prof: 'luis.soto@edusync.cl' },
+      { nombre: '8° Básico A',        prof: 'rodrigo.flores@edusync.cl' },
+      { nombre: '2° Medio A',         prof: 'veronica.naranjo@edusync.cl' },
+      { nombre: '3° Medio A',         prof: 'pablo.silva@edusync.cl' },
+      { nombre: '4° Medio A',         prof: 'diego.rojas@edusync.cl' },
+      { nombre: '1° Medio A',         prof: 'ana@edusync.com' },
     ];
 
     const courseIds = {};
@@ -191,20 +191,20 @@ async function seedEscuela() {
 
     // ===== 4. INSERTAR ALUMNOS =====
     const cursosConAlumnos = [
-      { key: 'Pre-Kínder (NT1)', year: 2021, count: 20 },
-      { key: 'Kínder (NT2)',     year: 2020, count: 20 },
-      { key: '1° Básico',        year: 2019, count: 20 },
-      { key: '2° Básico',        year: 2018, count: 20 },
-      { key: '3° Básico',        year: 2017, count: 20 },
-      { key: '4° Básico',        year: 2016, count: 20 },
-      { key: '5° Básico',        year: 2015, count: 20 },
-      { key: '6° Básico',        year: 2014, count: 20 },
-      { key: '7° Básico',        year: 2013, count: 20 },
-      { key: '8° Básico',        year: 2012, count: 20 },
-      { key: '1° Medio',         year: 2011, count: 20 },
-      { key: '2° Medio',         year: 2010, count: 20 },
-      { key: '3° Medio',         year: 2009, count: 20 },
-      { key: '4° Medio',         year: 2008, count: 20 },
+      { key: 'Pre-Kínder (NT1) A', year: 2021, count: 20 },
+      { key: 'Kínder (NT2) A',     year: 2020, count: 20 },
+      { key: '1° Básico A',        year: 2019, count: 20 },
+      { key: '2° Básico A',        year: 2018, count: 20 },
+      { key: '3° Básico A',        year: 2017, count: 20 },
+      { key: '4° Básico A',        year: 2016, count: 20 },
+      { key: '5° Básico A',        year: 2015, count: 20 },
+      { key: '6° Básico A',        year: 2014, count: 20 },
+      { key: '7° Básico A',        year: 2013, count: 20 },
+      { key: '8° Básico A',        year: 2012, count: 20 },
+      { key: '1° Medio A',         year: 2011, count: 20 },
+      { key: '2° Medio A',         year: 2010, count: 20 },
+      { key: '3° Medio A',         year: 2009, count: 20 },
+      { key: '4° Medio A',         year: 2008, count: 20 },
     ];
 
     for (const c of cursosConAlumnos) {
