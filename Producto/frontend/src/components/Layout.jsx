@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GraduationCap, CheckSquare, Info, X } from 'lucide-react';
 import {
   LayoutDashboard,
   Users,
@@ -14,7 +13,9 @@ import {
   User as UserIcon,
   BookUser,
   Settings,
-  NotebookPen
+  NotebookPen,
+  Info,
+  X,
 } from 'lucide-react';
 
 // Atomic Components
