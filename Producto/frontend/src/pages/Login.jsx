@@ -198,7 +198,7 @@ export default function Login() {
             transition={{ delay: 0.9 }}
             style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', fontWeight: 600, letterSpacing: '0.05em' }}
           >
-            © {new Date().getFullYear()} EDUSYNC · SISTEMA DE GESTIÓN ESCOLAR
+            © {new Date().getFullYear()} EDUSYSTEM · SISTEMA DE GESTIÓN ESCOLAR
           </motion.div>
         </div>
 
@@ -410,7 +410,7 @@ export default function Login() {
                 <GraduationCap size={13} color="white" />
               </div>
               <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>
-                EduSync · Portal Escolar
+                EduSystem · Portal Escolar
               </span>
             </div>
             <p style={{ fontSize: '11px', color: '#cbd5e1', marginTop: '14px' }}>
