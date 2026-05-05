@@ -17,13 +17,18 @@ export default function Footer() {
         </a>
         <p className="text-translucent">© {new Date().getFullYear()} EduSystem. Todos los derechos reservados.</p>
         <div style={{ display: 'flex', gap: 24 }}>
-          {['Privacidad', 'Términos', 'Contacto'].map((l) => (
+          {['Privacidad', 'Términos'].map((l) => (
             <a key={l} href="#" className="text-translucent" style={{ textDecoration: 'none', transition: 'color 0.2s' }}
               onMouseEnter={e => e.target.style.color = '#fff'}
               onMouseLeave={e => e.target.style.color = ''}>
               {l}
             </a>
           ))}
+          <a href="#contacto" className="text-translucent" style={{ textDecoration: 'none', transition: 'color 0.2s' }}
+            onMouseEnter={e => e.target.style.color = '#fff'}
+            onMouseLeave={e => e.target.style.color = ''}>
+            Contacto
+          </a>
         </div>
       </div>
     </footer>

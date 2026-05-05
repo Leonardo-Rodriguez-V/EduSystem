@@ -4,6 +4,7 @@ import HeroSection from '../components/landing/HeroSection';
 import FeaturesSection from '../components/landing/FeaturesSection';
 import RolesSection from '../components/landing/RolesSection';
 import CtaBanner from '../components/landing/CtaBanner';
+import ContactoSection from '../components/landing/ContactoSection';
 import Footer from '../components/landing/Footer';
 
 export default function LandingPage() {
@@ -20,6 +21,7 @@ export default function LandingPage() {
           <FeaturesSection />
           <RolesSection />
           <CtaBanner />
+          <ContactoSection />
         </main>
         <Footer />
       </div>
