@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle, GraduationCap, Users, BookOpen, BarChart3 } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, AlertCircle, GraduationCap, Users, BookOpen, BarChart3 } from 'lucide-react';
 
 const FEATURES = [
   { icon: GraduationCap, title: 'Gestión académica',   desc: 'Notas, asistencia y horarios en un solo lugar' },
@@ -131,6 +131,24 @@ export default function Login() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2, duration: 0.6 }}
           >
+            {/* Botón volver */}
+            <button
+              onClick={() => navigate('/')}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: '20px', padding: '7px 16px',
+                color: 'rgba(255,255,255,0.75)', fontSize: '13px', fontWeight: 600,
+                cursor: 'pointer', marginBottom: '28px',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = '#fff'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'rgba(255,255,255,0.75)'; }}
+            >
+              <ArrowLeft size={15} />
+              Volver al inicio
+            </button>
+
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '36px' }}>
               <div className="aura-orb" style={{
                 width: 52, height: 52, borderRadius: '16px',
