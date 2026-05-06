@@ -1,6 +1,5 @@
 {
-  "buildCommand": "cd Producto/frontend && npm install && npm run build",
-  "outputDirectory": "Producto/frontend/dist",
-  "installCommand": "echo 'skip root install'",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "framework": "vite"
 }
