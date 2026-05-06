@@ -11,7 +11,6 @@ import {
   LayoutDashboard,
   Clock,
   Calendar,
-  Star,
   TrendingUp,
   AlertCircle,
 } from 'lucide-react';
@@ -529,10 +528,12 @@ function DashboardProfesor({ usuario, cursos, totalAlumnos, cargando }) {
 
 /* ────────── APODERADO ────────── */
 function DashboardApoderado({ usuario }) {
-  const [hijos, setHijos]           = useState([]);
-  const [evaluaciones, setEval]     = useState({});
-  const [notas, setNotas]           = useState({});
-  const [cargando, setCargando]     = useState(true);
+  const navigate = useNavigate();
+  const [hijos,       setHijos]   = useState([]);
+  const [evaluaciones, setEval]   = useState({});
+  const [promedios,   setProm]    = useState({});
+  const [asistencia,  setAsist]   = useState({});
+  const [cargando,    setCargando] = useState(true);
 
   useEffect(() => {
     if (!usuario.id) return;
@@ -544,25 +545,43 @@ function DashboardApoderado({ usuario }) {
 
         const hoy = new Date().toISOString().split('T')[0];
 
-        const [evalResults, notaResults] = await Promise.all([
+        const [evalResults, notaResults, asistResults] = await Promise.all([
           Promise.all(lista.map(h =>
             apiFetch(`/evaluaciones/curso/${h.id_curso}`).then(r => r?.json()).catch(() => [])
           )),
           Promise.all(lista.map(h =>
             apiFetch(`/notas?id_alumno=${h.id}`).then(r => r?.json()).catch(() => [])
-          ))
+          )),
+          Promise.all(lista.map(h =>
+            apiFetch(`/asistencia/alumno/${h.id}`).then(r => r?.json()).catch(() => [])
+          )),
         ]);
 
         const evalMap = {};
-        const notaMap = {};
+        const promMap = {};
+        const asistMap = {};
         lista.forEach((h, i) => {
           const evs = Array.isArray(evalResults[i]) ? evalResults[i] : [];
           evalMap[h.id] = evs.filter(e => e.fecha >= hoy).slice(0, 3);
+
           const ns = Array.isArray(notaResults[i]) ? notaResults[i] : [];
-          notaMap[h.id] = ns.slice(0, 3);
+          promMap[h.id] = ns.length > 0
+            ? (ns.reduce((s, n) => s + parseFloat(n.calificacion), 0) / ns.length).toFixed(1)
+            : null;
+
+          const as = Array.isArray(asistResults[i]) ? asistResults[i] : [];
+          const presentes = as.filter(a => a.estado === 'presente').length;
+          const ausentes  = as.filter(a => a.estado === 'ausente').length;
+          const tardanzas = as.filter(a => a.estado === 'tardanza').length;
+          const total     = as.length;
+          asistMap[h.id] = {
+            presentes, ausentes, tardanzas, total,
+            pct: total > 0 ? Math.round((presentes / total) * 100) : null,
+          };
         });
         setEval(evalMap);
-        setNotas(notaMap);
+        setProm(promMap);
+        setAsist(asistMap);
         setCargando(false);
       })
       .catch(() => setCargando(false));
@@ -608,10 +627,13 @@ function DashboardApoderado({ usuario }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '28px' }}>
         {hijos.map((h, i) => {
           const proxEvals = evaluaciones[h.id] || [];
-          const ultimasNotas = notas[h.id] || [];
-          const promedio = ultimasNotas.length > 0
-            ? (ultimasNotas.reduce((s, n) => s + parseFloat(n.calificacion), 0) / ultimasNotas.length).toFixed(1)
-            : null;
+          const promedio  = promedios[h.id];
+          const asist     = asistencia[h.id] || { presentes: 0, ausentes: 0, tardanzas: 0, total: 0, pct: null };
+
+          const pctColor  = asist.pct === null ? 'var(--color-foreground)'
+            : asist.pct >= 90 ? '#15803d'
+            : asist.pct >= 75 ? '#b45309'
+            : '#b91c1c';
 
           return (
             <motion.div key={h.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
@@ -623,14 +645,15 @@ function DashboardApoderado({ usuario }) {
                   <div style={{ width: '52px', height: '52px', background: 'rgba(255,255,255,0.25)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: 900, backdropFilter: 'blur(4px)' }}>
                     {h.nombre_completo.split(' ').slice(0, 2).map(p => p[0]).join('')}
                   </div>
-                  <div>
+                  <div style={{ flex: 1 }}>
                     <div style={{ fontSize: '18px', fontWeight: 800 }}>{h.nombre_completo}</div>
                     <div style={{ opacity: 0.8, fontSize: '13px', fontWeight: 600 }}>{h.nombre_curso || `Curso #${h.id_curso}`}</div>
                   </div>
+                  {/* Promedio real */}
                   {promedio && (
-                    <div style={{ marginLeft: 'auto', textAlign: 'center' }}>
-                      <div style={{ fontSize: '26px', fontWeight: 900 }}>{promedio}</div>
-                      <div style={{ fontSize: '10px', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '.5px' }}>Promedio</div>
+                    <div style={{ textAlign: 'center', background: 'rgba(255,255,255,0.18)', borderRadius: '14px', padding: '8px 16px', backdropFilter: 'blur(4px)' }}>
+                      <div style={{ fontSize: '26px', fontWeight: 900, lineHeight: 1 }}>{promedio}</div>
+                      <div style={{ fontSize: '10px', opacity: 0.85, textTransform: 'uppercase', letterSpacing: '.5px', marginTop: '2px' }}>Promedio</div>
                     </div>
                   )}
                 </div>
@@ -671,36 +694,56 @@ function DashboardApoderado({ usuario }) {
                   )}
                 </div>
 
-                {/* Últimas notas */}
+                {/* Asistencia */}
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                    <Star size={15} color="#f59e0b" />
-                    <span style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--color-foreground)', opacity: 0.6 }}>
-                      Últimas Notas
-                    </span>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <TrendingUp size={15} color={pctColor} />
+                      <span style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--color-foreground)', opacity: 0.6 }}>
+                        Asistencia
+                      </span>
+                    </div>
+                    {asist.pct !== null && (
+                      <span style={{ fontSize: '20px', fontWeight: 900, color: pctColor }}>{asist.pct}%</span>
+                    )}
                   </div>
-                  {ultimasNotas.length === 0 ? (
-                    <p style={{ fontSize: '13px', color: 'var(--color-foreground)', opacity: 0.4, fontStyle: 'italic' }}>Sin notas registradas</p>
+
+                  {asist.total === 0 ? (
+                    <p style={{ fontSize: '13px', color: 'var(--color-foreground)', opacity: 0.4, fontStyle: 'italic' }}>Sin registros de asistencia</p>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {ultimasNotas.map(n => {
-                        const nota = parseFloat(n.calificacion);
-                        const aprueba = nota >= 4.0;
-                        return (
-                          <div key={n.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--color-muted)', borderRadius: '12px' }}>
-                            <div>
-                              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-foreground)' }}>{n.descripcion}</div>
-                              <div style={{ fontSize: '11px', color: 'var(--color-foreground)', opacity: 0.5 }}>{n.nombre_asignatura || 'Sin asignatura'}</div>
-                            </div>
-                            <span style={{ fontSize: '18px', fontWeight: 900, color: aprueba ? '#10b981' : '#ef4444' }}>
-                              {nota.toFixed(1)}
+                    <>
+                      {/* Barra visual */}
+                      <div style={{ display: 'flex', height: '10px', borderRadius: '6px', overflow: 'hidden', marginBottom: '10px', gap: '2px' }}>
+                        {asist.presentes > 0 && <div style={{ flex: asist.presentes, background: '#15803d', borderRadius: '5px 0 0 5px' }} />}
+                        {asist.tardanzas > 0 && <div style={{ flex: asist.tardanzas, background: '#f59e0b' }} />}
+                        {asist.ausentes  > 0 && <div style={{ flex: asist.ausentes,  background: '#b91c1c', borderRadius: '0 5px 5px 0' }} />}
+                      </div>
+                      {/* Leyenda compacta */}
+                      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                        {[
+                          { label: 'Presente', count: asist.presentes, color: '#15803d' },
+                          { label: 'Tardanza', count: asist.tardanzas, color: '#f59e0b' },
+                          { label: 'Ausente',  count: asist.ausentes,  color: '#b91c1c' },
+                        ].filter(item => item.count > 0).map(item => (
+                          <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: item.color, flexShrink: 0 }} />
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-foreground)', opacity: 0.6 }}>
+                              {item.label}: <strong style={{ opacity: 1 }}>{item.count}</strong>
                             </span>
                           </div>
-                        );
-                      })}
-                    </div>
+                        ))}
+                      </div>
+                    </>
                   )}
                 </div>
+
+                {/* Botón ver detalle */}
+                <button onClick={() => navigate('/notas')}
+                  style={{ width: '100%', padding: '11px', borderRadius: '14px', border: '1.5px solid var(--color-border)', background: 'transparent', color: 'var(--color-primary)', cursor: 'pointer', fontWeight: 800, fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', transition: 'all 0.2s' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'var(--color-muted)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                  Ver perfil completo <ChevronRight size={15} />
+                </button>
               </div>
             </motion.div>
           );
