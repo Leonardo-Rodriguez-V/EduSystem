@@ -10,6 +10,7 @@ import MuroAvisos from './pages/MuroAvisos';
 import Horarios from './pages/Horarios';
 import Calendario from './pages/Calendario';
 import NotasHijo from './pages/NotasHijo';
+import PerfilHijo from './pages/PerfilHijo';
 import Alumnos from './pages/Alumnos';
 import Perfil from './pages/Perfil';
 import Anotaciones from './pages/Anotaciones';
@@ -45,7 +46,7 @@ function App() {
         <Route path="/notas" element={
           <ProtectedRoute allowedRoles={['director', 'profesor', 'apoderado']}>
             <Layout>
-              {usuario?.rol === 'apoderado' ? <NotasHijo /> : <Notas />}
+              {usuario?.rol === 'apoderado' ? <PerfilHijo /> : <Notas />}
             </Layout>
           </ProtectedRoute>
         } />
