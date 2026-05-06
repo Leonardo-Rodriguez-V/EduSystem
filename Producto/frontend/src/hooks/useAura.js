@@ -1,62 +1,71 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
-const AURA_MESSAGES = {
-  director: "Hola Director. ¿Deseas ver un resumen de asistencia hoy o revisar el registro de nuevos usuarios?",
-  profesor: "Buen día Profesor. He notado que algunas notas están pendientes. ¿Quieres que las revisemos juntos?",
-  apoderado: "Hola. Aquí puedes ver el progreso académico de tu hijo. ¿Deseas ver el último informe de notas?",
-  alumno: "¡Hola! No olvides revisar tu calendario escolar para las próximas evaluaciones.",
-  default: "Conectado al núcleo de EduSync. ¿En qué puedo asistirte?"
+const SALUDO_INICIAL = {
+  director:  'Hola Director. Soy AURA, tu asistente de EduSync. Puedo consultar datos reales de asistencia, notas y alumnos. ¿En qué te ayudo?',
+  profesor:  'Buen día Profesor. Soy AURA. Puedo ayudarte con ejercicios, planificaciones y datos de tus cursos. ¿Qué necesitas?',
+  apoderado: 'Hola. Soy AURA, asistente de EduSync. Puedo orientarte sobre el progreso académico y asistencia de tu hijo. ¿Cómo te ayudo?',
+  alumno:    '¡Hola! Soy AURA. Puedo responder dudas sobre materias, horarios y evaluaciones. ¿En qué puedo ayudarte?',
+  default:   'Conectado al núcleo de EduSync. ¿En qué puedo asistirte?',
 };
 
 export const useAura = (rol = 'alumno') => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { id: 1, text: AURA_MESSAGES[rol] || AURA_MESSAGES.default, sender: 'aura', time: new Date() }
+    { id: 1, text: SALUDO_INICIAL[rol] || SALUDO_INICIAL.default, sender: 'aura', time: new Date() },
   ]);
   const [typing, setTyping] = useState(false);
+  const historialRef = useRef([]);
 
   const toggleAura = useCallback(() => setIsOpen(prev => !prev), []);
 
   const addSystemMessage = useCallback((text) => {
     setMessages(prev => [...prev, { id: Date.now(), text, sender: 'aura', time: new Date() }]);
-    // Abrir automáticamente si llega una notificación importante
     setIsOpen(true);
   }, []);
 
   const sendMessage = useCallback(async (text) => {
     if (!text.trim()) return;
 
-    // Mensaje del usuario
-    setMessages(prev => [...prev, { id: Date.now(), text, sender: 'user', time: new Date() }]);
-
-    // Simular procesamiento
+    const msgUsuario = { id: Date.now(), text, sender: 'user', time: new Date() };
+    setMessages(prev => [...prev, msgUsuario]);
     setTyping(true);
-    
-    setTimeout(() => {
-      let reply = "Entiendo perfectamente. Estoy consultando esa información en los registros de EduSync...";
-      
-      const lower = text.toLowerCase();
-      if (lower.includes('hola') || lower.includes('buenos')) {
-        reply = `¡Hola! Soy Aura, tu asistente virtual. ¿Cómo va tu día en el colegio?`;
-      } else if (lower.includes('nota') || lower.includes('calificación')) {
-        reply = "He cargado los registros de calificaciones. Veo que el promedio general del curso está estable. ¿Quieres detalles de algún alumno?";
-      } else if (lower.includes('asistencia')) {
-        reply = "La asistencia de hoy ya está consolidada. Puedes ver el resumen en tu panel principal.";
-      } else if (lower.includes('gracias')) {
-        reply = "¡De nada! Siempre estoy aquí para facilitar tu trabajo administrativo.";
-      }
 
-      setMessages(prev => [...prev, { id: Date.now() + 1, text: reply, sender: 'aura', time: new Date() }]);
+    // Historial para el backend (últimos 12 mensajes antes del nuevo)
+    const historialParaApi = historialRef.current.slice(-12);
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/aura/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ mensaje: text, historial: historialParaApi }),
+      });
+
+      const data = await res.json();
+      const respuesta = data.respuesta || data.error || 'No pude obtener una respuesta.';
+
+      const msgAura = { id: Date.now() + 1, text: respuesta, sender: 'aura', time: new Date() };
+      setMessages(prev => [...prev, msgAura]);
+
+      // Actualizar historial interno
+      historialRef.current = [
+        ...historialRef.current,
+        { sender: 'user', text },
+        { sender: 'aura', text: respuesta },
+      ].slice(-20);
+
+    } catch {
+      setMessages(prev => [
+        ...prev,
+        { id: Date.now() + 1, text: 'Error de conexión con AURA. Verifica que el servidor esté activo.', sender: 'aura', time: new Date() },
+      ]);
+    } finally {
       setTyping(false);
-    }, 1500);
+    }
   }, []);
 
-  return { 
-    isOpen, 
-    toggleAura, 
-    messages, 
-    sendMessage, 
-    typing, 
-    addSystemMessage 
-  };
+  return { isOpen, toggleAura, messages, sendMessage, typing, addSystemMessage };
 };

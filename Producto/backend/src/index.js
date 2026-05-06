@@ -7,9 +7,23 @@ dotenv.config();
 const db = require('./config/db');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+  : ['http://localhost:5173'];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.some(o => origin.startsWith(o))) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS no permitido'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 app.use(express.json());
 
 const usuarioRoutes = require('./routes/usuarioRoutes');
@@ -22,6 +36,7 @@ const muroAvisosRoutes = require('./routes/muroAvisosRoutes');
 const horarioRoutes = require('./routes/horarioRoutes');
 const evaluacionRoutes  = require('./routes/evaluacionRoutes');
 const anotacionRoutes   = require('./routes/anotacionRoutes');
+const auraRoutes        = require('./routes/auraRoutes');
 
 app.get('/', (req, res) => {
   res.json({ mensaje: 'API de EduSync funcionando en el puerto 3000' });
@@ -37,6 +52,7 @@ app.use('/api/avisos', muroAvisosRoutes);
 app.use('/api/horarios', horarioRoutes);
 app.use('/api/evaluaciones',  evaluacionRoutes);
 app.use('/api/anotaciones',   anotacionRoutes);
+app.use('/api/aura',          auraRoutes);
 
 // Middleware de manejo de errores (siempre al final)
 const errorHandler = require('./middleware/errorHandler');
@@ -45,8 +61,8 @@ app.use(errorHandler);
 const httpServer = require('http').createServer(app);
 const io = require('socket.io')(httpServer, {
   cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
+    origin: allowedOrigins,
+    methods: ['GET', 'POST'],
   }
 });
 

@@ -1,35 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const notaController = require('../controllers/calificacionController');
+const { verificarToken, verificarRol } = require('../middleware/auth');
 
-// GET /api/notas?id_alumno=1
-router.get('/', notaController.obtenerNotasPorAlumno);
+// Consultas: cualquier usuario autenticado
+router.get('/',                          verificarToken, notaController.obtenerNotasPorAlumno);
+router.get('/promedio-cursos',           verificarToken, notaController.obtenerPromedioPorCurso);
+router.get('/analitica/riesgo',          verificarToken, notaController.obtenerAlumnosEnRiesgoAcademico);
+router.get('/analitica/top',             verificarToken, notaController.obtenerMejoresPromedios);
+router.get('/config/asignaturas',        verificarToken, notaController.obtenerAsignaturasPorProfesorYCurso);
+router.get('/asignaturas-curso/:id_curso', verificarToken, notaController.obtenerAsignaturasPorCurso);
+router.get('/curso/:id_curso',           verificarToken, notaController.obtenerNotasPorCurso);
 
-// GET /api/notas/curso/:id_curso
-router.get('/curso/:id_curso', notaController.obtenerNotasPorCurso);
-
-// POST /api/notas
-router.post('/', notaController.crearNota);
-
-// PUT /api/notas/:id
-router.put('/:id', notaController.actualizarNota);
-
-// GET /api/notas/promedio-cursos — antes de /:id
-router.get('/promedio-cursos', notaController.obtenerPromedioPorCurso);
-
-// GET /api/notas/analitica/riesgo
-router.get('/analitica/riesgo', notaController.obtenerAlumnosEnRiesgoAcademico);
-
-// GET /api/notas/analitica/top
-router.get('/analitica/top', notaController.obtenerMejoresPromedios);
-
-// GET /api/notas/config/asignaturas?id_profesor=...&id_curso=...
-router.get('/config/asignaturas', notaController.obtenerAsignaturasPorProfesorYCurso);
-
-// GET /api/notas/asignaturas-curso/:id_curso
-router.get('/asignaturas-curso/:id_curso', notaController.obtenerAsignaturasPorCurso);
-
-// DELETE /api/notas/:id
-router.delete('/:id', notaController.eliminarNota);
+// Escritura: solo director y profesor
+router.post('/',     verificarToken, verificarRol('director', 'profesor'), notaController.crearNota);
+router.put('/:id',   verificarToken, verificarRol('director', 'profesor'), notaController.actualizarNota);
+router.delete('/:id', verificarToken, verificarRol('director', 'profesor'), notaController.eliminarNota);
 
 module.exports = router;

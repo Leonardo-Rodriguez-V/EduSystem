@@ -1,22 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const alumnoController = require('../controllers/alumnoController');
+const { verificarToken, verificarRol } = require('../middleware/auth');
 
-// GET /api/alumnos?id_curso=1
-router.get('/', alumnoController.obtenerAlumnos);
-// GET /api/alumnos/apoderado/:id_apoderado — debe ir ANTES de /:id
-router.get('/apoderado/:id_apoderado', alumnoController.obtenerAlumnosPorApoderado);
-// GET /api/alumnos/:id
-router.get('/:id', alumnoController.obtenerAlumnoPorId);
-// POST /api/alumnos
-router.post('/', alumnoController.crearAlumno);
-// POST /api/alumnos/con-apoderado — crea alumno y vincula a apoderado
-router.post('/con-apoderado', alumnoController.crearAlumnoConApoderado);
-// PUT /api/alumnos/:id
-router.put('/:id', alumnoController.actualizarAlumno);
-// DELETE /api/alumnos/:id/apoderado/:id_apoderado — desvincular sin eliminar
-router.delete('/:id/apoderado/:id_apoderado', alumnoController.desvincularAlumnoApoderado);
-// DELETE /api/alumnos/:id
-router.delete('/:id', alumnoController.eliminarAlumno);
+// Lectura: cualquier usuario autenticado puede consultar alumnos
+router.get('/',                            verificarToken, alumnoController.obtenerAlumnos);
+router.get('/apoderado/:id_apoderado',     verificarToken, alumnoController.obtenerAlumnosPorApoderado);
+router.get('/:id',                         verificarToken, alumnoController.obtenerAlumnoPorId);
+
+// Escritura: solo director
+router.post('/',                           verificarToken, verificarRol('director'), alumnoController.crearAlumno);
+router.post('/con-apoderado',              verificarToken, verificarRol('director'), alumnoController.crearAlumnoConApoderado);
+router.put('/:id',                         verificarToken, verificarRol('director'), alumnoController.actualizarAlumno);
+router.delete('/:id/apoderado/:id_apoderado', verificarToken, verificarRol('director'), alumnoController.desvincularAlumnoApoderado);
+router.delete('/:id',                      verificarToken, verificarRol('director'), alumnoController.eliminarAlumno);
 
 module.exports = router;
