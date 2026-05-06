@@ -7,10 +7,20 @@ dotenv.config();
 const db = require('./config/db');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+  : ['http://localhost:5173'];
 
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.some(o => origin.startsWith(o))) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS no permitido'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
@@ -51,7 +61,7 @@ app.use(errorHandler);
 const httpServer = require('http').createServer(app);
 const io = require('socket.io')(httpServer, {
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
   }
 });

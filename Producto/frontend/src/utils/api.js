@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:3000/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // Fetch autenticado — agrega Authorization: Bearer <token> automáticamente
 const apiFetch = async (endpoint, opciones = {}) => {

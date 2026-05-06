@@ -31,7 +31,7 @@ export const NotificationProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    const socket = io('http://localhost:3000');
+    const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000');
 
     socket.on('notification', (data) => {
       const n = { ...data, id: Date.now(), type: 'info' };
