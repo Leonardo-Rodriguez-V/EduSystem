@@ -58,6 +58,31 @@ const crearAnotacion = async (req, res) => {
   }
 };
 
+// PUT /api/anotaciones/:id
+const actualizarAnotacion = async (req, res) => {
+  const { id } = req.params;
+  const { texto, tipo } = req.body;
+  if (!texto?.trim()) return res.status(400).json({ error: 'El texto es obligatorio' });
+  try {
+    const check = await pool.query('SELECT id_profesor FROM anotaciones WHERE id=$1', [id]);
+    if (check.rows.length === 0) return res.status(404).json({ error: 'Anotación no encontrada' });
+
+    const esDirector   = req.usuario.rol === 'director';
+    const esAutor      = String(check.rows[0].id_profesor) === String(req.usuario.id);
+    if (!esDirector && !esAutor) return res.status(403).json({ error: 'Sin permiso para editar esta anotación' });
+
+    const r = await pool.query(
+      `UPDATE anotaciones SET texto=$1, tipo=$2 WHERE id=$3
+       RETURNING *`,
+      [texto.trim(), tipo || 'observacion', id]
+    );
+    res.json(r.rows[0]);
+  } catch (e) {
+    console.error('Error al actualizar anotación:', e);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+};
+
 // DELETE /api/anotaciones/:id
 const eliminarAnotacion = async (req, res) => {
   const { id } = req.params;
@@ -71,4 +96,4 @@ const eliminarAnotacion = async (req, res) => {
   }
 };
 
-module.exports = { obtenerPorAlumno, obtenerPorCurso, crearAnotacion, eliminarAnotacion };
+module.exports = { obtenerPorAlumno, obtenerPorCurso, crearAnotacion, actualizarAnotacion, eliminarAnotacion };

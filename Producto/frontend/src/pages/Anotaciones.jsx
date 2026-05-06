@@ -36,9 +36,11 @@ export default function Anotaciones() {
   const [filtroTipo,   setFiltroTipo]   = useState('todos');
   const [confirmId,    setConfirmId]    = useState(null);
 
-  const [form,      setForm]      = useState({ texto: '', tipo: 'observacion' });
-  const [enviando,  setEnviando]  = useState(false);
-  const [mensaje,   setMensaje]   = useState({ texto: '', tipo: '' });
+  const [form,        setForm]      = useState({ texto: '', tipo: 'observacion' });
+  const [enviando,    setEnviando]  = useState(false);
+  const [mensaje,     setMensaje]   = useState({ texto: '', tipo: '' });
+  const [editandoId,  setEditandoId] = useState(null);
+  const [editForm,    setEditForm]   = useState({ texto: '', tipo: 'observacion' });
 
   // Cargar cursos y primer hijo (apoderado)
   useEffect(() => {
@@ -103,6 +105,29 @@ export default function Anotaciones() {
     const res = await apiFetch(`/anotaciones/${id}`, { method: 'DELETE' });
     if (res?.ok) { setAnotaciones(prev => prev.filter(a => a.id !== id)); setConfirmId(null); }
   };
+
+  const iniciarEdicion = (an) => {
+    setEditandoId(an.id);
+    setEditForm({ texto: an.texto, tipo: an.tipo });
+    setConfirmId(null);
+  };
+
+  const cancelarEdicion = () => { setEditandoId(null); setEditForm({ texto: '', tipo: 'observacion' }); };
+
+  const guardarEdicion = async (id) => {
+    if (!editForm.texto.trim()) return;
+    const res  = await apiFetch(`/anotaciones/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ texto: editForm.texto, tipo: editForm.tipo }),
+    });
+    if (res?.ok) {
+      const data = await res.json();
+      setAnotaciones(prev => prev.map(a => a.id === id ? { ...a, texto: data.texto, tipo: data.tipo } : a));
+      cancelarEdicion();
+    }
+  };
+
+  const puedeEditar = (an) => esDirector || (esProfesor && String(an.id_profesor) === String(usuario.id));
 
   const anotacionesFiltradas = filtroTipo === 'todos'
     ? anotaciones
@@ -238,41 +263,75 @@ export default function Anotaciones() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {anotacionesFiltradas.map(an => {
-                const tc = TIPO_CONFIG[an.tipo] || TIPO_CONFIG.observacion;
+                const editando = editandoId === an.id;
+                const tcActual = TIPO_CONFIG[editando ? editForm.tipo : an.tipo] || TIPO_CONFIG.observacion;
                 return (
-                  <div key={an.id} style={{ ...s.card, marginBottom: 0, borderLeft: `4px solid ${tc.dot}` }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 9px', borderRadius: '10px', background: tc.bg, color: tc.color }}>
-                            {tc.label}
-                          </span>
-                          <span style={{ fontSize: '12px', color: 'var(--color-foreground)', opacity: 0.45 }}>
-                            {formatFecha(an.fecha)}
-                          </span>
-                          {an.nombre_profesor && (
-                            <span style={{ fontSize: '12px', color: 'var(--color-foreground)', opacity: 0.45 }}>
-                              · {an.nombre_profesor}
-                            </span>
-                          )}
-                        </div>
-                        <p style={{ margin: 0, fontSize: '14px', color: 'var(--color-foreground)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-                          {an.texto}
-                        </p>
-                      </div>
+                  <div key={an.id} style={{ ...s.card, marginBottom: 0, borderLeft: `4px solid ${tcActual.dot}` }}>
+                    {/* Cabecera: tipo + fecha + autor */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                      {editando ? (
+                        <select style={{ ...s.select, width: 'auto', padding: '2px 8px', fontSize: '11px', fontWeight: 700 }}
+                          value={editForm.tipo} onChange={e => setEditForm(p => ({ ...p, tipo: e.target.value }))}>
+                          <option value="observacion">Observación</option>
+                          <option value="positiva">Positiva</option>
+                          <option value="negativa">Negativa</option>
+                        </select>
+                      ) : (
+                        <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 9px', borderRadius: '10px', background: tcActual.bg, color: tcActual.color }}>
+                          {tcActual.label}
+                        </span>
+                      )}
+                      <span style={{ fontSize: '12px', color: 'var(--color-foreground)', opacity: 0.45 }}>
+                        {formatFecha(an.fecha)}
+                      </span>
+                      {an.nombre_profesor && (
+                        <span style={{ fontSize: '12px', color: 'var(--color-foreground)', opacity: 0.45 }}>
+                          · {an.nombre_profesor}
+                        </span>
+                      )}
+                    </div>
 
-                      {puedeEscribir && (
-                        <div style={{ flexShrink: 0 }}>
-                          {confirmId === an.id ? (
-                            <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
-                              <span style={{ fontSize: '11px', color: 'var(--color-destructive)', fontWeight: 600 }}>¿Eliminar?</span>
-                              <button style={s.btnDel} onClick={() => eliminar(an.id)}>Sí</button>
-                              <button style={s.btnSec} onClick={() => setConfirmId(null)}>No</button>
-                            </div>
-                          ) : (
-                            <button style={s.btnDel} onClick={() => setConfirmId(an.id)}>Eliminar</button>
+                    {/* Cuerpo: texto o editor */}
+                    {editando ? (
+                      <textarea style={{ ...s.textarea, marginBottom: '10px' }}
+                        value={editForm.texto}
+                        onChange={e => setEditForm(p => ({ ...p, texto: e.target.value }))}
+                        autoFocus
+                      />
+                    ) : (
+                      <p style={{ margin: '0 0 10px', fontSize: '14px', color: 'var(--color-foreground)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                        {an.texto}
+                      </p>
+                    )}
+
+                    {/* Acciones */}
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px', alignItems: 'center' }}>
+                      {editando ? (
+                        <>
+                          <button style={s.btnSec} onClick={cancelarEdicion}>Cancelar</button>
+                          <button style={{ ...s.btnPri, padding: '4px 14px', fontSize: '12px' }}
+                            onClick={() => guardarEdicion(an.id)}
+                            disabled={!editForm.texto.trim()}>
+                            Guardar
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          {puedeEditar(an) && (
+                            <button style={s.btnSec} onClick={() => iniciarEdicion(an)}>Editar</button>
                           )}
-                        </div>
+                          {puedeEscribir && (
+                            confirmId === an.id ? (
+                              <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                                <span style={{ fontSize: '11px', color: 'var(--color-destructive)', fontWeight: 600 }}>¿Eliminar?</span>
+                                <button style={s.btnDel} onClick={() => eliminar(an.id)}>Sí</button>
+                                <button style={s.btnSec} onClick={() => setConfirmId(null)}>No</button>
+                              </div>
+                            ) : (
+                              <button style={s.btnDel} onClick={() => setConfirmId(an.id)}>Eliminar</button>
+                            )
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
