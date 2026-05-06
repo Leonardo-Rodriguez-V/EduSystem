@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, AlertCircle, GraduationCap, Users, BookOpen, BarChart3 } from 'lucide-react';
 
@@ -18,7 +19,8 @@ export default function Login() {
   const [verPass,    setVerPass]    = useState(false);
   const [focusCorreo,   setFocusCorreo]   = useState(false);
   const [focusPassword, setFocusPassword] = useState(false);
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
+  const isMobile  = useIsMobile();
 
   useEffect(() => {
     if (localStorage.getItem('usuario')) navigate('/dashboard');
@@ -107,15 +109,15 @@ export default function Login() {
         transition={{ duration: 0.7, ease: 'easeOut' }}
         style={{
           display: 'flex',
-          width: '980px',
-          maxWidth: '100%',
-          borderRadius: '28px',
+          width: isMobile ? '100%' : '980px',
+          maxWidth: isMobile ? '440px' : '100%',
+          borderRadius: isMobile ? '24px' : '28px',
           overflow: 'hidden',
           boxShadow: '0 30px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08)',
         }}
       >
-        {/* ── Panel izquierdo: Branding ── */}
-        <div style={{
+        {/* ── Panel izquierdo: Branding — oculto en móvil ── */}
+        {!isMobile && <div style={{
           flex: 1,
           padding: '56px 48px',
           background: 'rgba(255,255,255,0.04)',
@@ -218,7 +220,7 @@ export default function Login() {
           >
             © {new Date().getFullYear()} EDUSYSTEM · SISTEMA DE GESTIÓN ESCOLAR
           </motion.div>
-        </div>
+        </div>}
 
         {/* ── Panel derecho: Formulario ── */}
         <motion.div
@@ -226,15 +228,31 @@ export default function Login() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.15, duration: 0.6 }}
           style={{
-            width: '420px',
+            width: isMobile ? '100%' : '420px',
             flexShrink: 0,
             background: '#fff',
-            padding: '56px 44px',
+            padding: isMobile ? '36px 28px' : '56px 44px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
           }}
         >
+          {/* Cabecera móvil: logo + botón volver */}
+          {isMobile && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className="aura-orb" style={{ width: 36, height: 36, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <GraduationCap size={18} color="white" />
+                </div>
+                <div style={{ fontSize: '20px', fontWeight: 900, color: '#1e1b4b', fontFamily: "'Crimson Pro', serif", letterSpacing: '-0.5px' }}>EduSync</div>
+              </div>
+              <button onClick={() => navigate('/')} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: 'rgba(79,70,229,0.07)', border: '1px solid rgba(79,70,229,0.2)', borderRadius: '16px', padding: '6px 12px', color: '#4f46e5', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>
+                <ArrowLeft size={13} />
+                Volver
+              </button>
+            </div>
+          )}
+
           {/* Encabezado formulario */}
           <div style={{ marginBottom: '36px' }}>
             <div style={{

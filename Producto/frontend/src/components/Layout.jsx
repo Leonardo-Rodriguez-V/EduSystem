@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
@@ -92,7 +93,8 @@ function iniciales(nombre = '') {
 
 export default function Layout({ children }) {
   const location = useLocation();
-  const [sidebarAbierto, setSidebarAbierto] = useState(true);
+  const isMobile = useIsMobile();
+  const [sidebarAbierto, setSidebarAbierto] = useState(!isMobile);
   const [tema, setTema] = useState(localStorage.getItem('theme') || 'light');
   const lastNotifId = useRef(null);
 
@@ -151,20 +153,30 @@ export default function Layout({ children }) {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--color-background)', transition: 'background 0.3s' }}>
-      
-      <Sidebar 
+
+      {/* Backdrop móvil */}
+      {isMobile && sidebarAbierto && (
+        <div
+          onClick={() => setSidebarAbierto(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 99, backdropFilter: 'blur(2px)' }}
+        />
+      )}
+
+      <Sidebar
         sidebarAbierto={sidebarAbierto}
+        setSidebarAbierto={setSidebarAbierto}
+        isMobile={isMobile}
         usuario={usuario}
         navItems={navItems}
         handleLogout={handleLogout}
         iniciales={iniciales}
       />
 
-      <div style={{ 
-        marginLeft: sidebarAbierto ? '280px' : '0', 
-        flex: 1, 
-        display: 'flex', 
-        flexDirection: 'column', 
+      <div style={{
+        marginLeft: isMobile ? 0 : (sidebarAbierto ? '280px' : '0'),
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
         minHeight: '100vh',
         transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
       }}>
@@ -172,6 +184,7 @@ export default function Layout({ children }) {
         <Topbar
           sidebarAbierto={sidebarAbierto}
           setSidebarAbierto={setSidebarAbierto}
+          isMobile={isMobile}
           tema={tema}
           toggleTema={toggleTema}
           tituloPagina={tituloPagina}
@@ -180,7 +193,7 @@ export default function Layout({ children }) {
           clearNew={clearNew}
         />
 
-        <main style={{ padding: '0 32px 32px' }}>
+        <main style={{ padding: isMobile ? '0 16px 24px' : '0 32px 32px' }}>
           <motion.div
             key={location.pathname}
             initial={{ y: 20, opacity: 0 }}

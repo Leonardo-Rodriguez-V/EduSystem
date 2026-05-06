@@ -11,6 +11,7 @@ const TIPO_ICONO = {
 const Topbar = ({
   sidebarAbierto,
   setSidebarAbierto,
+  isMobile,
   tema,
   toggleTema,
   tituloPagina,
@@ -41,14 +42,14 @@ const Topbar = ({
     <header
       className="glass-premium"
       style={{
-        padding: '16px 32px',
+        padding: isMobile ? '12px 16px' : '16px 32px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         position: 'sticky',
-        top: 20,
-        margin: '0 24px 24px',
-        borderRadius: '24px',
+        top: isMobile ? 8 : 20,
+        margin: isMobile ? '0 10px 16px' : '0 24px 24px',
+        borderRadius: '20px',
         zIndex: 50,
         transition: 'all 0.3s',
       }}
@@ -66,8 +67,10 @@ const Topbar = ({
           {sidebarAbierto ? <X size={20} /> : <Menu size={20} />}
         </button>
         <h2 style={{
-          fontSize: '20px', fontWeight: 800, color: 'var(--color-foreground)',
+          fontSize: isMobile ? '16px' : '20px', fontWeight: 800, color: 'var(--color-foreground)',
           margin: 0, fontFamily: "'Crimson Pro', serif",
+          maxWidth: isMobile ? '160px' : 'none', overflow: 'hidden',
+          whiteSpace: 'nowrap', textOverflow: 'ellipsis',
         }}>
           {tituloPagina}
         </h2>
@@ -195,14 +198,16 @@ const Topbar = ({
           </AnimatePresence>
         </motion.button>
 
-        {/* Fecha */}
-        <div style={{
-          background: 'var(--color-surface)', padding: '8px 16px', borderRadius: '12px',
-          boxShadow: 'var(--clay-shadow)', fontSize: '12px', fontWeight: 700,
-          color: 'var(--color-primary)', textTransform: 'capitalize',
-        }}>
-          {new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' })}
-        </div>
+        {/* Fecha — oculta en móvil */}
+        {!isMobile && (
+          <div style={{
+            background: 'var(--color-surface)', padding: '8px 16px', borderRadius: '12px',
+            boxShadow: 'var(--clay-shadow)', fontSize: '12px', fontWeight: 700,
+            color: 'var(--color-primary)', textTransform: 'capitalize',
+          }}>
+            {new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </div>
+        )}
       </div>
     </header>
   );
