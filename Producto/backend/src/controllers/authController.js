@@ -30,6 +30,7 @@ const login = async (req, res) => {
         nombre_completo: usuario.nombre_completo,
         correo: usuario.correo,
         rol: usuario.rol,
+        colegio_id: usuario.colegio_id ?? null, // null = superadmin (sin tenant)
       },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
