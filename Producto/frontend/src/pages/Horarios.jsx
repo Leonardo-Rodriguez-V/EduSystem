@@ -134,7 +134,10 @@ export default function Horarios() {
     setDescargando(true);
     try {
       const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-      const res = await fetch(`${API_BASE}/horarios/exportar?id_curso=${cursoSel.id}`);
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/horarios/exportar?id_curso=${cursoSel.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) throw new Error('Error al generar el archivo');
       const blob = await res.blob();
       const url  = URL.createObjectURL(blob);

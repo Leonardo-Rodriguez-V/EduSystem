@@ -9,14 +9,18 @@ import {
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 async function descargarPDF(ruta, nombre) {
-  const token = localStorage.getItem('token');
-  const res = await fetch(`${API_URL}${ruta}`, { headers: { Authorization: `Bearer ${token}` } });
-  if (!res.ok) return;
-  const blob = await res.blob();
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = nombre; a.click();
-  URL.revokeObjectURL(url);
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API_URL}${ruta}`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) throw new Error(`Error ${res.status}`);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = nombre; a.click();
+    URL.revokeObjectURL(url);
+  } catch {
+    alert('No se pudo generar el PDF. Intenta nuevamente.');
+  }
 }
 
 function colorNota(n) {
