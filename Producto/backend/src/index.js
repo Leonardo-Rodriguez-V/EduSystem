@@ -37,6 +37,7 @@ const horarioRoutes = require('./routes/horarioRoutes');
 const evaluacionRoutes  = require('./routes/evaluacionRoutes');
 const anotacionRoutes   = require('./routes/anotacionRoutes');
 const auraRoutes        = require('./routes/auraRoutes');
+const reporteRoutes     = require('./routes/reporteRoutes');
 
 app.get('/', (req, res) => {
   res.json({ mensaje: 'API de EduSync funcionando en el puerto 3000' });
@@ -53,6 +54,7 @@ app.use('/api/horarios', horarioRoutes);
 app.use('/api/evaluaciones',  evaluacionRoutes);
 app.use('/api/anotaciones',   anotacionRoutes);
 app.use('/api/aura',          auraRoutes);
+app.use('/api/reportes',      reporteRoutes);
 
 // Middleware de manejo de errores (siempre al final)
 const errorHandler = require('./middleware/errorHandler');

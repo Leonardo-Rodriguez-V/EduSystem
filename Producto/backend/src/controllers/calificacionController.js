@@ -1,4 +1,19 @@
 const pool = require('../config/db');
+const { alertaNotaBaja } = require('../services/emailService');
+
+// Crear tabla de historial si no existe
+pool.query(`
+  CREATE TABLE IF NOT EXISTS notas_historial (
+    id SERIAL PRIMARY KEY,
+    id_nota INT NOT NULL,
+    id_usuario UUID NOT NULL,
+    calificacion_anterior NUMERIC(4,2),
+    calificacion_nueva NUMERIC(4,2),
+    descripcion_anterior TEXT,
+    descripcion_nueva TEXT,
+    modificado_en TIMESTAMPTZ DEFAULT NOW()
+  )
+`).catch(err => console.error('[DB] Error creando notas_historial:', err.message));
 
 // GET /api/notas?id_alumno=1&id_asignatura=2
 const obtenerNotasPorAlumno = async (req, res) => {
@@ -86,6 +101,27 @@ const crearNota = async (req, res) => {
       });
     }
 
+    // Email al apoderado si nota < 4.0 (fire-and-forget)
+    if (parseFloat(nuevaNota.calificacion) < 4.0) {
+      pool.query(`
+        SELECT u.correo, u.nombre_completo AS nombre_apoderado,
+               al.nombre_completo AS nombre_alumno,
+               asig.nombre AS asignatura
+        FROM alumnos al
+        JOIN apoderado_alumno aa ON aa.id_alumno = al.id
+        JOIN usuarios u ON u.id = aa.id_apoderado
+        LEFT JOIN asignaturas asig ON asig.id = $2
+        WHERE al.id = $1
+      `, [nuevaNota.id_alumno, nuevaNota.id_asignatura])
+        .then(({ rows }) => {
+          rows.forEach(r => alertaNotaBaja(
+            r.correo, r.nombre_apoderado, r.nombre_alumno,
+            r.asignatura || nuevaNota.descripcion, nuevaNota.calificacion
+          ));
+        })
+        .catch(err => console.error('[EMAIL] Error consultando apoderado:', err.message));
+    }
+
     res.status(201).json(nuevaNota);
   } catch (error) {
     console.error('Error al crear nota:', error);
@@ -98,20 +134,45 @@ const actualizarNota = async (req, res) => {
   const { id } = req.params;
   const { descripcion, calificacion, fecha, id_asignatura } = req.body;
   try {
+    const anterior = await pool.query('SELECT * FROM notas WHERE id = $1', [id]);
+    if (anterior.rows.length === 0) return res.status(404).json({ error: 'Nota no encontrada' });
+    const prev = anterior.rows[0];
+
     const respuesta = await pool.query(
-      `UPDATE notas
-       SET descripcion = $1, calificacion = $2, fecha = $3, id_asignatura = $4
-       WHERE id = $5
-       RETURNING *`,
+      `UPDATE notas SET descripcion = $1, calificacion = $2, fecha = $3, id_asignatura = $4
+       WHERE id = $5 RETURNING *`,
       [descripcion, calificacion, fecha, id_asignatura, id]
     );
-    if (respuesta.rows.length === 0) {
-      return res.status(404).json({ error: 'Nota no encontrada' });
-    }
+
+    // Registrar en historial (fire-and-forget)
+    pool.query(
+      `INSERT INTO notas_historial (id_nota, id_usuario, calificacion_anterior, calificacion_nueva, descripcion_anterior, descripcion_nueva)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [id, req.usuario?.id || null, prev.calificacion, calificacion, prev.descripcion, descripcion]
+    ).catch(err => console.error('[HISTORIAL] Error:', err.message));
+
     res.status(200).json(respuesta.rows[0]);
   } catch (error) {
     console.error('Error al actualizar nota:', error);
     res.status(500).json({ error: 'Error del servidor', detalle: error.message });
+  }
+};
+
+// GET /api/notas/historial/:id_nota
+const obtenerHistorialNota = async (req, res) => {
+  const { id_nota } = req.params;
+  try {
+    const { rows } = await pool.query(`
+      SELECT h.*, u.nombre_completo AS nombre_usuario
+      FROM notas_historial h
+      LEFT JOIN usuarios u ON u.id = h.id_usuario
+      WHERE h.id_nota = $1
+      ORDER BY h.modificado_en DESC
+    `, [id_nota]);
+    res.json(rows);
+  } catch (error) {
+    console.error('Error al obtener historial:', error);
+    res.status(500).json({ error: 'Error del servidor' });
   }
 };
 
@@ -259,5 +320,6 @@ module.exports = {
   obtenerPromedioPorCurso,
   obtenerAlumnosEnRiesgoAcademico,
   obtenerMejoresPromedios,
+  obtenerHistorialNota,
 };
 

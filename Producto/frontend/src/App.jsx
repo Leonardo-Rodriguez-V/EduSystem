@@ -14,6 +14,8 @@ import PerfilHijo from './pages/PerfilHijo';
 import Alumnos from './pages/Alumnos';
 import Perfil from './pages/Perfil';
 import Anotaciones from './pages/Anotaciones';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import { NotificationProvider } from './context/NotificationContext';
@@ -29,6 +31,8 @@ function App() {
         <Routes>
         {/* Rutas públicas */}
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Rutas protegidas con sidebar */}
         <Route path="/dashboard" element={

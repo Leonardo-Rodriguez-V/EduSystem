@@ -1,7 +1,20 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import apiFetch from '../utils/api';
-import { User, GraduationCap, TrendingUp, AlertTriangle } from 'lucide-react';
+import { User, GraduationCap, TrendingUp, AlertTriangle, FileDown } from 'lucide-react';
+
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+
+async function descargarPDF(ruta, nombre) {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${API_URL}${ruta}`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) return;
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nombre; a.click();
+  URL.revokeObjectURL(url);
+}
 
 function colorNota(n) {
   const v = Number(n);
@@ -109,13 +122,21 @@ export default function NotasHijo() {
     <motion.div style={{ padding: '0 0 40px', maxWidth: '1200px', margin: '0 auto' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
 
       {/* Header */}
-      <div style={{ marginBottom: '28px' }}>
-        <h1 style={{ fontSize: '30px', fontWeight: 900, color: 'var(--color-foreground)', margin: 0, fontFamily: "'Crimson Pro', serif" }}>
-          Notas de {hijoSel.nombre_completo.split(' ')[0]}
-        </h1>
-        <p style={{ fontSize: '14px', color: 'var(--color-foreground)', opacity: 0.5, marginTop: '4px', fontWeight: 600 }}>
-          {hijoSel.nombre_curso || 'Curso'} · Año Lectivo 2026
-        </p>
+      <div style={{ marginBottom: '28px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <h1 style={{ fontSize: '30px', fontWeight: 900, color: 'var(--color-foreground)', margin: 0, fontFamily: "'Crimson Pro', serif" }}>
+            Notas de {hijoSel.nombre_completo.split(' ')[0]}
+          </h1>
+          <p style={{ fontSize: '14px', color: 'var(--color-foreground)', opacity: 0.5, marginTop: '4px', fontWeight: 600 }}>
+            {hijoSel.nombre_curso || 'Curso'} · Año Lectivo 2026
+          </p>
+        </div>
+        <button
+          onClick={() => descargarPDF(`/reportes/notas/${hijoSel.id}`, `notas_${hijoSel.nombre_completo}.pdf`)}
+          style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '10px 18px', borderRadius: '14px', border: 'none', background: 'rgba(99,102,241,0.12)', color: '#6366f1', fontWeight: 700, fontSize: '13px', cursor: 'pointer' }}
+        >
+          <FileDown size={15} /> Exportar PDF
+        </button>
       </div>
 
       {/* Selector de hijo */}

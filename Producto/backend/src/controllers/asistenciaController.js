@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { alertaAsistencia } = require('../services/emailService');
 
 // GET /api/asistencia?id_curso=1&fecha=2026-03-20
 // Alumnos del curso con su estado de asistencia para esa fecha
@@ -85,6 +86,28 @@ const guardarAsistencia = async (req, res) => {
     }
 
     res.status(200).json({ mensaje: 'Asistencia guardada correctamente' });
+
+    // Email a apoderados de alumnos con asistencia acumulada < 85% (fire-and-forget)
+    pool.query(`
+      SELECT al.id, al.nombre_completo AS nombre_alumno,
+             u.correo, u.nombre_completo AS nombre_apoderado,
+             ROUND(100.0 * SUM(CASE WHEN asi.estado = 'presente' THEN 1 ELSE 0 END)
+               / NULLIF(COUNT(asi.id), 0), 1) AS porcentaje
+      FROM alumnos al
+      JOIN apoderado_alumno aa ON aa.id_alumno = al.id
+      JOIN usuarios u ON u.id = aa.id_apoderado
+      JOIN asistencia asi ON asi.id_alumno = al.id
+      WHERE al.id = ANY($1::int[])
+      GROUP BY al.id, al.nombre_completo, u.correo, u.nombre_completo
+      HAVING COUNT(asi.id) >= 5
+        AND ROUND(100.0 * SUM(CASE WHEN asi.estado = 'presente' THEN 1 ELSE 0 END)
+          / NULLIF(COUNT(asi.id), 0), 1) < 85
+    `, [ids])
+      .then(({ rows }) => {
+        rows.forEach(r => alertaAsistencia(r.correo, r.nombre_apoderado, r.nombre_alumno, r.porcentaje));
+      })
+      .catch(err => console.error('[EMAIL] Error asistencia:', err.message));
+
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Error al guardar asistencia:', error);

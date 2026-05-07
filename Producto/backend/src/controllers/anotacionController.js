@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { alertaAnotacionNegativa } = require('../services/emailService');
 
 // GET /api/anotaciones?id_alumno=X
 const obtenerPorAlumno = async (req, res) => {
@@ -51,7 +52,30 @@ const crearAnotacion = async (req, res) => {
        VALUES ($1, $2, $3, $4, $5) RETURNING *`,
       [id_alumno, id_profesor || null, texto, tipo || 'observacion', fecha || new Date()]
     );
-    res.status(201).json(r.rows[0]);
+    const nueva = r.rows[0];
+
+    // Email al apoderado si la anotación es negativa (fire-and-forget)
+    if (nueva.tipo === 'negativa') {
+      pool.query(`
+        SELECT u.correo, u.nombre_completo AS nombre_apoderado,
+               al.nombre_completo AS nombre_alumno,
+               prof.nombre_completo AS nombre_profesor
+        FROM alumnos al
+        JOIN apoderado_alumno aa ON aa.id_alumno = al.id
+        JOIN usuarios u ON u.id = aa.id_apoderado
+        LEFT JOIN usuarios prof ON prof.id = $2
+        WHERE al.id = $1
+      `, [nueva.id_alumno, nueva.id_profesor])
+        .then(({ rows }) => {
+          rows.forEach(r => alertaAnotacionNegativa(
+            r.correo, r.nombre_apoderado, r.nombre_alumno,
+            nueva.texto, r.nombre_profesor || 'Profesor'
+          ));
+        })
+        .catch(err => console.error('[EMAIL] Error anotación:', err.message));
+    }
+
+    res.status(201).json(nueva);
   } catch (e) {
     console.error('Error al crear anotación:', e);
     res.status(500).json({ error: 'Error del servidor' });

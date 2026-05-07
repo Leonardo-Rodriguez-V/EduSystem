@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, AlertCircle, GraduationCap, Users, BookOpen, BarChart3 } from 'lucide-react';
@@ -375,6 +375,13 @@ export default function Login() {
                   {verPass ? <EyeOff size={17} /> : <Eye size={17} />}
                 </button>
               </div>
+            </div>
+
+            {/* ¿Olvidaste tu contraseña? */}
+            <div style={{ textAlign: 'right', marginTop: '-8px' }}>
+              <Link to="/forgot-password" style={{ fontSize: '12px', fontWeight: 700, color: '#4f46e5', textDecoration: 'none', opacity: 0.8 }}>
+                ¿Olvidaste tu contraseña?
+              </Link>
             </div>
 
             {/* Botón submit */}

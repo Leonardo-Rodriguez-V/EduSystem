@@ -3,8 +3,21 @@ import { motion } from 'framer-motion';
 import apiFetch from '../utils/api';
 import {
   User, GraduationCap, CalendarCheck, AlertTriangle,
-  TrendingUp, Clock, CheckCircle, XCircle,
+  TrendingUp, Clock, CheckCircle, XCircle, FileDown,
 } from 'lucide-react';
+
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+
+async function descargarPDF(ruta, nombre) {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${API_URL}${ruta}`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) return;
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nombre; a.click();
+  URL.revokeObjectURL(url);
+}
 
 function colorNota(n) {
   const v = Number(n);
@@ -168,20 +181,32 @@ export default function PerfilHijo() {
               </div>
             </div>
 
-            {/* Badge estado académico */}
-            {estado && (
-              <div style={{
-                padding: '10px 20px', borderRadius: '16px',
-                background: estado.bg, border: `2px solid ${estado.border}`,
-                fontWeight: 800, fontSize: '13px', color: estado.color,
-                display: 'flex', alignItems: 'center', gap: '8px',
-              }}>
-                {estado.label.includes('óptimo') ? <CheckCircle size={16} /> :
-                 estado.label.includes('Requiere') ? <AlertTriangle size={16} /> :
-                 <TrendingUp size={16} />}
-                {estado.label}
+            {/* Badge estado académico + botones PDF */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'flex-end' }}>
+              {estado && (
+                <div style={{
+                  padding: '10px 20px', borderRadius: '16px',
+                  background: estado.bg, border: `2px solid ${estado.border}`,
+                  fontWeight: 800, fontSize: '13px', color: estado.color,
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                }}>
+                  {estado.label.includes('óptimo') ? <CheckCircle size={16} /> :
+                   estado.label.includes('Requiere') ? <AlertTriangle size={16} /> :
+                   <TrendingUp size={16} />}
+                  {estado.label}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                <button onClick={() => descargarPDF(`/reportes/notas/${hijoSel.id}`, `notas_${hijoSel.nombre_completo}.pdf`)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '12px', border: 'none', background: 'rgba(99,102,241,0.12)', color: '#6366f1', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+                  <FileDown size={14} /> Notas PDF
+                </button>
+                <button onClick={() => descargarPDF(`/reportes/asistencia/${hijoSel.id}`, `asistencia_${hijoSel.nombre_completo}.pdf`)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '12px', border: 'none', background: 'rgba(16,185,129,0.12)', color: '#10b981', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
+                  <FileDown size={14} /> Asistencia PDF
+                </button>
               </div>
-            )}
+            </div>
           </motion.div>
 
           {/* KPIs */}

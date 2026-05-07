@@ -11,6 +11,7 @@ router.get('/analitica/top',             verificarToken, notaController.obtenerM
 router.get('/config/asignaturas',        verificarToken, notaController.obtenerAsignaturasPorProfesorYCurso);
 router.get('/asignaturas-curso/:id_curso', verificarToken, notaController.obtenerAsignaturasPorCurso);
 router.get('/curso/:id_curso',           verificarToken, notaController.obtenerNotasPorCurso);
+router.get('/historial/:id_nota',        verificarToken, notaController.obtenerHistorialNota);
 
 // Escritura: solo director y profesor
 router.post('/',     verificarToken, verificarRol('director', 'profesor'), notaController.crearNota);
