@@ -1,26 +1,92 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import apiFetch from '../utils/api';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import {
   User, GraduationCap, CalendarCheck, AlertTriangle,
   TrendingUp, Clock, CheckCircle, XCircle, FileDown,
 } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
-
-async function descargarPDF(ruta, nombre) {
-  try {
-    const token = localStorage.getItem('token');
-    const res = await fetch(`${API_URL}${ruta}`, { headers: { Authorization: `Bearer ${token}` } });
-    if (!res.ok) throw new Error(`Error ${res.status}`);
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = nombre; a.click();
-    URL.revokeObjectURL(url);
-  } catch {
-    alert('No se pudo generar el PDF. Intenta nuevamente.');
+function exportarNotasPDF(alumno, notas) {
+  const doc = new jsPDF();
+  const hoy = new Date().toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' });
+  doc.setFontSize(22); doc.setTextColor(99, 102, 241);
+  doc.text('EduSync', 105, 20, { align: 'center' });
+  doc.setFontSize(14); doc.setTextColor(68, 68, 68);
+  doc.text('Reporte de Calificaciones', 105, 30, { align: 'center' });
+  doc.setFontSize(10); doc.setTextColor(136, 136, 136);
+  doc.text(`Generado el ${hoy}`, 105, 38, { align: 'center' });
+  doc.setFontSize(11); doc.setTextColor(17, 17, 17);
+  doc.text(`Alumno: ${alumno.nombre_completo}`, 14, 52);
+  doc.text(`RUT: ${alumno.rut || '—'}`, 14, 60);
+  doc.text(`Curso: ${alumno.nombre_curso || '—'}`, 14, 68);
+  if (notas.length > 0) {
+    const prom = notas.reduce((s, n) => s + parseFloat(n.calificacion), 0) / notas.length;
+    doc.setFontSize(13);
+    doc.setTextColor(...(prom >= 4 ? [16, 185, 129] : [239, 68, 68]));
+    doc.text(`Promedio General: ${prom.toFixed(1)}`, 105, 80, { align: 'center' });
   }
+  autoTable(doc, {
+    startY: 88,
+    head: [['Descripción', 'Asignatura', 'Nota', 'Fecha']],
+    body: [...notas].sort((a, b) => new Date(b.fecha) - new Date(a.fecha)).map(n => [
+      n.descripcion || '—',
+      n.nombre_asignatura || '—',
+      parseFloat(n.calificacion).toFixed(1),
+      n.fecha ? new Date(n.fecha).toLocaleDateString('es-CL') : '—',
+    ]),
+    headStyles: { fillColor: [99, 102, 241], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [241, 245, 249] },
+    didParseCell: (d) => {
+      if (d.column.index === 2 && d.section === 'body') {
+        d.cell.styles.textColor = parseFloat(d.cell.text[0]) >= 4 ? [16, 185, 129] : [239, 68, 68];
+        d.cell.styles.fontStyle = 'bold';
+      }
+    },
+  });
+  doc.save(`notas_${alumno.nombre_completo.replace(/ /g, '_')}.pdf`);
+}
+
+function exportarAsistenciaPDF(alumno, asistencia) {
+  const doc = new jsPDF();
+  const hoy = new Date().toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' });
+  doc.setFontSize(22); doc.setTextColor(99, 102, 241);
+  doc.text('EduSync', 105, 20, { align: 'center' });
+  doc.setFontSize(14); doc.setTextColor(68, 68, 68);
+  doc.text('Reporte de Asistencia', 105, 30, { align: 'center' });
+  doc.setFontSize(10); doc.setTextColor(136, 136, 136);
+  doc.text(`Generado el ${hoy}`, 105, 38, { align: 'center' });
+  doc.setFontSize(11); doc.setTextColor(17, 17, 17);
+  doc.text(`Alumno: ${alumno.nombre_completo}`, 14, 52);
+  doc.text(`RUT: ${alumno.rut || '—'}`, 14, 60);
+  doc.text(`Curso: ${alumno.nombre_curso || '—'}`, 14, 68);
+  if (asistencia.length > 0) {
+    const presentes = asistencia.filter(r => r.estado === 'presente').length;
+    const pct = ((presentes / asistencia.length) * 100).toFixed(1);
+    doc.setFontSize(13);
+    doc.setTextColor(...(parseFloat(pct) >= 85 ? [16, 185, 129] : [239, 68, 68]));
+    doc.text(`Asistencia total: ${pct}% (${presentes}/${asistencia.length} clases)`, 105, 80, { align: 'center' });
+  }
+  const estadoColor = { presente: [16, 185, 129], ausente: [239, 68, 68], tardanza: [245, 158, 11] };
+  autoTable(doc, {
+    startY: 88,
+    head: [['Fecha', 'Estado', 'Justificación']],
+    body: [...asistencia].sort((a, b) => new Date(b.fecha) - new Date(a.fecha)).map(r => [
+      r.fecha ? new Date(r.fecha).toLocaleDateString('es-CL') : '—',
+      r.estado || '—',
+      r.justificacion || '—',
+    ]),
+    headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [241, 245, 249] },
+    didParseCell: (d) => {
+      if (d.column.index === 1 && d.section === 'body') {
+        d.cell.styles.textColor = estadoColor[d.cell.text[0]] || [34, 34, 34];
+        d.cell.styles.fontStyle = 'bold';
+      }
+    },
+  });
+  doc.save(`asistencia_${alumno.nombre_completo.replace(/ /g, '_')}.pdf`);
 }
 
 function colorNota(n) {
@@ -201,11 +267,11 @@ export default function PerfilHijo() {
                 </div>
               )}
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                <button onClick={() => descargarPDF(`/reportes/notas/${hijoSel.id}`, `notas_${hijoSel.nombre_completo}.pdf`)}
+                <button onClick={() => exportarNotasPDF(hijoSel, notas)}
                   style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '12px', border: 'none', background: 'rgba(99,102,241,0.12)', color: '#6366f1', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
                   <FileDown size={14} /> Notas PDF
                 </button>
-                <button onClick={() => descargarPDF(`/reportes/asistencia/${hijoSel.id}`, `asistencia_${hijoSel.nombre_completo}.pdf`)}
+                <button onClick={() => exportarAsistenciaPDF(hijoSel, asistencia)}
                   style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', borderRadius: '12px', border: 'none', background: 'rgba(16,185,129,0.12)', color: '#10b981', fontWeight: 700, fontSize: '12px', cursor: 'pointer' }}>
                   <FileDown size={14} /> Asistencia PDF
                 </button>
