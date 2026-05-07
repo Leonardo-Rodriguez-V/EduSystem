@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import html2canvas from 'html2canvas';
 import apiFetch from '../utils/api';
-import { Download } from 'lucide-react';
+import { Download, Image } from 'lucide-react';
 
 const s = {
   header:    { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' },
@@ -68,6 +69,8 @@ export default function Horarios() {
   const [horario,     setHorario]     = useState([]);
   const [, setCargando]               = useState(true);
   const [descargando, setDescargando] = useState(false);
+  const [descargandoPNG, setDescargandoPNG] = useState(false);
+  const gridRef = useRef(null);
 
   const usuario = (() => { try { return JSON.parse(localStorage.getItem('usuario')); } catch { return {}; } })();
 
@@ -104,6 +107,27 @@ export default function Horarios() {
 
   const getEntry = (diaIdx, bloqueInicio) =>
     horario.find(h => Number(h.dia_semana) === (diaIdx + 1) && h.bloque_inicio.startsWith(bloqueInicio));
+
+  const descargarPNG = async () => {
+    if (!cursoSel || descargandoPNG || !gridRef.current) return;
+    setDescargandoPNG(true);
+    try {
+      const canvas = await html2canvas(gridRef.current, {
+        scale: 2,
+        backgroundColor: null,
+        useCORS: true,
+      });
+      const url = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Horario_${cursoSel.nombre}.png`;
+      a.click();
+    } catch {
+      alert('No se pudo generar la imagen.');
+    } finally {
+      setDescargandoPNG(false);
+    }
+  };
 
   const descargarWord = async () => {
     if (!cursoSel || descargando) return;
@@ -145,19 +169,29 @@ export default function Horarios() {
             </select>
           )}
           {cursoSel && (
-            <button
-              onClick={descargarWord}
-              disabled={descargando}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px', border: 'none', background: 'var(--color-primary)', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: descargando ? 'not-allowed' : 'pointer', opacity: descargando ? 0.7 : 1 }}
-            >
-              <Download size={15} />
-              {descargando ? 'Generando...' : 'Descargar Word'}
-            </button>
+            <>
+              <button
+                onClick={descargarPNG}
+                disabled={descargandoPNG}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px', border: 'none', background: 'rgba(99,102,241,0.12)', color: 'var(--color-primary)', fontSize: '13px', fontWeight: 700, cursor: descargandoPNG ? 'not-allowed' : 'pointer', opacity: descargandoPNG ? 0.7 : 1 }}
+              >
+                <Image size={15} />
+                {descargandoPNG ? 'Generando...' : 'Descargar PNG'}
+              </button>
+              <button
+                onClick={descargarWord}
+                disabled={descargando}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px', border: 'none', background: 'var(--color-primary)', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: descargando ? 'not-allowed' : 'pointer', opacity: descargando ? 0.7 : 1 }}
+              >
+                <Download size={15} />
+                {descargando ? 'Generando...' : 'Descargar Word'}
+              </button>
+            </>
           )}
         </div>
       </div>
 
-      <div style={s.grid}>
+      <div ref={gridRef} style={s.grid}>
         {/* Fila de encabezado */}
         <div style={s.headCell}>Hora</div>
         {DIAS.map(d => <div key={d} style={s.headCell}>{d}</div>)}
