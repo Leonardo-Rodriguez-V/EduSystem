@@ -32,4 +32,25 @@ const verificarRol = (...roles) => {
   };
 };
 
-module.exports = { verificarToken, verificarRol };
+// Verifica el tenant del usuario (colegio_id)
+// El superadmin omite esta verificación (acceso total)
+// Todos los demás roles DEBEN tener colegio_id en el JWT
+const verificarTenant = (req, res, next) => {
+  const { rol, colegio_id } = req.usuario;
+
+  // Superadmin tiene acceso global
+  if (rol === 'superadmin') return next();
+
+  // Cualquier otro rol debe pertenecer a un colegio
+  if (!colegio_id) {
+    return res.status(403).json({
+      error: 'Acceso denegado: usuario sin colegio asignado',
+    });
+  }
+
+  // Inyectar colegio_id en el request para usarlo en los controllers
+  req.colegio_id = colegio_id;
+  next();
+};
+
+module.exports = { verificarToken, verificarRol, verificarTenant };
