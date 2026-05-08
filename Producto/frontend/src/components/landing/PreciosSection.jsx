@@ -367,6 +367,6 @@ function PlanCard({ id, abierto, onToggle, destacado = false }) {
           </a>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
