@@ -10,7 +10,8 @@ router.get('/resumen-cursos',    verificarToken, asistenciaController.obtenerRes
 router.get('/resumen',           verificarToken, asistenciaController.obtenerResumenPorCurso);
 router.get('/analitica/riesgo',  verificarToken, asistenciaController.obtenerAlumnosEnRiesgoAsistencia);
 router.get('/analitica/top',     verificarToken, asistenciaController.obtenerMejoresAsistencias);
-router.get('/alumno/:id_alumno', verificarToken, asistenciaController.obtenerAsistenciaPorAlumno);
+router.get('/resumen-alumnos/:id_curso', verificarToken, asistenciaController.obtenerResumenPorAlumnosDeCurso);
+router.get('/alumno/:id_alumno',         verificarToken, asistenciaController.obtenerAsistenciaPorAlumno);
 
 // Escritura: solo director y profesor
 router.post('/guardar',          verificarToken, verificarRol('director', 'profesor'), asistenciaController.guardarAsistencia);

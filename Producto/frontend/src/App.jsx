@@ -14,6 +14,7 @@ import PerfilHijo from './pages/PerfilHijo';
 import Alumnos from './pages/Alumnos';
 import Perfil from './pages/Perfil';
 import Anotaciones from './pages/Anotaciones';
+import InformeCurso from './pages/InformeCurso';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -106,6 +107,12 @@ function App() {
         <Route path="/anotaciones" element={
           <ProtectedRoute allowedRoles={['director', 'profesor', 'apoderado']}>
             <Layout><Anotaciones /></Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/informe-curso" element={
+          <ProtectedRoute allowedRoles={['director', 'profesor']}>
+            <Layout><InformeCurso /></Layout>
           </ProtectedRoute>
         } />
 

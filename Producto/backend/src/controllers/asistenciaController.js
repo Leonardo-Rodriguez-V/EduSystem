@@ -275,6 +275,31 @@ const obtenerMejoresAsistencias = async (req, res) => {
   }
 };
 
+// GET /api/asistencia/resumen-alumnos/:id_curso
+const obtenerResumenPorAlumnosDeCurso = async (req, res) => {
+  const { id_curso } = req.params;
+  try {
+    const respuesta = await pool.query(`
+      SELECT
+        al.id,
+        al.nombre_completo,
+        COUNT(CASE WHEN asi.estado = 'presente' THEN 1 END)::int AS presentes,
+        COUNT(CASE WHEN asi.estado = 'ausente'  THEN 1 END)::int AS ausentes,
+        COUNT(CASE WHEN asi.estado = 'tardanza' THEN 1 END)::int AS tardanzas,
+        COUNT(asi.id)::int AS total
+      FROM alumnos al
+      LEFT JOIN asistencia asi ON asi.id_alumno = al.id
+      WHERE al.id_curso = $1
+      GROUP BY al.id, al.nombre_completo
+      ORDER BY al.nombre_completo ASC
+    `, [id_curso]);
+    res.json(respuesta.rows);
+  } catch (error) {
+    console.error('Error al obtener resumen por alumnos:', error);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+};
+
 module.exports = {
   obtenerAsistenciaPorCursoYFecha,
   obtenerAsistenciaPorAlumno,
@@ -285,4 +310,5 @@ module.exports = {
   obtenerResumenPorTodosLosCursos,
   obtenerAlumnosEnRiesgoAsistencia,
   obtenerMejoresAsistencias,
+  obtenerResumenPorAlumnosDeCurso,
 };

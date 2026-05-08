@@ -15,6 +15,7 @@ import {
   BookUser,
   Settings,
   NotebookPen,
+  BarChart2,
   Info,
   X,
 } from 'lucide-react';
@@ -33,9 +34,10 @@ const NAV_ITEMS = {
   director: [
     { label: 'Dashboard',        icon: LayoutDashboard, path: '/dashboard' },
     { label: 'Gestión Usuarios', icon: Users,           path: '/usuarios' },
-    { label: 'Gestión Alumnos', icon: BookUser,        path: '/alumnos' },
+    { label: 'Gestión Alumnos',  icon: BookUser,        path: '/alumnos' },
     { label: 'Asistencia',       icon: CheckSquare,     path: '/asistencia' },
     { label: 'Notas',            icon: GraduationCap,   path: '/notas' },
+    { label: 'Informe de Curso', icon: BarChart2,       path: '/informe-curso' },
     { label: 'Horarios',         icon: Calendar,        path: '/horarios' },
     { label: 'Calendario',       icon: CalendarDays,    path: '/calendario' },
     { label: 'Muro de Avisos',   icon: Bell,            path: '/muro-avisos' },
@@ -44,14 +46,15 @@ const NAV_ITEMS = {
     { label: 'Mi Perfil',        icon: Settings,        path: '/perfil' },
   ],
   profesor: [
-    { label: 'Dashboard',      icon: LayoutDashboard, path: '/dashboard' },
-    { label: 'Asistencia',     icon: CheckSquare,     path: '/asistencia' },
-    { label: 'Notas',          icon: GraduationCap,   path: '/notas' },
-    { label: 'Horarios',       icon: Calendar,        path: '/horarios' },
-    { label: 'Calendario',     icon: CalendarDays,    path: '/calendario' },
-    { label: 'Muro de Avisos', icon: Bell,            path: '/muro-avisos' },
-    { label: 'Anotaciones',    icon: NotebookPen,     path: '/anotaciones' },
-    { label: 'Mi Perfil',      icon: Settings,        path: '/perfil' },
+    { label: 'Dashboard',        icon: LayoutDashboard, path: '/dashboard' },
+    { label: 'Asistencia',       icon: CheckSquare,     path: '/asistencia' },
+    { label: 'Notas',            icon: GraduationCap,   path: '/notas' },
+    { label: 'Informe de Curso', icon: BarChart2,       path: '/informe-curso' },
+    { label: 'Horarios',         icon: Calendar,        path: '/horarios' },
+    { label: 'Calendario',       icon: CalendarDays,    path: '/calendario' },
+    { label: 'Muro de Avisos',   icon: Bell,            path: '/muro-avisos' },
+    { label: 'Anotaciones',      icon: NotebookPen,     path: '/anotaciones' },
+    { label: 'Mi Perfil',        icon: Settings,        path: '/perfil' },
   ],
   apoderado: [
     { label: 'Dashboard',      icon: LayoutDashboard, path: '/dashboard' },
@@ -84,7 +87,8 @@ const TITULO_POR_RUTA = {
   '/registro':     'Registro de Usuarios',
   '/alumnos':      'Gestión de Alumnos',
   '/perfil':       'Mi Perfil',
-  '/anotaciones':  'Libro de Anotaciones',
+  '/anotaciones':   'Libro de Anotaciones',
+  '/informe-curso': 'Informe de Curso',
 };
 
 function iniciales(nombre = '') {
