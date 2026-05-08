@@ -164,15 +164,19 @@ export default function InformeCurso() {
   const [cargando,     setCargando]     = useState(true);
   const [cargandoData, setCargandoData] = useState(false);
 
-  // Cargar cursos del profesor (o todos si es director)
+  // Cargar cursos: director ve todos, profesor solo los que es jefe
   useEffect(() => {
     const url = usuario.rol === 'director' ? '/cursos' : `/cursos?id_profesor=${usuario.id}`;
     apiFetch(url)
       .then(r => r?.json())
       .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          setCursos(data);
-          setCursoSel(data[0]);
+        if (!Array.isArray(data)) return;
+        const lista = usuario.rol === 'profesor'
+          ? data.filter(c => String(c.id_profesor_jefe) === String(usuario.id))
+          : data;
+        if (lista.length > 0) {
+          setCursos(lista);
+          setCursoSel(lista[0]);
         }
       })
       .catch(() => {})
