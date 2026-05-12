@@ -12,14 +12,14 @@ const INFO = [
   {
     icon: Mail,
     label: 'Email',
-    valor: 'contacto@edusync.com',
-    href: 'mailto:contacto@edusync.com',
+    valor: 'educational.systemchl@gmail.com',
+    href: 'mailto:educational.systemchl@gmail.com',
   },
   {
     icon: Phone,
-    label: 'Teléfono',
-    valor: '+56 9 1234 5678',
-    href: 'tel:+56912345678',
+    label: 'WhatsApp',
+    valor: '+56 9 3736 6485',
+    href: 'https://wa.me/56937366485',
   },
   {
     icon: MapPin,
