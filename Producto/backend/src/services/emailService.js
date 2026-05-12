@@ -105,4 +105,24 @@ function emailRecuperacionContrasena(correo, nombre, token) {
   });
 }
 
-module.exports = { alertaNotaBaja, alertaAsistencia, alertaAnotacionNegativa, emailRecuperacionContrasena };
+function emailContactoLanding(nombre, correoRemitente, mensaje) {
+  return enviarEmail({
+    to: 'educational.systemchl@gmail.com',
+    subject: `Nuevo mensaje de contacto — ${nombre}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:520px;margin:auto;padding:32px;background:#f8f9fa;border-radius:12px;">
+        <h2 style="color:#6366f1;margin:0 0 8px">EduSync — Formulario de Contacto</h2>
+        <p style="color:#444;margin:0 0 20px">Has recibido un nuevo mensaje desde la landing page.</p>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+          <tr><td style="padding:8px 0;color:#888;font-size:13px;width:120px">Nombre</td><td style="padding:8px 0;color:#222;font-weight:600">${nombre}</td></tr>
+          <tr><td style="padding:8px 0;color:#888;font-size:13px">Correo</td><td style="padding:8px 0;color:#6366f1;font-weight:600">${correoRemitente}</td></tr>
+        </table>
+        <div style="background:#fff;border-left:4px solid #6366f1;padding:16px 20px;border-radius:0 8px 8px 0;color:#333;margin:16px 0;white-space:pre-wrap">${mensaje}</div>
+        <p style="color:#888;font-size:12px;margin-top:24px">Puedes responder directamente a <strong>${correoRemitente}</strong></p>
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0">
+        <p style="color:#bbb;font-size:11px">EduSync — Sistema de Gestión Educativa</p>
+      </div>`,
+  });
+}
+
+module.exports = { alertaNotaBaja, alertaAsistencia, alertaAnotacionNegativa, emailRecuperacionContrasena, emailContactoLanding };

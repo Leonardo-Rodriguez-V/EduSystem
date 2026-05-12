@@ -37,14 +37,23 @@ export default function ContactoSection() {
   const handleChange = e =>
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
-  const handleSubmit = e => {
+  const handleSubmit = async e => {
     e.preventDefault();
     if (!form.nombre || !form.correo || !form.mensaje) return;
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/contacto`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error('Error al enviar');
       setEnviado(true);
-    }, 1200);
+    } catch {
+      alert('No se pudo enviar el mensaje. Escríbenos directamente a educational.systemchl@gmail.com');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
