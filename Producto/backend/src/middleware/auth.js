@@ -32,4 +32,12 @@ const verificarRol = (...roles) => {
   };
 };
 
-module.exports = { verificarToken, verificarRol };
+// Adjunta colegio_id al request. Superadmin no tiene restricción de tenant.
+const verificarTenant = (req, res, next) => {
+  if (!req.usuario) return res.status(401).json({ error: 'No autenticado' });
+  req.colegio_id = req.usuario.rol === 'superadmin' ? null : (req.usuario.colegio_id || null);
+  req.esSuperadmin = req.usuario.rol === 'superadmin';
+  next();
+};
+
+module.exports = { verificarToken, verificarRol, verificarTenant };

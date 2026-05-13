@@ -16,6 +16,7 @@ import {
   Settings,
   NotebookPen,
   BarChart2,
+  Building2,
   Info,
   X,
 } from 'lucide-react';
@@ -73,6 +74,9 @@ const NAV_ITEMS = {
     { label: 'Calendario', icon: CalendarDays,    path: '/calendario' },
     { label: 'Mi Perfil',  icon: Settings,        path: '/perfil' },
   ],
+  superadmin: [
+    { label: 'Colegios',   icon: Building2,       path: '/superadmin' },
+  ],
 };
 
 const TITULO_POR_RUTA = {
@@ -89,6 +93,7 @@ const TITULO_POR_RUTA = {
   '/perfil':       'Mi Perfil',
   '/anotaciones':   'Libro de Anotaciones',
   '/informe-curso': 'Informe de Curso',
+  '/superadmin':    'Panel Superadmin',
 };
 
 function iniciales(nombre = '') {

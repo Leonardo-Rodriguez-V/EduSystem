@@ -1,63 +1,41 @@
 const pool = require('../config/db');
 
-// Obtener todos los cursos
+const ORDEN_CURSOS = `
+  ORDER BY
+    CASE nombre
+      WHEN 'Pre-Kínder (NT1)' THEN 1 WHEN 'Kínder (NT2)' THEN 2
+      WHEN '1° Básico' THEN 3 WHEN '2° Básico' THEN 4 WHEN '3° Básico' THEN 5
+      WHEN '4° Básico' THEN 6 WHEN '5° Básico' THEN 7 WHEN '6° Básico' THEN 8
+      WHEN '7° Básico' THEN 9 WHEN '8° Básico' THEN 10
+      WHEN '1° Medio' THEN 11 WHEN '2° Medio' THEN 12
+      WHEN '3° Medio' THEN 13 WHEN '4° Medio' THEN 14
+      ELSE 15
+    END
+`;
+
 const obtenerCursos = async (req, res) => {
   const { id_profesor } = req.query;
+  const esSuperadmin = req.usuario.rol === 'superadmin';
+  const colegio_id = req.usuario.colegio_id;
   try {
-    let consulta = '';
-    let valores = [];
+    let consulta, valores = [];
 
     if (id_profesor) {
+      const extraFiltro = esSuperadmin ? '' : 'AND c.colegio_id = $2';
       consulta = `
         SELECT * FROM (
-          SELECT c.* FROM cursos c WHERE c.id_profesor_jefe = $1
+          SELECT c.* FROM cursos c WHERE c.id_profesor_jefe = $1 ${extraFiltro}
           UNION
           SELECT c.* FROM cursos c
           JOIN curso_asignatura_profesor cap ON c.id = cap.id_curso
-          WHERE cap.id_profesor = $1
-        ) sub
-        ORDER BY
-          CASE nombre
-            WHEN 'Pre-Kínder (NT1)' THEN 1
-            WHEN 'Kínder (NT2)'     THEN 2
-            WHEN '1° Básico'        THEN 3
-            WHEN '2° Básico'        THEN 4
-            WHEN '3° Básico'        THEN 5
-            WHEN '4° Básico'        THEN 6
-            WHEN '5° Básico'        THEN 7
-            WHEN '6° Básico'        THEN 8
-            WHEN '7° Básico'        THEN 9
-            WHEN '8° Básico'        THEN 10
-            WHEN '1° Medio'         THEN 11
-            WHEN '2° Medio'         THEN 12
-            WHEN '3° Medio'         THEN 13
-            WHEN '4° Medio'         THEN 14
-            ELSE 15
-          END
+          WHERE cap.id_profesor = $1 ${extraFiltro}
+        ) sub ${ORDEN_CURSOS}
       `;
-      valores = [id_profesor];
+      valores = esSuperadmin ? [id_profesor] : [id_profesor, colegio_id];
     } else {
-      consulta = `
-        SELECT * FROM cursos
-        ORDER BY
-          CASE nombre
-            WHEN 'Pre-Kínder (NT1)' THEN 1
-            WHEN 'Kínder (NT2)'     THEN 2
-            WHEN '1° Básico'        THEN 3
-            WHEN '2° Básico'        THEN 4
-            WHEN '3° Básico'        THEN 5
-            WHEN '4° Básico'        THEN 6
-            WHEN '5° Básico'        THEN 7
-            WHEN '6° Básico'        THEN 8
-            WHEN '7° Básico'        THEN 9
-            WHEN '8° Básico'        THEN 10
-            WHEN '1° Medio'         THEN 11
-            WHEN '2° Medio'         THEN 12
-            WHEN '3° Medio'         THEN 13
-            WHEN '4° Medio'         THEN 14
-            ELSE 15
-          END
-      `;
+      const where = esSuperadmin ? '' : 'WHERE colegio_id = $1';
+      consulta = `SELECT * FROM cursos ${where} ${ORDEN_CURSOS}`;
+      valores = esSuperadmin ? [] : [colegio_id];
     }
 
     const respuesta = await pool.query(consulta, valores);
@@ -68,13 +46,14 @@ const obtenerCursos = async (req, res) => {
   }
 };
 
-// Crear un nuevo curso
 const crearCurso = async (req, res) => {
   const { nombre, anio, id_profesor_jefe } = req.body;
+  const colegio_id = req.usuario.rol === 'superadmin' ? (req.body.colegio_id || null) : req.usuario.colegio_id;
   try {
-    const consulta = 'INSERT INTO cursos (nombre, anio, id_profesor_jefe) VALUES ($1, $2, $3) RETURNING *';
-    const valores = [nombre, anio, id_profesor_jefe];
-    const respuesta = await pool.query(consulta, valores);
+    const respuesta = await pool.query(
+      'INSERT INTO cursos (nombre, anio, id_profesor_jefe, colegio_id) VALUES ($1, $2, $3, $4) RETURNING *',
+      [nombre, anio, id_profesor_jefe, colegio_id]
+    );
     res.status(201).json(respuesta.rows[0]);
   } catch (error) {
     console.error('Error al crear curso:', error);
@@ -82,7 +61,4 @@ const crearCurso = async (req, res) => {
   }
 };
 
-module.exports = {
-  obtenerCursos,
-  crearCurso,
-};
+module.exports = { obtenerCursos, crearCurso };

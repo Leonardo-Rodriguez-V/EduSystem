@@ -1,20 +1,31 @@
 const pool = require('../config/db');
 
-// GET /api/alumnos  — opcionalmente filtrar por curso: ?id_curso=1
 const obtenerAlumnos = async (req, res) => {
   const { id_curso } = req.query;
+  const esSuperadmin = req.usuario.rol === 'superadmin';
+  const colegio_id = req.usuario.colegio_id;
   try {
-    let consulta = `
+    const condiciones = [];
+    const valores = [];
+    let idx = 1;
+
+    if (!esSuperadmin) {
+      condiciones.push(`a.colegio_id = $${idx++}`);
+      valores.push(colegio_id);
+    }
+    if (id_curso) {
+      condiciones.push(`a.id_curso = $${idx++}`);
+      valores.push(id_curso);
+    }
+
+    const where = condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : '';
+    const consulta = `
       SELECT a.*, c.nombre AS nombre_curso
       FROM alumnos a
       LEFT JOIN cursos c ON a.id_curso = c.id
+      ${where}
+      ORDER BY a.nombre_completo ASC
     `;
-    const valores = [];
-    if (id_curso) {
-      consulta += ' WHERE a.id_curso = $1';
-      valores.push(id_curso);
-    }
-    consulta += ' ORDER BY a.nombre_completo ASC';
     const respuesta = await pool.query(consulta, valores);
     res.status(200).json(respuesta.rows);
   } catch (error) {
@@ -23,7 +34,6 @@ const obtenerAlumnos = async (req, res) => {
   }
 };
 
-// GET /api/alumnos/:id
 const obtenerAlumnoPorId = async (req, res) => {
   const { id } = req.params;
   try {
@@ -44,13 +54,13 @@ const obtenerAlumnoPorId = async (req, res) => {
   }
 };
 
-// POST /api/alumnos
 const crearAlumno = async (req, res) => {
   const { nombre_completo, rut, fecha_nacimiento, id_curso } = req.body;
+  const colegio_id = req.usuario.rol === 'superadmin' ? (req.body.colegio_id || null) : req.usuario.colegio_id;
   try {
     const respuesta = await pool.query(
-      'INSERT INTO alumnos (nombre_completo, rut, fecha_nacimiento, id_curso) VALUES ($1, $2, $3, $4) RETURNING *',
-      [nombre_completo, rut, fecha_nacimiento, id_curso]
+      'INSERT INTO alumnos (nombre_completo, rut, fecha_nacimiento, id_curso, colegio_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [nombre_completo, rut, fecha_nacimiento, id_curso, colegio_id]
     );
     res.status(201).json(respuesta.rows[0]);
   } catch (error) {
@@ -62,12 +72,10 @@ const crearAlumno = async (req, res) => {
   }
 };
 
-// PUT /api/alumnos/:id
 const actualizarAlumno = async (req, res) => {
   const { id } = req.params;
   const { nombre_completo, rut, fecha_nacimiento, id_curso, id_apoderado } = req.body;
   try {
-    // Build dynamic SET clause for partial updates
     const sets = [];
     const valores = [];
     let idx = 1;
@@ -94,7 +102,6 @@ const actualizarAlumno = async (req, res) => {
   }
 };
 
-// DELETE /api/alumnos/:id
 const eliminarAlumno = async (req, res) => {
   const { id } = req.params;
   try {
@@ -109,7 +116,6 @@ const eliminarAlumno = async (req, res) => {
   }
 };
 
-// GET /api/alumnos/apoderado/:id_apoderado
 const obtenerAlumnosPorApoderado = async (req, res) => {
   const { id_apoderado } = req.params;
   try {
@@ -129,10 +135,9 @@ const obtenerAlumnosPorApoderado = async (req, res) => {
   }
 };
 
-// POST /api/alumnos/con-apoderado
-// Crea un alumno y lo vincula al apoderado en apoderado_alumno (transacción)
 const crearAlumnoConApoderado = async (req, res) => {
   const { nombre_completo, rut, fecha_nacimiento, id_curso, id_apoderado } = req.body;
+  const colegio_id = req.usuario.rol === 'superadmin' ? (req.body.colegio_id || null) : req.usuario.colegio_id;
   if (!nombre_completo || !id_curso || !id_apoderado) {
     return res.status(400).json({ error: 'nombre_completo, id_curso e id_apoderado son obligatorios' });
   }
@@ -140,8 +145,8 @@ const crearAlumnoConApoderado = async (req, res) => {
   try {
     await client.query('BEGIN');
     const alumnoRes = await client.query(
-      'INSERT INTO alumnos (nombre_completo, rut, fecha_nacimiento, id_curso) VALUES ($1, $2, $3, $4) RETURNING *',
-      [nombre_completo, rut || null, fecha_nacimiento || null, id_curso]
+      'INSERT INTO alumnos (nombre_completo, rut, fecha_nacimiento, id_curso, colegio_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [nombre_completo, rut || null, fecha_nacimiento || null, id_curso, colegio_id]
     );
     const alumno = alumnoRes.rows[0];
     await client.query(
@@ -149,7 +154,6 @@ const crearAlumnoConApoderado = async (req, res) => {
       [id_apoderado, alumno.id]
     );
     await client.query('COMMIT');
-    // Adjuntar nombre_curso para la respuesta
     const cursoRes = await pool.query('SELECT nombre FROM cursos WHERE id = $1', [id_curso]);
     alumno.nombre_curso = cursoRes.rows[0]?.nombre || null;
     res.status(201).json(alumno);
@@ -163,8 +167,6 @@ const crearAlumnoConApoderado = async (req, res) => {
   }
 };
 
-// DELETE /api/alumnos/:id/apoderado/:id_apoderado
-// Solo desvincula la relación, no elimina el alumno
 const desvincularAlumnoApoderado = async (req, res) => {
   const { id, id_apoderado } = req.params;
   try {
@@ -179,5 +181,7 @@ const desvincularAlumnoApoderado = async (req, res) => {
   }
 };
 
-module.exports = { obtenerAlumnos, obtenerAlumnoPorId, crearAlumno, crearAlumnoConApoderado, desvincularAlumnoApoderado, actualizarAlumno, eliminarAlumno, obtenerAlumnosPorApoderado };
-
+module.exports = {
+  obtenerAlumnos, obtenerAlumnoPorId, crearAlumno, crearAlumnoConApoderado,
+  desvincularAlumnoApoderado, actualizarAlumno, eliminarAlumno, obtenerAlumnosPorApoderado,
+};

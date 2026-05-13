@@ -17,6 +17,7 @@ import Anotaciones from './pages/Anotaciones';
 import InformeCurso from './pages/InformeCurso';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import SuperAdminPanel from './pages/SuperAdminPanel';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import { NotificationProvider } from './context/NotificationContext';
@@ -113,6 +114,12 @@ function App() {
         <Route path="/informe-curso" element={
           <ProtectedRoute allowedRoles={['director', 'profesor']}>
             <Layout><InformeCurso /></Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/superadmin" element={
+          <ProtectedRoute allowedRoles={['superadmin']}>
+            <Layout><SuperAdminPanel /></Layout>
           </ProtectedRoute>
         } />
 

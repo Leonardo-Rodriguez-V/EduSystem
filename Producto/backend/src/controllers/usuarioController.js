@@ -2,10 +2,14 @@ const pool = require('../config/db');
 const bcrypt = require('bcryptjs');
 
 const obtenerUsuarios = async (req, res) => {
+  const esSuperadmin = req.usuario.rol === 'superadmin';
+  const colegio_id = req.usuario.colegio_id;
   try {
+    const filtro = esSuperadmin ? '' : 'WHERE u.colegio_id = $1';
+    const valores = esSuperadmin ? [] : [colegio_id];
     const respuesta = await pool.query(`
       SELECT
-        u.id, u.nombre_completo, u.correo, u.rol, u.especialidad,
+        u.id, u.nombre_completo, u.correo, u.rol, u.especialidad, u.colegio_id,
         c.nombre AS curso_jefatura,
         (SELECT STRING_AGG(DISTINCT a.nombre, ', ' ORDER BY a.nombre)
          FROM curso_asignatura_profesor cap
@@ -14,10 +18,11 @@ const obtenerUsuarios = async (req, res) => {
         (SELECT COUNT(*) FROM apoderado_alumno aa WHERE aa.id_apoderado = u.id) AS total_hijos
       FROM usuarios u
       LEFT JOIN cursos c ON c.id_profesor_jefe = u.id
+      ${filtro}
       ORDER BY
         CASE u.rol WHEN 'director' THEN 1 WHEN 'profesor' THEN 2 ELSE 3 END,
         u.nombre_completo
-    `);
+    `, valores);
     res.json(respuesta.rows);
   } catch (error) {
     console.error('Error al obtener los usuarios:', error);
@@ -27,6 +32,7 @@ const obtenerUsuarios = async (req, res) => {
 
 const crearUsuario = async (req, res) => {
   const { nombre_completo, correo, rol, contraseña } = req.body;
+  const colegio_id = req.usuario.rol === 'superadmin' ? (req.body.colegio_id || null) : req.usuario.colegio_id;
 
   if (!contraseña || contraseña.length < 8 || !/\d/.test(contraseña)) {
     return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres y un número' });
@@ -34,8 +40,10 @@ const crearUsuario = async (req, res) => {
 
   try {
     const hash = await bcrypt.hash(contraseña, 10);
-    const consulta = 'INSERT INTO usuarios (nombre_completo, correo, rol, contraseña) VALUES ($1, $2, $3, $4) RETURNING *';
-    const respuesta = await pool.query(consulta, [nombre_completo, correo, rol, hash]);
+    const respuesta = await pool.query(
+      'INSERT INTO usuarios (nombre_completo, correo, rol, contraseña, colegio_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [nombre_completo, correo, rol, hash, colegio_id]
+    );
     const { contraseña: _, ...datosUsuario } = respuesta.rows[0];
     res.status(201).json(datosUsuario);
   } catch (error) {
@@ -84,9 +92,4 @@ const eliminarUsuario = async (req, res) => {
   }
 };
 
-module.exports = {
-  obtenerUsuarios,
-  crearUsuario,
-  actualizarUsuario,
-  eliminarUsuario,
-};
+module.exports = { obtenerUsuarios, crearUsuario, actualizarUsuario, eliminarUsuario };

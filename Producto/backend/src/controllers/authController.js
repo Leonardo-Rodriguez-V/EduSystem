@@ -17,7 +17,13 @@ const login = async (req, res) => {
       return res.status(401).json({ error: 'Credenciales incorrectas' });
     }
     const token = jwt.sign(
-      { id: usuario.id, nombre_completo: usuario.nombre_completo, correo: usuario.correo, rol: usuario.rol },
+      {
+        id: usuario.id,
+        nombre_completo: usuario.nombre_completo,
+        correo: usuario.correo,
+        rol: usuario.rol,
+        colegio_id: usuario.colegio_id || null,
+      },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
     );
