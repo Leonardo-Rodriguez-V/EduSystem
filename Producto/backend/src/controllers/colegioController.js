@@ -104,12 +104,33 @@ const actualizarColegio = async (req, res) => {
     if (director?.nombre || director?.correo) {
       const existe = await client.query(`SELECT id FROM usuarios WHERE colegio_id = $1 AND rol = 'director' LIMIT 1`, [id]);
       if (existe.rows.length > 0) {
+        // Director ya existe: actualizar datos y opcionalmente la contraseña
+        if (director.contraseña) {
+          const hash = await bcrypt.hash(director.contraseña, 10);
+          await client.query(
+            `UPDATE usuarios SET
+              nombre_completo = COALESCE(NULLIF($1,''), nombre_completo),
+              correo          = COALESCE(NULLIF($2,''), correo),
+              contraseña      = $3
+             WHERE colegio_id = $4 AND rol = 'director'`,
+            [director.nombre || null, director.correo || null, hash, id]
+          );
+        } else {
+          await client.query(
+            `UPDATE usuarios SET
+              nombre_completo = COALESCE(NULLIF($1,''), nombre_completo),
+              correo          = COALESCE(NULLIF($2,''), correo)
+             WHERE colegio_id = $3 AND rol = 'director'`,
+            [director.nombre || null, director.correo || null, id]
+          );
+        }
+      } else if (director.nombre && director.correo && director.contraseña) {
+        // No existe director: crear uno nuevo
+        const hash = await bcrypt.hash(director.contraseña, 10);
         await client.query(
-          `UPDATE usuarios SET
-            nombre_completo = COALESCE(NULLIF($1,''), nombre_completo),
-            correo          = COALESCE(NULLIF($2,''), correo)
-           WHERE colegio_id = $3 AND rol = 'director'`,
-          [director.nombre || null, director.correo || null, id]
+          `INSERT INTO usuarios (nombre_completo, correo, rol, contraseña, colegio_id)
+           VALUES ($1, $2, 'director', $3, $4)`,
+          [director.nombre, director.correo, hash, id]
         );
       }
     }
