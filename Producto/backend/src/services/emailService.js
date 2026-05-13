@@ -13,7 +13,7 @@ async function enviarEmail({ to, subject, html }) {
         'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'EduSync <notificaciones@edusync.cl>',
+        from: process.env.EMAIL_FROM || 'EduSync <onboarding@resend.dev>',
         to,
         subject,
         html,
