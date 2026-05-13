@@ -42,7 +42,7 @@ export default function ContactoSection() {
     if (!form.nombre || !form.correo || !form.mensaje) return;
     setLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/contacto`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/contacto`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
