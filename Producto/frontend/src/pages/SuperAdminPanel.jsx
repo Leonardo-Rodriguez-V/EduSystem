@@ -64,12 +64,23 @@ export default function SuperAdminPanel() {
   const [loadingDetalle, setLoadingDetalle] = useState(false);
   const [guardando, setGuardando]       = useState(false);
   const [error, setError]               = useState('');
+  const [errorCarga, setErrorCarga]     = useState('');
 
   const cargar = async () => {
+    setErrorCarga('');
     try {
       const res = await fetch(`${API}/colegios`, { headers });
-      if (res.ok) setColegios(await res.json());
-    } finally { setLoading(false); }
+      if (res.ok) {
+        setColegios(await res.json());
+      } else {
+        const d = await res.json().catch(() => ({}));
+        setErrorCarga(d.error || `Error ${res.status} al cargar colegios`);
+      }
+    } catch (err) {
+      setErrorCarga('No se pudo conectar con el servidor. Intenta recargar la página.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { cargar(); }, []);
@@ -228,6 +239,13 @@ export default function SuperAdminPanel() {
       <div style={card}>
         {loading ? (
           <p style={{ textAlign: 'center', color: 'var(--color-foreground)', opacity: 0.4, padding: '32px 0' }}>Cargando...</p>
+        ) : errorCarga ? (
+          <div style={{ textAlign: 'center', padding: '32px 0' }}>
+            <p style={{ color: '#f87171', fontSize: 14, marginBottom: 16 }}>{errorCarga}</p>
+            <button onClick={cargar} style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(165,180,252,0.3)', borderRadius: 10, padding: '9px 20px', color: '#a5b4fc', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>
+              Reintentar
+            </button>
+          </div>
         ) : filtrados.length === 0 ? (
           <p style={{ textAlign: 'center', color: 'var(--color-foreground)', opacity: 0.4, padding: '32px 0' }}>
             {busqueda || filtroPlan !== 'todos' || filtroEstado !== 'todos' ? 'Sin resultados para este filtro.' : 'No hay colegios registrados.'}
