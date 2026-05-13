@@ -83,9 +83,11 @@ const crearColegio = async (req, res) => {
 
 const actualizarColegio = async (req, res) => {
   const { id } = req.params;
-  const { nombre, rut, direccion, telefono, email, plan, plan_expira, activo } = req.body;
+  const { nombre, rut, direccion, telefono, email, plan, plan_expira, activo, director } = req.body;
+  const client = await pool.connect();
   try {
-    const { rows } = await pool.query(
+    await client.query('BEGIN');
+    const { rows } = await client.query(
       `UPDATE colegios SET
         nombre      = COALESCE($1, nombre),
         rut         = COALESCE($2, rut),
@@ -98,11 +100,27 @@ const actualizarColegio = async (req, res) => {
        WHERE id = $9 RETURNING *`,
       [nombre, rut, direccion, telefono, email, plan, plan_expira, activo, id]
     );
-    if (rows.length === 0) return res.status(404).json({ error: 'Colegio no encontrado' });
+    if (rows.length === 0) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'Colegio no encontrado' }); }
+    if (director?.nombre || director?.correo) {
+      const existe = await client.query(`SELECT id FROM usuarios WHERE colegio_id = $1 AND rol = 'director' LIMIT 1`, [id]);
+      if (existe.rows.length > 0) {
+        await client.query(
+          `UPDATE usuarios SET
+            nombre_completo = COALESCE(NULLIF($1,''), nombre_completo),
+            correo          = COALESCE(NULLIF($2,''), correo)
+           WHERE colegio_id = $3 AND rol = 'director'`,
+          [director.nombre || null, director.correo || null, id]
+        );
+      }
+    }
+    await client.query('COMMIT');
     res.json(rows[0]);
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error('[COLEGIOS] Error al actualizar:', err.message);
     res.status(500).json({ error: 'Error del servidor' });
+  } finally {
+    client.release();
   }
 };
 

@@ -124,6 +124,8 @@ export default function SuperAdminPanel() {
       telefono: c.telefono || '', email: c.email || '', plan: c.plan,
       plan_expira: c.plan_expira ? c.plan_expira.split('T')[0] : '',
     });
+    setFormDir({ nombre: c.nombre_director || '', correo: c.correo_director || '', contraseña: '' });
+    setConDirector(true);
     setError('');
     setModal({ modo: 'editar', id: c.id });
   };
@@ -144,6 +146,7 @@ export default function SuperAdminPanel() {
       const url = modal.modo === 'crear' ? `${API}/colegios` : `${API}/colegios/${modal.id}`;
       const body = { ...form };
       if (modal.modo === 'crear' && conDirector) body.director = formDir;
+      if (modal.modo === 'editar' && (formDir.nombre.trim() || formDir.correo.trim())) body.director = { nombre: formDir.nombre, correo: formDir.correo };
       const res = await fetch(url, { method: modal.modo === 'crear' ? 'POST' : 'PUT', headers, body: JSON.stringify(body) });
       if (res.ok) { setModal(null); cargar(); }
       else { const d = await res.json(); setError(d.error || 'Error al guardar'); }
@@ -358,22 +361,28 @@ export default function SuperAdminPanel() {
                 <Campo label="Vencimiento plan" type="date" valor={form.plan_expira} onChange={v => setForm(f => ({...f, plan_expira: v}))} placeholder="" />
               </div>
 
-              {/* Sección director (solo al crear) */}
-              {modal.modo === 'crear' && (
-                <div style={{ marginTop: 8 }}>
-                  <button onClick={() => setConDirector(d => !d)} style={{ display: 'flex', alignItems: 'center', gap: 8, background: conDirector ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.04)', border: `1px solid ${conDirector ? 'rgba(165,180,252,0.4)' : 'rgba(165,180,252,0.15)'}`, borderRadius: 10, padding: '9px 16px', color: conDirector ? '#a5b4fc' : 'var(--color-foreground)', fontWeight: 600, fontSize: 13, cursor: 'pointer', width: '100%', justifyContent: 'center' }}>
+              {/* Sección director */}
+              <div style={{ marginTop: 8 }}>
+                {modal.modo === 'crear' && (
+                  <button onClick={() => setConDirector(d => !d)} style={{ display: 'flex', alignItems: 'center', gap: 8, background: conDirector ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.04)', border: `1px solid ${conDirector ? 'rgba(165,180,252,0.4)' : 'rgba(165,180,252,0.15)'}`, borderRadius: 10, padding: '9px 16px', color: conDirector ? '#a5b4fc' : 'var(--color-foreground)', fontWeight: 600, fontSize: 13, cursor: 'pointer', width: '100%', justifyContent: 'center', marginBottom: 14 }}>
                     <UserPlus size={15} />
                     {conDirector ? 'Quitar director inicial' : 'Crear director inicial'}
                   </button>
-                  {conDirector && (
-                    <div style={{ marginTop: 14, padding: '18px', background: 'rgba(99,102,241,0.06)', borderRadius: 12, border: '1px solid rgba(165,180,252,0.15)', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                      <Campo label="Nombre director *" valor={formDir.nombre}    onChange={v => setFormDir(d => ({...d, nombre: v}))}    placeholder="Ana Martínez" />
-                      <Campo label="Correo director *"  valor={formDir.correo}    onChange={v => setFormDir(d => ({...d, correo: v}))}    placeholder="director@colegio.cl" type="email" />
-                      <Campo label="Contraseña *"        valor={formDir.contraseña} onChange={v => setFormDir(d => ({...d, contraseña: v}))} placeholder="Mínimo 8 caracteres y un número" type="password" />
-                    </div>
-                  )}
-                </div>
-              )}
+                )}
+                {(modal.modo === 'editar' || conDirector) && (
+                  <div style={{ padding: '18px', background: 'rgba(99,102,241,0.06)', borderRadius: 12, border: '1px solid rgba(165,180,252,0.15)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <p style={{ margin: 0, fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a5b4fc', opacity: 0.8 }}>
+                      <UserPlus size={12} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+                      {modal.modo === 'crear' ? 'Director inicial' : 'Director'}
+                    </p>
+                    <Campo label="Nombre director" valor={formDir.nombre} onChange={v => setFormDir(d => ({...d, nombre: v}))} placeholder="Ana Martínez" />
+                    <Campo label="Correo director" valor={formDir.correo} onChange={v => setFormDir(d => ({...d, correo: v}))} placeholder="director@colegio.cl" type="email" />
+                    {modal.modo === 'crear' && (
+                      <Campo label="Contraseña *" valor={formDir.contraseña} onChange={v => setFormDir(d => ({...d, contraseña: v}))} placeholder="Mínimo 8 caracteres y un número" type="password" />
+                    )}
+                  </div>
+                )}
+              </div>
 
               {error && <p style={{ color: '#f87171', fontSize: 13, margin: 0, background: 'rgba(239,68,68,0.1)', padding: '10px 14px', borderRadius: 8 }}>{error}</p>}
             </div>
