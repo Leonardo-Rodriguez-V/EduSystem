@@ -10,24 +10,23 @@ const obtenerColegios = async (req, res) => {
   try {
     const { rows } = await pool.query(`
       SELECT c.*,
-        COUNT(DISTINCT u.id)   FILTER (WHERE u.rol != 'superadmin') AS total_usuarios,
-        COUNT(DISTINCT a.id)   AS total_alumnos,
-        COUNT(DISTINCT cur.id) AS total_cursos,
+        (SELECT COUNT(*) FROM usuarios u
+         WHERE u.colegio_id = c.id AND u.rol != 'superadmin') AS total_usuarios,
+        (SELECT COUNT(*) FROM alumnos a
+         WHERE a.colegio_id = c.id) AS total_alumnos,
+        (SELECT COUNT(*) FROM cursos cur
+         WHERE cur.colegio_id = c.id) AS total_cursos,
         (SELECT u2.nombre_completo FROM usuarios u2
          WHERE u2.colegio_id = c.id AND u2.rol = 'director' LIMIT 1) AS nombre_director,
         (SELECT u2.correo FROM usuarios u2
          WHERE u2.colegio_id = c.id AND u2.rol = 'director' LIMIT 1) AS correo_director
       FROM colegios c
-      LEFT JOIN usuarios u   ON u.colegio_id   = c.id
-      LEFT JOIN alumnos a    ON a.colegio_id   = c.id
-      LEFT JOIN cursos cur   ON cur.colegio_id = c.id
-      GROUP BY c.id
       ORDER BY c.creado_en DESC
     `);
     res.json(rows);
   } catch (err) {
     console.error('[COLEGIOS] Error al obtener:', err.message);
-    res.status(500).json({ error: 'Error del servidor' });
+    res.status(500).json({ error: err.message });
   }
 };
 

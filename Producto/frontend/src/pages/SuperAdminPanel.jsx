@@ -68,8 +68,10 @@ export default function SuperAdminPanel() {
 
   const cargar = async () => {
     setErrorCarga('');
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
     try {
-      const res = await fetch(`${API}/colegios`, { headers });
+      const res = await fetch(`${API}/colegios`, { headers, signal: controller.signal });
       if (res.ok) {
         setColegios(await res.json());
       } else {
@@ -77,8 +79,13 @@ export default function SuperAdminPanel() {
         setErrorCarga(d.error || `Error ${res.status} al cargar colegios`);
       }
     } catch (err) {
-      setErrorCarga('No se pudo conectar con el servidor. Intenta recargar la página.');
+      if (err.name === 'AbortError') {
+        setErrorCarga('El servidor tardó demasiado en responder. Intenta de nuevo.');
+      } else {
+        setErrorCarga('No se pudo conectar con el servidor. Intenta recargar la página.');
+      }
     } finally {
+      clearTimeout(timeout);
       setLoading(false);
     }
   };
