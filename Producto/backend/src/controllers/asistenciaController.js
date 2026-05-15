@@ -292,10 +292,16 @@ const obtenerMejoresAsistencias = async (req, res) => {
   }
 };
 
-// GET /api/asistencia/resumen-alumnos/:id_curso
+// GET /api/asistencia/resumen-alumnos/:id_curso?fecha_desde=&fecha_hasta=
 const obtenerResumenPorAlumnosDeCurso = async (req, res) => {
   const { id_curso } = req.params;
+  const { fecha_desde, fecha_hasta } = req.query;
   try {
+    const params = [id_curso];
+    let dateFilter = '';
+    if (fecha_desde) { params.push(fecha_desde); dateFilter += ` AND asi.fecha >= $${params.length}`; }
+    if (fecha_hasta) { params.push(fecha_hasta); dateFilter += ` AND asi.fecha <= $${params.length}`; }
+
     const respuesta = await pool.query(`
       SELECT
         al.id,
@@ -305,11 +311,11 @@ const obtenerResumenPorAlumnosDeCurso = async (req, res) => {
         COUNT(CASE WHEN asi.estado = 'tardanza' THEN 1 END)::int AS tardanzas,
         COUNT(asi.id)::int AS total
       FROM alumnos al
-      LEFT JOIN asistencia asi ON asi.id_alumno = al.id
+      LEFT JOIN asistencia asi ON asi.id_alumno = al.id AND TRUE ${dateFilter}
       WHERE al.id_curso = $1
       GROUP BY al.id, al.nombre_completo
       ORDER BY al.nombre_completo ASC
-    `, [id_curso]);
+    `, params);
     res.json(respuesta.rows);
   } catch (error) {
     console.error('Error al obtener resumen por alumnos:', error);
