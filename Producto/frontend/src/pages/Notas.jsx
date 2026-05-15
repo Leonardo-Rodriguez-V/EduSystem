@@ -4,8 +4,8 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, 
   ResponsiveContainer, AreaChart, Area
 } from 'recharts';
-import apiFetch from '../utils/api';
-import { 
+import apiFetch, { PlanError } from '../utils/api';
+import {
   Plus,
   Edit3,
   Trash2,
@@ -16,7 +16,8 @@ import {
   AlertTriangle,
   Award,
   BarChart3,
-  LayoutGrid
+  LayoutGrid,
+  Lock
 } from 'lucide-react';
 
 /* ── Sugerencias de Estilos Rich Aesthetic ── */
@@ -514,11 +515,31 @@ export default function Notas() {
   );
 }
 
+function PremiumLock({ mensaje }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 32px', gap: '20px' }}>
+      <div style={{ width: '72px', height: '72px', borderRadius: '24px', background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.15))', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid rgba(99,102,241,0.2)' }}>
+        <Lock size={32} color="var(--color-primary)" />
+      </div>
+      <div style={{ textAlign: 'center', maxWidth: '380px' }}>
+        <h3 style={{ margin: '0 0 8px', fontSize: '20px', fontWeight: 900, color: 'var(--color-foreground)' }}>Función Premium</h3>
+        <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--color-foreground)', opacity: 0.55, lineHeight: 1.6 }}>
+          {mensaje || 'Esta sección requiere Plan Premium. Contacta con el administrador de tu institución para actualizar el plan.'}
+        </p>
+      </div>
+      <div style={{ padding: '10px 20px', borderRadius: '12px', background: 'linear-gradient(135deg, var(--color-primary), #8b5cf6)', color: '#fff', fontSize: '13px', fontWeight: 800, letterSpacing: '0.02em' }}>
+        Plan Premium requerido
+      </div>
+    </div>
+  );
+}
+
 function NotasAnalytics() {
   const [promediosCursos, setPromediosCursos] = useState([]);
   const [riesgoAcademico, setRiesgoAcademico] = useState([]);
   const [topPromedios, setTopPromedios] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [sinPlan, setSinPlan] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -534,13 +555,16 @@ function NotasAnalytics() {
         if (Array.isArray(resRiesgo)) setRiesgoAcademico(resRiesgo);
         if (Array.isArray(resTop)) setTopPromedios(resTop);
       } catch (err) {
-        console.error('Error fetching grades analytics:', err);
+        if (err.code === 'plan_requerido') { setSinPlan(true); }
+        else console.error('Error fetching grades analytics:', err);
       } finally {
         setCargando(false);
       }
     };
     fetchData();
   }, []);
+
+  if (sinPlan) return <PremiumLock />;
 
   if (cargando) return (
      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '32px' }}>
