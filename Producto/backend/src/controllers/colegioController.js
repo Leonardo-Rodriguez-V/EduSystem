@@ -180,4 +180,25 @@ const eliminarColegio = async (req, res) => {
   }
 };
 
-module.exports = { obtenerColegios, obtenerColegioDetalle, crearColegio, actualizarColegio, eliminarColegio };
+const reenviarBienvenida = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { rows: [colegio] } = await pool.query('SELECT * FROM colegios WHERE id = $1', [id]);
+    if (!colegio) return res.status(404).json({ error: 'Colegio no encontrado' });
+    const { rows: [director] } = await pool.query(
+      `SELECT nombre_completo, correo FROM usuarios
+       WHERE colegio_id = $1 AND rol = 'director'
+         AND nombre_completo != '' AND correo != ''
+       LIMIT 1`, [id]
+    );
+    if (!director) return res.status(404).json({ error: 'El colegio no tiene director con correo registrado' });
+    console.log(`[COLEGIOS] reenviando bienvenida a ${director.correo}`);
+    await bienvenidaDirector(director.correo, director.nombre_completo, colegio.nombre, colegio.plan);
+    res.json({ mensaje: `Correo de bienvenida reenviado a ${director.correo}` });
+  } catch (err) {
+    console.error('[COLEGIOS] Error reenviar bienvenida:', err.message);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+};
+
+module.exports = { obtenerColegios, obtenerColegioDetalle, crearColegio, actualizarColegio, eliminarColegio, reenviarBienvenida };

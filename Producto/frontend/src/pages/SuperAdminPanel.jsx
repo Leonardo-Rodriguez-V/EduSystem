@@ -436,6 +436,21 @@ export default function SuperAdminPanel() {
                     {modal.modo === 'editar' && modal.tieneDirector && (
                       <Campo label="Nueva contraseña (opcional)" valor={formDir.contraseña} onChange={v => setFormDir(d => ({...d, contraseña: v}))} placeholder="Dejar vacío para no cambiar" type="password" />
                     )}
+                    {modal.modo === 'editar' && modal.tieneDirector && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            const r = await fetch(`${API}/colegios/${modal.id}/reenviar-bienvenida`, { method: 'POST', headers });
+                            const d = await r.json();
+                            alert(r.ok ? `✅ ${d.mensaje}` : `❌ ${d.error}`);
+                          } catch { alert('❌ Error de red'); }
+                        }}
+                        style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(165,180,252,0.3)', borderRadius: 8, padding: '8px 14px', color: '#a5b4fc', fontWeight: 600, fontSize: 12, cursor: 'pointer', width: '100%' }}
+                      >
+                        Reenviar correo de bienvenida
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
