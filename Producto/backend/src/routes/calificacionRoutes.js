@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const notaController = require('../controllers/calificacionController');
-const { verificarToken, verificarRol } = require('../middleware/auth');
+const { verificarToken, verificarRol, verificarPlan } = require('../middleware/auth');
 
 // Consultas: cualquier usuario autenticado
 router.get('/',                          verificarToken, notaController.obtenerNotasPorAlumno);
 router.get('/promedio-cursos',           verificarToken, notaController.obtenerPromedioPorCurso);
-router.get('/analitica/riesgo',          verificarToken, notaController.obtenerAlumnosEnRiesgoAcademico);
-router.get('/analitica/top',             verificarToken, notaController.obtenerMejoresPromedios);
+router.get('/analitica/riesgo',          verificarToken, verificarPlan, notaController.obtenerAlumnosEnRiesgoAcademico);
+router.get('/analitica/top',             verificarToken, verificarPlan, notaController.obtenerMejoresPromedios);
 router.get('/config/asignaturas',        verificarToken, notaController.obtenerAsignaturasPorProfesorYCurso);
 router.get('/asignaturas-curso/:id_curso', verificarToken, notaController.obtenerAsignaturasPorCurso);
 router.get('/curso/:id_curso',           verificarToken, notaController.obtenerNotasPorCurso);

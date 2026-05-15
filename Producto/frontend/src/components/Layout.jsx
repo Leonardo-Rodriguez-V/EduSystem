@@ -131,6 +131,8 @@ export default function Layout({ children }) {
     window.location.href = '/login';
   };
 
+  const esPremium = !usuario?.plan || usuario.plan !== 'basico';
+
   const navItems = NAV_ITEMS[usuario?.rol] || [];
   const tituloPagina = TITULO_POR_RUTA[location.pathname] || 'EduSync';
 
@@ -227,14 +229,16 @@ export default function Layout({ children }) {
         </footer>
       </div>
 
-      <AuraOrb onClick={handleToggleAura} hasNotification={hasNew} />
-      <AuraPanel
-        isOpen={auraOpen}
-        onClose={toggleAura}
-        messages={auraMessages}
-        sendMessage={sendAuraMessage}
-        typing={isAuraTyping}
-      />
+      {esPremium && <AuraOrb onClick={handleToggleAura} hasNotification={hasNew} />}
+      {esPremium && (
+        <AuraPanel
+          isOpen={auraOpen}
+          onClose={toggleAura}
+          messages={auraMessages}
+          sendMessage={sendAuraMessage}
+          typing={isAuraTyping}
+        />
+      )}
 
       {/* Toasts de notificaciones en tiempo real */}
       <div style={{ position: 'fixed', bottom: '24px', left: '24px', zIndex: 1000, display: 'flex', flexDirection: 'column-reverse', gap: '10px' }}>

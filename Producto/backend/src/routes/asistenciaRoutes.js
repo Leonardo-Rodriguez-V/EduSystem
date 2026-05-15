@@ -1,15 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const asistenciaController = require('../controllers/asistenciaController');
-const { verificarToken, verificarRol } = require('../middleware/auth');
+const { verificarToken, verificarRol, verificarPlan } = require('../middleware/auth');
 
 // Consultas: cualquier usuario autenticado
 router.get('/',                  verificarToken, asistenciaController.obtenerAsistenciaPorCursoYFecha);
 router.get('/global',            verificarToken, asistenciaController.obtenerAsistenciaGlobal);
 router.get('/resumen-cursos',    verificarToken, asistenciaController.obtenerResumenPorTodosLosCursos);
 router.get('/resumen',           verificarToken, asistenciaController.obtenerResumenPorCurso);
-router.get('/analitica/riesgo',  verificarToken, asistenciaController.obtenerAlumnosEnRiesgoAsistencia);
-router.get('/analitica/top',     verificarToken, asistenciaController.obtenerMejoresAsistencias);
+router.get('/analitica/riesgo',  verificarToken, verificarPlan, asistenciaController.obtenerAlumnosEnRiesgoAsistencia);
+router.get('/analitica/top',     verificarToken, verificarPlan, asistenciaController.obtenerMejoresAsistencias);
 router.get('/resumen-alumnos/:id_curso', verificarToken, asistenciaController.obtenerResumenPorAlumnosDeCurso);
 router.get('/alumno/:id_alumno',         verificarToken, asistenciaController.obtenerAsistenciaPorAlumno);
 

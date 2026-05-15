@@ -7,7 +7,12 @@ const { emailRecuperacionContrasena } = require('../services/emailService');
 const login = async (req, res) => {
   const { correo, contraseña } = req.body;
   try {
-    const respuesta = await pool.query('SELECT * FROM usuarios WHERE correo = $1', [correo]);
+    const respuesta = await pool.query(`
+      SELECT u.*, COALESCE(c.plan, 'enterprise') AS plan
+      FROM usuarios u
+      LEFT JOIN colegios c ON c.id = u.colegio_id
+      WHERE u.correo = $1
+    `, [correo]);
     if (respuesta.rows.length === 0) {
       return res.status(401).json({ error: 'Credenciales incorrectas' });
     }
@@ -23,6 +28,7 @@ const login = async (req, res) => {
         correo: usuario.correo,
         rol: usuario.rol,
         colegio_id: usuario.colegio_id || null,
+        plan: usuario.plan || 'basico',
       },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }

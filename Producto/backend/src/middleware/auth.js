@@ -40,4 +40,17 @@ const verificarTenant = (req, res, next) => {
   next();
 };
 
-module.exports = { verificarToken, verificarRol, verificarTenant };
+// Verifica que el colegio tenga plan Premium (profesional o enterprise)
+// Uso: verificarPlan en rutas de AURA, reportes, analytics avanzados
+const verificarPlan = (req, res, next) => {
+  if (!req.usuario) return res.status(401).json({ error: 'No autenticado' });
+  const plan = req.usuario.plan || 'basico';
+  const esPremium = plan === 'profesional' || plan === 'enterprise';
+  const esSuperadmin = req.usuario.rol === 'superadmin';
+  if (!esPremium && !esSuperadmin) {
+    return res.status(403).json({ error: 'plan_requerido', mensaje: 'Esta funcionalidad requiere Plan Premium.' });
+  }
+  next();
+};
+
+module.exports = { verificarToken, verificarRol, verificarTenant, verificarPlan };

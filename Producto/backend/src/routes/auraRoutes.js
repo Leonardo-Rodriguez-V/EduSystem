@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { chat } = require('../controllers/auraController');
-const { verificarToken } = require('../middleware/auth');
+const { verificarToken, verificarPlan } = require('../middleware/auth');
 
-router.post('/chat', verificarToken, chat);
+router.post('/chat', verificarToken, verificarPlan, chat);
 
 module.exports = router;
