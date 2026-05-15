@@ -22,6 +22,9 @@ async function enviarEmail({ to, subject, html }) {
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       console.error('[EMAIL] Error Resend:', res.status, err);
+    } else {
+      const data = await res.json().catch(() => ({}));
+      console.log('[EMAIL] Enviado OK —', subject, '— id:', data.id || '(sin id)');
     }
   } catch (err) {
     console.error('[EMAIL] Error de red:', err.message);

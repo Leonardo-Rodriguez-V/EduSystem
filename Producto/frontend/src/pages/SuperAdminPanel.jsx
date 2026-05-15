@@ -151,7 +151,9 @@ export default function SuperAdminPanel() {
       const body = { ...form };
       if (modal.modo === 'crear' && conDirector) body.director = formDir;
       if (modal.modo === 'editar' && (formDir.nombre.trim() || formDir.correo.trim())) {
-        body.director = { nombre: formDir.nombre, correo: formDir.correo, contraseña: formDir.contraseña || undefined };
+        const dirPayload = { nombre: formDir.nombre, correo: formDir.correo };
+        if (formDir.contraseña) dirPayload.contraseña = formDir.contraseña;
+        body.director = dirPayload;
       }
       const res = await fetch(url, { method: modal.modo === 'crear' ? 'POST' : 'PUT', headers, body: JSON.stringify(body) });
       if (res.ok) { setModal(null); cargar(); }

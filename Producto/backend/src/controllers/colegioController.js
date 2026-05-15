@@ -86,6 +86,7 @@ const crearColegio = async (req, res) => {
 const actualizarColegio = async (req, res) => {
   const { id } = req.params;
   const { nombre, rut, direccion, telefono, email, plan, plan_expira, activo, director } = req.body;
+  console.log(`[COLEGIOS] actualizarColegio id=${id} — director recibido:`, JSON.stringify(director ?? null));
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
