@@ -165,8 +165,20 @@ export default function SuperAdminPanel() {
     cargar();
   };
 
-  const descargarPlantilla = () => {
-    window.open(`${API}/colegios/${detalle?.colegio?.id}/plantilla`, '_blank');
+  const descargarPlantilla = async () => {
+    try {
+      const res = await fetch(`${API}/colegios/${detalle?.colegio?.id}/plantilla`, { headers });
+      if (!res.ok) throw new Error('Error al descargar');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'plantilla_edusync.xlsx';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setImportResult({ ok: false, error: 'No se pudo descargar la plantilla' });
+    }
   };
 
   const importarExcel = async (e) => {
