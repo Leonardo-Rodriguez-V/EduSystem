@@ -69,8 +69,13 @@ export const NotificationProvider = ({ children }) => {
     addToast(n);
   }, [addToast]);
 
+  // Toast de acción de usuario (éxito/error/info) — no va al historial de notificaciones
+  const showToast = useCallback((mensaje, tipo = 'success') => {
+    addToast({ id: Date.now(), mensaje, type: tipo });
+  }, [addToast]);
+
   return (
-    <NotificationContext.Provider value={{ notifications, toasts, hasNew, clearNew, addNotification, dismissToast }}>
+    <NotificationContext.Provider value={{ notifications, toasts, hasNew, clearNew, addNotification, dismissToast, showToast }}>
       {children}
     </NotificationContext.Provider>
   );

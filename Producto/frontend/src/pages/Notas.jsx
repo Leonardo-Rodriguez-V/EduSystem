@@ -5,6 +5,7 @@ import {
   ResponsiveContainer, AreaChart, Area
 } from 'recharts';
 import apiFetch, { PlanError } from '../utils/api';
+import { useNotifications } from '../context/NotificationContext';
 import {
   Plus,
   Edit3,
@@ -113,6 +114,7 @@ function colorNota(n) {
 export default function Notas() {
   const usuario = (() => { try { return JSON.parse(localStorage.getItem('usuario')); } catch { return {}; } })();
   const esDirector = usuario.rol === 'director';
+  const { showToast } = useNotifications();
 
   const [listaCursos, setListaCursos] = useState([]);
   const [curso,      setCurso]      = useState(null);
@@ -231,12 +233,13 @@ export default function Notas() {
           }
           return { ...prev, [alumnoSel.id]: lista };
         });
+        showToast(editando ? 'Nota actualizada correctamente.' : 'Nota registrada correctamente.', 'success');
         cerrarModal();
       } else {
-        setMensaje({ texto: data?.error || 'Error al guardar.', tipo: 'error' });
+        showToast(data?.error || 'Error al guardar la nota.', 'error');
       }
     } catch {
-      setMensaje({ texto: 'Error de conexión.', tipo: 'error' });
+      showToast('Error de conexión.', 'error');
     } finally {
       setGuardando(false);
     }
@@ -247,6 +250,9 @@ export default function Notas() {
     const res = await apiFetch(`/notas/${notaId}`, { method: 'DELETE' });
     if (res?.ok) {
       setNotas(prev => ({ ...prev, [alumnoId]: prev[alumnoId].filter(n => n.id !== notaId) }));
+      showToast('Nota eliminada.', 'success');
+    } else {
+      showToast('Error al eliminar la nota.', 'error');
     }
   };
 

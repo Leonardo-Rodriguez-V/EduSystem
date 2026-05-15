@@ -1,14 +1,15 @@
 import { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
-  ResponsiveContainer, Cell 
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, Cell
 } from 'recharts';
 import {
   TrendingUp, AlertCircle, CheckCircle,
   ClipboardList, School, Lock
 } from 'lucide-react';
 import apiFetch, { PlanError } from '../utils/api';
+import { useNotifications } from '../context/NotificationContext';
 
 // Estilos base con variables CSS (compatibles con dark mode)
 const s = {
@@ -31,6 +32,7 @@ const ESTADO_COLORS = {
 function Asistencia() {
   const usuario    = JSON.parse(localStorage.getItem('usuario')) || {};
   const esDirector = usuario.rol === 'director';
+  const { showToast } = useNotifications();
 
   const [curso,      setCurso]      = useState(null);
   const [cursos,     setCursos]     = useState([]);
@@ -41,7 +43,7 @@ function Asistencia() {
   const [guardando,  setGuardando]  = useState(false);
   const [mensaje,    setMensaje]    = useState({ texto: '', tipo: '' });
   const [justificaciones, setJustificaciones] = useState({});
-  const [directorModo, setDirectorModo] = useState(esDirector); // Default true for director
+  const [directorModo, setDirectorModo] = useState(esDirector);
 
   // 1. Cargar cursos
   useEffect(() => {
@@ -114,10 +116,11 @@ function Asistencia() {
         body: JSON.stringify({ id_curso: curso.id, fecha, registros }),
       });
       if (res.ok) {
-        setMensaje({ texto: 'Asistencia guardada correctamente.', tipo: 'exito' });
+        showToast('Asistencia guardada correctamente.', 'success');
+        setMensaje({ texto: '', tipo: '' });
       } else {
         const err = await res.json();
-        setMensaje({ texto: err.detalle || err.error || 'Error al guardar.', tipo: 'error' });
+        showToast(err.detalle || err.error || 'Error al guardar.', 'error');
       }
     } catch {
       setMensaje({ texto: 'Error de conexión.', tipo: 'error' });

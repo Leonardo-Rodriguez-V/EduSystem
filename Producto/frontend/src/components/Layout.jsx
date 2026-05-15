@@ -248,6 +248,10 @@ export default function Layout({ children }) {
               ? { icon: GraduationCap, color: '#6366f1', bg: 'rgba(99,102,241,0.12)', border: 'rgba(99,102,241,0.3)' }
               : toast.type === 'attendance'
               ? { icon: CheckSquare,   color: '#10b981', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)' }
+              : toast.type === 'success'
+              ? { icon: CheckSquare,   color: '#10b981', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)' }
+              : toast.type === 'error'
+              ? { icon: X,             color: '#ef4444', bg: 'rgba(239,68,68,0.12)',  border: 'rgba(239,68,68,0.3)'  }
               : { icon: Info,          color: '#0ea5e9', bg: 'rgba(14,165,233,0.12)', border: 'rgba(14,165,233,0.3)' };
             const Icono = tipo.icon;
             return (
