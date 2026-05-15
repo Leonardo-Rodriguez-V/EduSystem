@@ -104,9 +104,18 @@ const actualizarColegio = async (req, res) => {
     );
     if (rows.length === 0) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'Colegio no encontrado' }); }
     if (director?.nombre || director?.correo) {
-      const existe = await client.query(`SELECT id FROM usuarios WHERE colegio_id = $1 AND rol = 'director' LIMIT 1`, [id]);
+      // Director "real" = tiene nombre y correo no vacíos
+      const existe = await client.query(
+        `SELECT id FROM usuarios
+         WHERE colegio_id = $1 AND rol = 'director'
+           AND nombre_completo IS NOT NULL AND nombre_completo != ''
+           AND correo IS NOT NULL AND correo != ''
+         LIMIT 1`,
+        [id]
+      );
+      console.log(`[COLEGIOS] director check colegio ${id}: existe=${existe.rows.length > 0}`);
       if (existe.rows.length > 0) {
-        // Director ya existe: actualizar datos y opcionalmente la contraseña
+        // Director real ya existe: actualizar datos y opcionalmente la contraseña
         if (director.contraseña) {
           const hash = await bcrypt.hash(director.contraseña, 10);
           await client.query(
@@ -127,14 +136,22 @@ const actualizarColegio = async (req, res) => {
           );
         }
       } else if (director.nombre && director.correo && director.contraseña) {
-        // No existe director: crear uno nuevo
+        // No existe director real: limpiar filas vacías y crear uno nuevo
+        await client.query(
+          `DELETE FROM usuarios WHERE colegio_id = $1 AND rol = 'director'
+           AND (nombre_completo IS NULL OR nombre_completo = '')`,
+          [id]
+        );
         const hash = await bcrypt.hash(director.contraseña, 10);
         await client.query(
           `INSERT INTO usuarios (nombre_completo, correo, rol, contraseña, colegio_id)
            VALUES ($1, $2, 'director', $3, $4)`,
           [director.nombre, director.correo, hash, id]
         );
+        console.log(`[COLEGIOS] director creado, enviando bienvenida a ${director.correo}`);
         bienvenidaDirector(director.correo, director.nombre, rows[0].nombre, rows[0].plan);
+      } else {
+        console.log(`[COLEGIOS] sin datos suficientes para crear director: nombre=${!!director.nombre} correo=${!!director.correo} pass=${!!director.contraseña}`);
       }
     }
     await client.query('COMMIT');
