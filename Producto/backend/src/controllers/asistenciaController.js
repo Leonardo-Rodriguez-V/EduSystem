@@ -143,14 +143,17 @@ const obtenerResumenPorCurso = async (req, res) => {
 // GET /api/asistencia/resumen-cursos?mes=3&anio=2026
 const obtenerResumenPorTodosLosCursos = async (req, res) => {
   const { mes, anio } = req.query;
+  const colegio_id = req.usuario?.colegio_id;
   try {
-    const valores = [];
+    const valores = colegio_id ? [colegio_id] : [];
+    const filtroColegio = colegio_id ? `WHERE c.colegio_id = $1` : '';
     let filtroFecha = '';
+    const base = colegio_id ? 2 : 1;
     if (mes && anio) {
-      filtroFecha = `AND EXTRACT(MONTH FROM asi.fecha) = $1 AND EXTRACT(YEAR FROM asi.fecha) = $2`;
+      filtroFecha = `AND EXTRACT(MONTH FROM asi.fecha) = $${base} AND EXTRACT(YEAR FROM asi.fecha) = $${base + 1}`;
       valores.push(parseInt(mes), parseInt(anio));
     } else if (anio) {
-      filtroFecha = `AND EXTRACT(YEAR FROM asi.fecha) = $1`;
+      filtroFecha = `AND EXTRACT(YEAR FROM asi.fecha) = $${base}`;
       valores.push(parseInt(anio));
     }
 
@@ -165,6 +168,7 @@ const obtenerResumenPorTodosLosCursos = async (req, res) => {
       FROM cursos c
       LEFT JOIN alumnos al ON al.id_curso = c.id
       LEFT JOIN asistencia asi ON asi.id_alumno = al.id ${filtroFecha}
+      ${filtroColegio}
       GROUP BY c.id, c.nombre
       ORDER BY c.nombre
     `, valores);
@@ -181,15 +185,20 @@ const obtenerResumenPorTodosLosCursos = async (req, res) => {
 
 // GET /api/asistencia/global
 const obtenerAsistenciaGlobal = async (req, res) => {
+  const colegio_id = req.usuario?.colegio_id;
   try {
+    const filtroColegio = colegio_id
+      ? `JOIN alumnos al ON al.id = asi.id_alumno JOIN cursos c ON c.id = al.id_curso WHERE c.colegio_id = $1`
+      : '';
     const respuesta = await pool.query(`
       SELECT
-        COUNT(CASE WHEN estado = 'presente' THEN 1 END)::int AS presentes,
-        COUNT(CASE WHEN estado = 'ausente'  THEN 1 END)::int AS ausentes,
-        COUNT(CASE WHEN estado = 'tardanza' THEN 1 END)::int AS tardanzas,
-        COUNT(id)::int AS total
-      FROM asistencia
-    `);
+        COUNT(CASE WHEN asi.estado = 'presente' THEN 1 END)::int AS presentes,
+        COUNT(CASE WHEN asi.estado = 'ausente'  THEN 1 END)::int AS ausentes,
+        COUNT(CASE WHEN asi.estado = 'tardanza' THEN 1 END)::int AS tardanzas,
+        COUNT(asi.id)::int AS total
+      FROM asistencia asi
+      ${filtroColegio}
+    `, colegio_id ? [colegio_id] : []);
     const { presentes, total } = respuesta.rows[0];
     const porcentaje = total > 0 ? Math.round((presentes / total) * 1000) / 10 : 0;
     res.json({ ...respuesta.rows[0], porcentaje });
@@ -219,28 +228,31 @@ const justificarAsistencia = async (req, res) => {
 // GET /api/asistencia/analitica/riesgo?limite=75
 const obtenerAlumnosEnRiesgoAsistencia = async (req, res) => {
   const limite = req.query.limite || 75;
+  const colegio_id = req.usuario?.colegio_id;
   try {
+    const filtroColegio = colegio_id ? `AND al.colegio_id = $2` : '';
     const respuesta = await pool.query(`
-      SELECT 
-        al.id, 
-        al.nombre_completo, 
+      SELECT
+        al.id,
+        al.nombre_completo,
         c.nombre AS nombre_curso,
         COUNT(CASE WHEN asi.estado = 'presente' THEN 1 END)::int AS presentes,
         COUNT(asi.id)::int AS total_clases,
-        CASE 
+        CASE
           WHEN COUNT(asi.id) > 0 THEN ROUND((COUNT(CASE WHEN asi.estado = 'presente' THEN 1 END)::float / COUNT(asi.id)) * 100)
-          ELSE 100 
+          ELSE 100
         END AS porcentaje
       FROM alumnos al
       JOIN cursos c ON al.id_curso = c.id
       LEFT JOIN asistencia asi ON asi.id_alumno = al.id
+      WHERE 1=1 ${filtroColegio}
       GROUP BY al.id, al.nombre_completo, c.nombre
-      HAVING 
-        COUNT(asi.id) > 5 AND 
+      HAVING
+        COUNT(asi.id) > 5 AND
         (COUNT(CASE WHEN asi.estado = 'presente' THEN 1 END)::float / COUNT(asi.id)) * 100 < $1
       ORDER BY porcentaje ASC
       LIMIT 10
-    `, [limite]);
+    `, colegio_id ? [limite, colegio_id] : [limite]);
     res.json(respuesta.rows);
   } catch (error) {
     console.error('Error al obtener alumnos en riesgo de asistencia:', error);
@@ -250,24 +262,27 @@ const obtenerAlumnosEnRiesgoAsistencia = async (req, res) => {
 
 // GET /api/asistencia/analitica/top
 const obtenerMejoresAsistencias = async (req, res) => {
+  const colegio_id = req.usuario?.colegio_id;
   try {
+    const filtroColegio = colegio_id ? `WHERE al.colegio_id = $1` : '';
     const respuesta = await pool.query(`
-      SELECT 
-        al.id, 
-        al.nombre_completo, 
+      SELECT
+        al.id,
+        al.nombre_completo,
         c.nombre AS nombre_curso,
-        CASE 
+        CASE
           WHEN COUNT(asi.id) > 0 THEN ROUND((COUNT(CASE WHEN asi.estado = 'presente' THEN 1 END)::float / COUNT(asi.id)) * 100)
-          ELSE 0 
+          ELSE 0
         END AS porcentaje
       FROM alumnos al
       JOIN cursos c ON al.id_curso = c.id
       LEFT JOIN asistencia asi ON asi.id_alumno = al.id
+      ${filtroColegio}
       GROUP BY al.id, al.nombre_completo, c.nombre
       HAVING COUNT(asi.id) > 5
       ORDER BY porcentaje DESC
       LIMIT 10
-    `);
+    `, colegio_id ? [colegio_id] : []);
     res.json(respuesta.rows);
   } catch (error) {
     console.error('Error al obtener mejores asistencias:', error);

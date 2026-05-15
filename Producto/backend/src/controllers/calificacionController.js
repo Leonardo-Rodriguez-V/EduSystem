@@ -234,7 +234,9 @@ const obtenerAsignaturasPorCurso = async (req, res) => {
 
 // GET /api/notas/promedio-cursos
 const obtenerPromedioPorCurso = async (req, res) => {
+  const colegio_id = req.usuario?.colegio_id;
   try {
+    const filtroColegio = colegio_id ? `WHERE c.colegio_id = $1` : '';
     const respuesta = await pool.query(`
       SELECT
         c.id,
@@ -247,9 +249,10 @@ const obtenerPromedioPorCurso = async (req, res) => {
       FROM cursos c
       LEFT JOIN alumnos al ON al.id_curso = c.id
       LEFT JOIN notas n ON n.id_alumno = al.id
+      ${filtroColegio}
       GROUP BY c.id, c.nombre
       ORDER BY c.nombre
-    `);
+    `, colegio_id ? [colegio_id] : []);
     res.json(respuesta.rows);
   } catch (error) {
     console.error('Error al obtener promedio por curso:', error);
@@ -260,24 +263,27 @@ const obtenerPromedioPorCurso = async (req, res) => {
 // GET /api/notas/analitica/riesgo?limite=4.0
 const obtenerAlumnosEnRiesgoAcademico = async (req, res) => {
   const limite = req.query.limite || 4.0;
+  const colegio_id = req.usuario?.colegio_id;
   try {
+    const filtroColegio = colegio_id ? `AND al.colegio_id = $2` : '';
     const respuesta = await pool.query(`
-      SELECT 
-        al.id, 
-        al.nombre_completo, 
+      SELECT
+        al.id,
+        al.nombre_completo,
         c.nombre AS nombre_curso,
         ROUND(AVG(n.calificacion)::numeric, 1) AS promedio,
         COUNT(CASE WHEN n.calificacion < 4.0 THEN 1 END)::int AS reprobadas
       FROM alumnos al
       JOIN cursos c ON al.id_curso = c.id
       LEFT JOIN notas n ON n.id_alumno = al.id
+      WHERE 1=1 ${filtroColegio}
       GROUP BY al.id, al.nombre_completo, c.nombre
-      HAVING 
-        COUNT(n.id) > 2 AND 
+      HAVING
+        COUNT(n.id) > 2 AND
         AVG(n.calificacion) < $1
       ORDER BY promedio ASC
       LIMIT 10
-    `, [limite]);
+    `, colegio_id ? [limite, colegio_id] : [limite]);
     res.json(respuesta.rows);
   } catch (error) {
     console.error('Error al obtener alumnos en riesgo académico:', error);
@@ -287,21 +293,24 @@ const obtenerAlumnosEnRiesgoAcademico = async (req, res) => {
 
 // GET /api/notas/analitica/top
 const obtenerMejoresPromedios = async (req, res) => {
+  const colegio_id = req.usuario?.colegio_id;
   try {
+    const filtroColegio = colegio_id ? `WHERE al.colegio_id = $1` : '';
     const respuesta = await pool.query(`
-      SELECT 
-        al.id, 
-        al.nombre_completo, 
+      SELECT
+        al.id,
+        al.nombre_completo,
         c.nombre AS nombre_curso,
         ROUND(AVG(n.calificacion)::numeric, 1) AS promedio
       FROM alumnos al
       JOIN cursos c ON al.id_curso = c.id
       LEFT JOIN notas n ON n.id_alumno = al.id
+      ${filtroColegio}
       GROUP BY al.id, al.nombre_completo, c.nombre
       HAVING COUNT(n.id) > 2
       ORDER BY promedio DESC
       LIMIT 10
-    `);
+    `, colegio_id ? [colegio_id] : []);
     res.json(respuesta.rows);
   } catch (error) {
     console.error('Error al obtener mejores promedios:', error);

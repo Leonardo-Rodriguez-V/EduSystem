@@ -1,8 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Building2, Plus, Pencil, PowerOff, Power, X, Check,
   Search, Download, Users, GraduationCap, BookOpen,
   ChevronRight, UserPlus, Calendar, Mail, Phone, MapPin,
+  FileSpreadsheet, Upload, AlertCircle, CheckCircle2,
 } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_URL;
@@ -65,6 +66,9 @@ export default function SuperAdminPanel() {
   const [guardando, setGuardando]       = useState(false);
   const [error, setError]               = useState('');
   const [errorCarga, setErrorCarga]     = useState('');
+  const [importando, setImportando]     = useState(false);
+  const [importResult, setImportResult] = useState(null);
+  const fileInputRef                    = useRef(null);
 
   const cargar = async () => {
     setErrorCarga('');
@@ -159,6 +163,34 @@ export default function SuperAdminPanel() {
     e.stopPropagation();
     await fetch(`${API}/colegios/${c.id}`, { method: 'PUT', headers, body: JSON.stringify({ activo: !c.activo }) });
     cargar();
+  };
+
+  const descargarPlantilla = () => {
+    window.open(`${API}/colegios/${detalle?.colegio?.id}/plantilla`, '_blank');
+  };
+
+  const importarExcel = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setImportando(true);
+    setImportResult(null);
+    try {
+      const buffer = await file.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+      const res = await fetch(`${API}/colegios/${detalle.colegio.id}/importar`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ archivo: base64 }),
+      });
+      const data = await res.json();
+      if (res.ok) { setImportResult({ ok: true, ...data }); cargar(); }
+      else setImportResult({ ok: false, error: data.error || 'Error al importar' });
+    } catch {
+      setImportResult({ ok: false, error: 'No se pudo conectar con el servidor' });
+    } finally {
+      setImportando(false);
+    }
   };
 
   const exportarCSV = () => {
@@ -507,6 +539,56 @@ export default function SuperAdminPanel() {
                     </div>
                   </div>
                 )}
+
+                {/* Importar datos */}
+                <div style={{ borderTop: '1px solid rgba(165,180,252,0.1)', paddingTop: 20 }}>
+                  <p style={{ margin: '0 0 12px', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-foreground)', opacity: 0.45 }}>
+                    Importar datos desde Excel
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <button
+                      onClick={descargarPlantilla}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(165,180,252,0.2)', borderRadius: 10, color: '#a5b4fc', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+                    >
+                      <FileSpreadsheet size={14} /> Descargar plantilla Excel
+                    </button>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={importando}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', background: importando ? 'rgba(99,102,241,0.06)' : 'linear-gradient(135deg,rgba(99,102,241,0.2),rgba(139,92,246,0.2))', border: '1px solid rgba(165,180,252,0.3)', borderRadius: 10, color: importando ? 'rgba(165,180,252,0.5)' : '#a5b4fc', fontWeight: 600, fontSize: 13, cursor: importando ? 'not-allowed' : 'pointer' }}
+                    >
+                      <Upload size={14} /> {importando ? 'Importando...' : 'Subir archivo Excel (.xlsx)'}
+                    </button>
+                    <input ref={fileInputRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={importarExcel} />
+                    {importResult && (
+                      <div style={{ padding: '12px 14px', borderRadius: 10, background: importResult.ok ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${importResult.ok ? 'rgba(52,211,153,0.2)' : 'rgba(248,113,113,0.2)'}` }}>
+                        {importResult.ok ? (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#34d399', fontWeight: 700, fontSize: 13, marginBottom: 8 }}>
+                              <CheckCircle2 size={14} /> Importación exitosa
+                            </div>
+                            <div style={{ fontSize: 12, color: 'var(--color-foreground)', opacity: 0.6, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                              <span>✓ {importResult.resumen?.cursos || 0} cursos</span>
+                              <span>✓ {importResult.resumen?.profesores || 0} profesores</span>
+                              <span>✓ {importResult.resumen?.alumnos || 0} alumnos</span>
+                              <span>✓ {importResult.resumen?.asignaturas || 0} asignaturas</span>
+                              {importResult.resumen?.errores?.length > 0 && (
+                                <span style={{ color: '#fbbf24', marginTop: 4 }}>⚠ {importResult.resumen.errores.length} advertencias</span>
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#f87171', fontWeight: 600, fontSize: 13 }}>
+                            <AlertCircle size={14} /> {importResult.error}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    <p style={{ margin: 0, fontSize: 11, color: 'var(--color-foreground)', opacity: 0.35, lineHeight: 1.5 }}>
+                      Descarga la plantilla, rellena las hojas Cursos, Profesores, Alumnos y Asignaturas, y sube el archivo.
+                    </p>
+                  </div>
+                </div>
               </>
             )}
           </div>
