@@ -101,8 +101,9 @@ const crearNota = async (req, res) => {
       });
     }
 
-    // Email al apoderado si nota < 4.0 (fire-and-forget)
-    if (parseFloat(nuevaNota.calificacion) < 4.0) {
+    // Email al apoderado si nota < 4.0 — solo Plan Premium (fire-and-forget)
+    const esPremiumNotas = ['profesional', 'enterprise'].includes(req.usuario?.plan);
+    if (esPremiumNotas && parseFloat(nuevaNota.calificacion) < 4.0) {
       pool.query(`
         SELECT u.correo, u.nombre_completo AS nombre_apoderado,
                al.nombre_completo AS nombre_alumno,

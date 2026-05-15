@@ -54,8 +54,9 @@ const crearAnotacion = async (req, res) => {
     );
     const nueva = r.rows[0];
 
-    // Email al apoderado si la anotación es negativa (fire-and-forget)
-    if (nueva.tipo === 'negativa') {
+    // Email al apoderado si anotación negativa — solo Plan Premium (fire-and-forget)
+    const esPremiumAnot = ['profesional', 'enterprise'].includes(req.usuario?.plan);
+    if (esPremiumAnot && nueva.tipo === 'negativa') {
       pool.query(`
         SELECT u.correo, u.nombre_completo AS nombre_apoderado,
                al.nombre_completo AS nombre_alumno,

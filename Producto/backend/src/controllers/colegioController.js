@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const bcrypt = require('bcryptjs');
+const { bienvenidaDirector } = require('../services/emailService');
 
 async function ensurePlanExpira() {
   await pool.query(`ALTER TABLE colegios ADD COLUMN IF NOT EXISTS plan_expira DATE`).catch(() => {});
@@ -68,6 +69,7 @@ const crearColegio = async (req, res) => {
          VALUES ($1,$2,'director',$3,$4)`,
         [director.nombre, director.correo, hash, colegio.id]
       );
+      bienvenidaDirector(director.correo, director.nombre, colegio.nombre, colegio.plan);
     }
     await client.query('COMMIT');
     res.status(201).json(colegio);
@@ -132,6 +134,7 @@ const actualizarColegio = async (req, res) => {
            VALUES ($1, $2, 'director', $3, $4)`,
           [director.nombre, director.correo, hash, id]
         );
+        bienvenidaDirector(director.correo, director.nombre, rows[0].nombre, rows[0].plan);
       }
     }
     await client.query('COMMIT');

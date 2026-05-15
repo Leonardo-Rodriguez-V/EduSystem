@@ -87,7 +87,9 @@ const guardarAsistencia = async (req, res) => {
 
     res.status(200).json({ mensaje: 'Asistencia guardada correctamente' });
 
-    // Email a apoderados de alumnos con asistencia acumulada < 85% (fire-and-forget)
+    // Email a apoderados con asistencia < 85% — solo Plan Premium (fire-and-forget)
+    const esPremiumAsist = ['profesional', 'enterprise'].includes(req.usuario?.plan);
+    if (!esPremiumAsist) return;
     pool.query(`
       SELECT al.id, al.nombre_completo AS nombre_alumno,
              u.correo, u.nombre_completo AS nombre_apoderado,

@@ -125,4 +125,41 @@ function emailContactoLanding(nombre, correoRemitente, mensaje) {
   });
 }
 
-module.exports = { alertaNotaBaja, alertaAsistencia, alertaAnotacionNegativa, emailRecuperacionContrasena, emailContactoLanding };
+function bienvenidaDirector(correo, nombre, nombreColegio, plan) {
+  const esPremium = plan === 'profesional' || plan === 'enterprise';
+  const badgePlan = esPremium
+    ? `<span style="background:#6366f1;color:#fff;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">Plan Premium</span>`
+    : `<span style="background:#e5e7eb;color:#374151;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">Plan Normal</span>`;
+
+  return enviarEmail({
+    to: correo,
+    subject: `Bienvenido/a a EduSync — ${nombreColegio}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:520px;margin:auto;padding:0;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
+        <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:40px 32px;text-align:center">
+          <h1 style="margin:0;color:#fff;font-size:28px;font-weight:900;letter-spacing:-0.5px">EduSync</h1>
+          <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;font-weight:600">Sistema de Gestión Educativa</p>
+        </div>
+        <div style="padding:36px 32px">
+          <p style="color:#111;font-size:18px;font-weight:800;margin:0 0 8px">¡Bienvenido/a, ${nombre}!</p>
+          <p style="color:#555;margin:0 0 24px;line-height:1.6">Tu cuenta de director ha sido creada exitosamente en <strong>${nombreColegio}</strong>. Ya puedes acceder al sistema con tu correo y contraseña.</p>
+          <div style="background:#f8f9fa;border-radius:12px;padding:20px 24px;margin-bottom:24px">
+            <p style="margin:0 0 6px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em">Tu plan actual</p>
+            ${badgePlan}
+          </div>
+          <div style="text-align:center;margin:28px 0">
+            <a href="${process.env.FRONTEND_URL || 'https://edu-system-r3bw.vercel.app'}/login"
+               style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;text-decoration:none;padding:14px 36px;border-radius:12px;font-weight:800;font-size:15px;display:inline-block">
+              Ingresar a EduSync
+            </a>
+          </div>
+          <p style="color:#888;font-size:13px;line-height:1.6;margin:0">Si tienes dudas, responde este correo o contáctanos. Estamos aquí para ayudarte.</p>
+        </div>
+        <div style="padding:20px 32px;background:#f8f9fa;border-top:1px solid #e5e7eb;text-align:center">
+          <p style="margin:0;color:#bbb;font-size:11px">EduSync — Sistema de Gestión Educativa · Chile</p>
+        </div>
+      </div>`,
+  });
+}
+
+module.exports = { alertaNotaBaja, alertaAsistencia, alertaAnotacionNegativa, emailRecuperacionContrasena, emailContactoLanding, bienvenidaDirector };
