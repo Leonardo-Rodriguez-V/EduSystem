@@ -18,6 +18,8 @@ import InformeCurso from './pages/InformeCurso';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import SuperAdminPanel from './pages/SuperAdminPanel';
+import CheckoutPage from './pages/CheckoutPage';
+import CheckoutExito from './pages/CheckoutExito';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import { NotificationProvider } from './context/NotificationContext';
@@ -35,6 +37,8 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/checkout/exito" element={<CheckoutExito />} />
 
         {/* Rutas protegidas con sidebar */}
         <Route path="/dashboard" element={

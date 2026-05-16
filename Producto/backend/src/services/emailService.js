@@ -165,4 +165,43 @@ function bienvenidaDirector(correo, nombre, nombreColegio, plan) {
   });
 }
 
-module.exports = { alertaNotaBaja, alertaAsistencia, alertaAnotacionNegativa, emailRecuperacionContrasena, emailContactoLanding, bienvenidaDirector };
+function emailNuevaSolicitud(sol, metodo) {
+  const planLabel  = sol.plan === 'premium' ? 'Premium' : 'Normal';
+  const metodoBadge = metodo === 'mercadopago'
+    ? '💳 MercadoPago (pagado)'
+    : metodo === 'paypal'
+    ? '🅿️ PayPal (pagado)'
+    : '🏦 Transferencia manual (pendiente verificación)';
+
+  return enviarEmail({
+    to: 'educational.systemchl@gmail.com',
+    subject: `Nueva solicitud de plan ${planLabel} — ${sol.nombre_colegio}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:600px;margin:auto;padding:0;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
+        <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:32px;text-align:center">
+          <h1 style="margin:0;color:#fff;font-size:24px;font-weight:900">EduSync — Nueva solicitud</h1>
+        </div>
+        <div style="padding:32px">
+          <p style="color:#111;font-size:18px;font-weight:800;margin:0 0 20px">📋 Datos de la solicitud</p>
+          <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+            <tr><td style="padding:8px 0;color:#888;font-size:13px;width:180px">Colegio</td><td style="color:#111;font-weight:700">${sol.nombre_colegio}</td></tr>
+            <tr><td style="padding:8px 0;color:#888;font-size:13px">Director</td><td style="color:#111;font-weight:700">${sol.nombre_director}</td></tr>
+            <tr><td style="padding:8px 0;color:#888;font-size:13px">Correo</td><td style="color:#6366f1;font-weight:700">${sol.correo}</td></tr>
+            <tr><td style="padding:8px 0;color:#888;font-size:13px">Teléfono</td><td style="color:#111">${sol.telefono || '—'}</td></tr>
+            <tr><td style="padding:8px 0;color:#888;font-size:13px">Alumnos aprox.</td><td style="color:#111">${sol.nro_alumnos_aprox || '—'}</td></tr>
+            <tr><td style="padding:8px 0;color:#888;font-size:13px">Plan</td><td style="color:#111;font-weight:700">${planLabel} · ${sol.segmento} · ${sol.periodo}</td></tr>
+            <tr><td style="padding:8px 0;color:#888;font-size:13px">Precio</td><td style="color:#111;font-weight:700">$${sol.precio_clp.toLocaleString('es-CL')} CLP</td></tr>
+            <tr><td style="padding:8px 0;color:#888;font-size:13px">Método de pago</td><td style="color:#111;font-weight:700">${metodoBadge}</td></tr>
+            <tr><td style="padding:8px 0;color:#888;font-size:13px">Estado</td><td style="color:#111;font-weight:700">${sol.estado}</td></tr>
+            ${sol.notas ? `<tr><td style="padding:8px 0;color:#888;font-size:13px">Notas</td><td style="color:#333">${sol.notas}</td></tr>` : ''}
+          </table>
+          <p style="color:#444;font-size:14px">Accede al panel de SuperAdmin para activar el plan una vez verificado el pago.</p>
+        </div>
+        <div style="padding:16px 32px;background:#f8f9fa;border-top:1px solid #e5e7eb;text-align:center">
+          <p style="margin:0;color:#bbb;font-size:11px">EduSync — Panel interno · No reenviar</p>
+        </div>
+      </div>`,
+  });
+}
+
+module.exports = { alertaNotaBaja, alertaAsistencia, alertaAnotacionNegativa, emailRecuperacionContrasena, emailContactoLanding, bienvenidaDirector, emailNuevaSolicitud };

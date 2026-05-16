@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Check, X, Brain, Shield } from 'lucide-react';
 
 // ── Datos ─────────────────────────────────────────────────────────────────────
@@ -146,6 +147,7 @@ export default function PreciosSection() {
           <PlanCard id="premium" segSel={segSel} periodoSel={periodoSel} destacado />
         </div>
 
+
         {/* ── Nota legal ── */}
         <p className="text-translucent" style={{ textAlign: 'center', fontSize: 12, marginTop: 40, opacity: 0.4 }}>
           Todos los precios en CLP · IVA no incluido · Facturación por colegio completo
@@ -158,6 +160,7 @@ export default function PreciosSection() {
 // ── Tarjeta de plan ───────────────────────────────────────────────────────────
 
 function PlanCard({ id, segSel, periodoSel, destacado = false }) {
+  const navigate    = useNavigate();
   const esPremium   = id === 'premium';
   const preciosSeg  = PRECIOS[id][segSel];
   const esEnterprise = preciosSeg === null;
@@ -301,24 +304,40 @@ function PlanCard({ id, segSel, periodoSel, destacado = false }) {
         </div>
 
         {/* CTA */}
-        <a href="#contacto" style={{
-          display: 'block', textAlign: 'center',
-          padding: '14px 24px', borderRadius: 13,
-          textDecoration: 'none', fontWeight: 700, fontSize: 14,
-          marginTop: 4,
-          background: esPremium
-            ? 'linear-gradient(135deg, #6366f1, #d946ef)'
-            : 'rgba(99,102,241,0.2)',
-          border: esPremium ? 'none' : `1px solid ${borderColor}`,
-          color: '#fff',
-          boxShadow: esPremium ? '0 8px 32px rgba(99,102,241,0.4)' : 'none',
-          transition: 'opacity 0.2s',
-        }}
-          onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
-          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-        >
-          {esEnterprise ? 'Contactar ventas' : 'Solicitar este plan'}
-        </a>
+        {esEnterprise ? (
+          <a href="#contacto" style={{
+            display: 'block', textAlign: 'center',
+            padding: '14px 24px', borderRadius: 13,
+            textDecoration: 'none', fontWeight: 700, fontSize: 14, marginTop: 4,
+            background: 'rgba(99,102,241,0.2)', border: `1px solid ${borderColor}`,
+            color: '#fff', transition: 'opacity 0.2s',
+          }}
+            onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
+            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+          >
+            Contactar ventas
+          </a>
+        ) : (
+          <button
+            onClick={() => navigate(`/checkout?plan=${id}&segmento=${segSel}&periodo=${periodoSel}`)}
+            style={{
+              display: 'block', width: '100%', textAlign: 'center',
+              padding: '14px 24px', borderRadius: 13,
+              fontWeight: 700, fontSize: 14, marginTop: 4, cursor: 'pointer',
+              background: esPremium
+                ? 'linear-gradient(135deg, #6366f1, #d946ef)'
+                : 'rgba(99,102,241,0.2)',
+              border: esPremium ? 'none' : `1px solid ${borderColor}`,
+              color: '#fff',
+              boxShadow: esPremium ? '0 8px 32px rgba(99,102,241,0.4)' : 'none',
+              transition: 'opacity 0.2s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
+            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+          >
+            Solicitar este plan
+          </button>
+        )}
       </div>
     </div>
   );
