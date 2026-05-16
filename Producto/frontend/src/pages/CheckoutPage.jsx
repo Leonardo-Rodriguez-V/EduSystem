@@ -120,24 +120,6 @@ export default function CheckoutPage() {
     }
   };
 
-  const handlePayPal = async () => {
-    setLoading(true);
-    setErrorGlobal('');
-    try {
-      const res  = await fetch(`${API}/pagos/paypal/crear`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ solicitudId }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error con PayPal');
-      window.location.href = data.approval_url;
-    } catch (err) {
-      setErrorGlobal(err.message);
-      setLoading(false);
-    }
-  };
-
   const handleTransferencia = async () => {
     setLoading(true);
     setErrorGlobal('');
@@ -254,18 +236,6 @@ export default function CheckoutPage() {
                 color="#00b1ea"
                 onClick={handleMercadoPago}
                 loading={loading}
-              />
-
-              {/* PayPal */}
-              <MetodoPago
-                icono={<span style={{ fontWeight: 900, fontSize: 18, color: '#003087' }}>P</span>}
-                bgIcono="rgba(0,48,135,0.15)"
-                titulo="PayPal"
-                subtitulo="Pago internacional con tu cuenta PayPal"
-                color="#009cde"
-                onClick={handlePayPal}
-                loading={loading}
-                style={{ marginTop: 12 }}
               />
 
               {/* Separador */}
