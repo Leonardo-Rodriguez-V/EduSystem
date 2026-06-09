@@ -86,6 +86,27 @@ io.on('connection', (socket) => {
   });
 });
 
+// Migración: asegurar que el rol 'alumno' esté permitido en la tabla usuarios
+async function ensureRolAlumno() {
+  try {
+    // Elimina el constraint existente (si lo hay) y lo recrea incluyendo 'alumno'
+    await db.query(`
+      ALTER TABLE usuarios
+        DROP CONSTRAINT IF EXISTS usuarios_rol_check,
+        DROP CONSTRAINT IF EXISTS users_rol_check;
+    `);
+    await db.query(`
+      ALTER TABLE usuarios
+        ADD CONSTRAINT usuarios_rol_check
+        CHECK (rol IN ('director','profesor','apoderado','superadmin','alumno'));
+    `);
+    console.log('✅ Constraint usuarios_rol_check actualizado (incluye alumno)');
+  } catch (err) {
+    console.error('[MIGRACIÓN] Error al actualizar constraint rol:', err.message);
+  }
+}
+ensureRolAlumno();
+
 httpServer.listen(PORT, () => {
   console.log(`🚀 Servidor EduSync (Express + Socket.io) corriendo en http://localhost:${PORT}`);
 });
