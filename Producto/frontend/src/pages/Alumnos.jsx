@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import apiFetch from '../utils/api';
-import { UserPlus, Search, Users, X, Pencil, Trash2, ChevronDown } from 'lucide-react';
+import { UserPlus, Search, Users, X, Pencil, Trash2, ChevronDown, KeyRound, CheckCircle2, AlertCircle } from 'lucide-react';
 import { validarRut, formatearRutInput } from '../utils/validarRut';
 
 const s = {
@@ -32,6 +32,8 @@ export default function Alumnos() {
   const [cargando,    setCargando]    = useState(true);
   const [confirmId,   setConfirmId]   = useState(null);
   const [pagina,      setPagina]      = useState(1);
+  const [creandoCuentas,   setCreandoCuentas]   = useState(false);
+  const [resultadoCuentas, setResultadoCuentas] = useState(null);
   const POR_PAGINA = 50;
 
   const cargarDatos = () => {
@@ -46,6 +48,20 @@ export default function Alumnos() {
   };
 
   useEffect(() => { cargarDatos(); }, []);
+
+  const crearCuentasAlumnos = async () => {
+    setCreandoCuentas(true);
+    setResultadoCuentas(null);
+    try {
+      const res  = await apiFetch('/usuarios/crear-cuentas-alumnos', { method: 'POST' });
+      const data = await res?.json();
+      setResultadoCuentas(res?.ok ? { ok: true, ...data } : { ok: false, mensaje: data?.error || 'Error inesperado' });
+    } catch {
+      setResultadoCuentas({ ok: false, mensaje: 'Error de conexión.' });
+    } finally {
+      setCreandoCuentas(false);
+    }
+  };
 
   const abrirCrear  = () => { setEditando(null); setForm(FORM_VACIO); setMensaje({ texto: '', tipo: '' }); setModal(true); };
   const abrirEditar = (a) => {
@@ -129,10 +145,52 @@ export default function Alumnos() {
           <h1 style={s.pageTitle}>Gestión de Alumnos</h1>
           <p style={s.pageSub}>{cargando ? '...' : `${alumnos.length} estudiantes registrados`}</p>
         </div>
-        <button style={s.btnPri} onClick={abrirCrear}>
-          <UserPlus size={18} /> Nuevo Alumno
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            onClick={crearCuentasAlumnos}
+            disabled={creandoCuentas}
+            title="Genera cuentas de acceso para todos los alumnos que aún no tienen una"
+            style={{ ...s.btnPri, background: '#0f766e', opacity: creandoCuentas ? 0.7 : 1 }}>
+            <KeyRound size={16} />
+            {creandoCuentas ? 'Generando...' : 'Crear cuentas alumnos'}
+          </button>
+          <button style={s.btnPri} onClick={abrirCrear}>
+            <UserPlus size={18} /> Nuevo Alumno
+          </button>
+        </div>
       </div>
+
+      {/* Banner resultado creación masiva */}
+      {resultadoCuentas && (
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+          style={{
+            marginBottom: '20px', padding: '14px 20px', borderRadius: '12px', display: 'flex', alignItems: 'flex-start', gap: '12px',
+            background: resultadoCuentas.ok ? 'rgba(21,128,61,0.1)' : 'rgba(220,38,38,0.1)',
+            border: `1px solid ${resultadoCuentas.ok ? 'rgba(21,128,61,0.3)' : 'rgba(220,38,38,0.3)'}`,
+          }}>
+          {resultadoCuentas.ok
+            ? <CheckCircle2 size={20} color="#15803d" style={{ flexShrink: 0, marginTop: '1px' }} />
+            : <AlertCircle  size={20} color="#dc2626" style={{ flexShrink: 0, marginTop: '1px' }} />}
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 800, fontSize: '14px', color: resultadoCuentas.ok ? '#15803d' : '#dc2626' }}>
+              {resultadoCuentas.ok ? '¡Cuentas generadas!' : 'Error'}
+            </div>
+            <div style={{ fontSize: '13px', color: 'var(--color-foreground)', opacity: 0.75, marginTop: '3px' }}>
+              {resultadoCuentas.mensaje}
+            </div>
+            {resultadoCuentas.ok && (
+              <div style={{ marginTop: '8px', padding: '8px 12px', background: 'rgba(21,128,61,0.08)', borderRadius: '8px', fontSize: '12px', fontWeight: 700, color: '#15803d' }}>
+                🔑 Contraseña por defecto: <span style={{ fontFamily: 'monospace', fontSize: '13px', letterSpacing: '1px' }}>Alumno2026</span>
+                <span style={{ marginLeft: '16px', opacity: 0.7, fontWeight: 600 }}>· Los alumnos pueden cambiarla desde su perfil</span>
+              </div>
+            )}
+          </div>
+          <button onClick={() => setResultadoCuentas(null)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-foreground)', opacity: 0.4, padding: '2px' }}>
+            <X size={16} />
+          </button>
+        </motion.div>
+      )}
 
       {/* Filtros */}
       <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
