@@ -63,19 +63,19 @@ function App() {
         } />
 
         <Route path="/horarios" element={
-          <ProtectedRoute allowedRoles={['director', 'profesor', 'apoderado']}>
+          <ProtectedRoute allowedRoles={['director', 'profesor', 'apoderado', 'alumno']}>
             <Layout><Horarios /></Layout>
           </ProtectedRoute>
         } />
 
         <Route path="/calendario" element={
-          <ProtectedRoute allowedRoles={['director', 'profesor', 'apoderado']}>
+          <ProtectedRoute allowedRoles={['director', 'profesor', 'apoderado', 'alumno']}>
             <Layout><Calendario /></Layout>
           </ProtectedRoute>
         } />
 
         <Route path="/muro-avisos" element={
-          <ProtectedRoute allowedRoles={['director', 'profesor', 'apoderado']}>
+          <ProtectedRoute allowedRoles={['director', 'profesor', 'apoderado', 'alumno']}>
             <Layout><MuroAvisos /></Layout>
           </ProtectedRoute>
         } />
