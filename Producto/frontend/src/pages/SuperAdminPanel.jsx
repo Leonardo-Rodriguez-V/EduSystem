@@ -191,7 +191,10 @@ export default function SuperAdminPanel() {
     setImportResult(null);
     try {
       const buffer = await file.arrayBuffer();
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+      const base64 = btoa(binary);
       const res = await fetch(`${API}/colegios/${detalle.colegio.id}/importar`, {
         method: 'POST',
         headers,
@@ -602,7 +605,14 @@ export default function SuperAdminPanel() {
                               <span>✓ {importResult.resumen?.alumnos || 0} alumnos</span>
                               <span>✓ {importResult.resumen?.asignaturas || 0} asignaturas</span>
                               {importResult.resumen?.errores?.length > 0 && (
-                                <span style={{ color: '#fbbf24', marginTop: 4 }}>⚠ {importResult.resumen.errores.length} advertencias</span>
+                                <div style={{ marginTop: 6, borderTop: '1px solid rgba(251,191,36,0.2)', paddingTop: 6 }}>
+                                  <span style={{ color: '#fbbf24', fontWeight: 700 }}>⚠ {importResult.resumen.errores.length} advertencias</span>
+                                  <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 2, maxHeight: 140, overflowY: 'auto' }}>
+                                    {importResult.resumen.errores.map((e, i) => (
+                                      <span key={i} style={{ fontSize: 11, color: '#fbbf24', opacity: 0.85, lineHeight: 1.4 }}>• {e}</span>
+                                    ))}
+                                  </div>
+                                </div>
                               )}
                             </div>
                           </>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import apiFetch from '../utils/api';
 import { UserPlus, Search, Users, X, Pencil, Trash2, ChevronDown } from 'lucide-react';
+import { validarRut, formatearRutInput } from '../utils/validarRut';
 
 const s = {
   pageTitle: { fontSize: '30px', fontWeight: 900, color: 'var(--color-foreground)', margin: 0, fontFamily: "'Crimson Pro', serif" },
@@ -63,11 +64,16 @@ export default function Alumnos() {
   const guardar = async () => {
     if (!form.nombre_completo.trim()) return setMensaje({ texto: 'El nombre es obligatorio.', tipo: 'error' });
     if (!form.id_curso) return setMensaje({ texto: 'Debes asignar un curso.', tipo: 'error' });
+    if (form.rut.trim()) {
+      const { valido } = validarRut(form.rut.trim());
+      if (!valido) return setMensaje({ texto: 'El RUT ingresado no es válido. Verifica el dígito verificador.', tipo: 'error' });
+    }
     setGuardando(true);
     try {
+      const rutFmt = form.rut.trim() ? validarRut(form.rut.trim()).formateado : null;
       const body = {
         nombre_completo: form.nombre_completo.trim(),
-        rut: form.rut.trim() || null,
+        rut: rutFmt,
         fecha_nacimiento: form.fecha_nacimiento || null,
         id_curso: Number(form.id_curso),
       };
@@ -260,7 +266,18 @@ export default function Alumnos() {
               </div>
               <div>
                 <label style={s.label}>RUT</label>
-                <input style={s.input} value={form.rut} onChange={e => setForm(p => ({ ...p, rut: e.target.value }))} placeholder="Ej: 12.345.678-9" />
+                <input
+                  style={{ ...s.input, borderColor: form.rut.trim() ? (validarRut(form.rut).valido ? '#15803d' : '#dc2626') : 'var(--color-border)' }}
+                  value={form.rut}
+                  onChange={e => setForm(p => ({ ...p, rut: formatearRutInput(e.target.value) }))}
+                  placeholder="Ej: 12.345.678-9"
+                  maxLength={12}
+                />
+                {form.rut.trim() && (
+                  <span style={{ fontSize: '11px', fontWeight: 700, marginTop: '4px', display: 'block', color: validarRut(form.rut).valido ? '#15803d' : '#dc2626' }}>
+                    {validarRut(form.rut).valido ? '✓ RUT válido' : '✗ RUT inválido'}
+                  </span>
+                )}
               </div>
               <div>
                 <label style={s.label}>Fecha de Nacimiento</label>

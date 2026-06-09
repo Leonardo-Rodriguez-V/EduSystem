@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import apiFetch from '../utils/api';
 import {
   Users,
@@ -97,6 +97,8 @@ export default function Dashboard() {
       setCargando(false);
     });
   }, [usuario.id, usuario.rol]);
+
+  if (usuario.rol === 'alumno') return <Navigate to="/portal-alumno" replace />;
 
   return (
     <div style={s.container}>

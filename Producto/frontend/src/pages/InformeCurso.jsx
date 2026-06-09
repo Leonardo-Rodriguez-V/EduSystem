@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import apiFetch from '../utils/api';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { FileDown, GraduationCap, Users, TrendingUp, AlertTriangle, Lock, SlidersHorizontal, CheckSquare, X } from 'lucide-react';
+import { FileDown, GraduationCap, Users, TrendingUp, AlertTriangle, Lock, SlidersHorizontal, CheckSquare, X, Eye } from 'lucide-react';
+import FichaAlumno from '../components/FichaAlumno';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -38,6 +39,122 @@ function agruparPorAlumno(notas) {
     map[sid][asig].push(parseFloat(n.calificacion));
   }
   return map;
+}
+
+// ── PDF: Informe Formato MINEDUC ─────────────────────────────────────────────
+// Campos exigidos: establecimiento, RBD, curso, año, RUT alumno, nombre, asistencia,
+// promedio por asignatura, promedio general, situación final (aprobado/reprobado/pendiente).
+
+function exportarPDFMineduc(colegio, curso, filas, asignaturas) {
+  const doc   = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const hoy   = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const anio  = new Date().getFullYear();
+  const ancho = doc.internal.pageSize.getWidth();
+
+  // ── Encabezado institucional ──────────────────────────────────────────────
+  doc.setFillColor(0, 51, 102);
+  doc.rect(0, 0, ancho, 22, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(13); doc.setFont(undefined, 'bold');
+  doc.text('MINISTERIO DE EDUCACIÓN — REPÚBLICA DE CHILE', ancho / 2, 9, { align: 'center' });
+  doc.setFontSize(10); doc.setFont(undefined, 'normal');
+  doc.text('Informe de Notas Anual — Formato SIGE/MINEDUC', ancho / 2, 16, { align: 'center' });
+
+  // ── Datos del establecimiento ─────────────────────────────────────────────
+  doc.setTextColor(30, 30, 30);
+  doc.setFontSize(9);
+  const datos = [
+    `Establecimiento: ${colegio || 'EduSync'}`,
+    `RBD: — (registrar antes de enviar)`,
+    `Curso: ${curso.nombre}`,
+    `Año Escolar: ${anio}`,
+    `Fecha emisión: ${hoy}`,
+  ];
+  let xd = 14, yd = 28;
+  datos.forEach(d => { doc.text(d, xd, yd); yd += 6; });
+
+  doc.setDrawColor(0, 51, 102);
+  doc.setLineWidth(0.4);
+  doc.line(14, 57, ancho - 14, 57);
+
+  // ── Tabla de notas ────────────────────────────────────────────────────────
+  const APROBACION = 4.0;
+  const ASIST_MIN  = 85;
+
+  const headers = [
+    'N°', 'RUT', 'Apellidos y Nombres',
+    ...asignaturas.map(a => a.split(' ').slice(0, 2).join(' ')),
+    'Prom.\nGeneral', 'Asist.\n%', 'Situación\nFinal',
+  ];
+
+  const body = filas.map((f, idx) => {
+    const fila = [
+      idx + 1,
+      f.rut || '—',
+      f.nombre_completo,
+    ];
+    asignaturas.forEach(a => {
+      const p = f.promsPorAsig[a];
+      fila.push(p !== null ? p.toFixed(1) : '—');
+    });
+    fila.push(f.promGeneral !== null ? f.promGeneral.toFixed(1) : '—');
+    fila.push(f.pctAsist    !== null ? `${f.pctAsist}%` : '—');
+
+    let situacion = '—';
+    if (f.promGeneral !== null && f.pctAsist !== null) {
+      situacion = (f.promGeneral >= APROBACION && f.pctAsist >= ASIST_MIN) ? 'APROBADO' : 'REPROBADO';
+    } else if (f.promGeneral !== null || f.pctAsist !== null) {
+      situacion = 'PENDIENTE';
+    }
+    fila.push(situacion);
+    return fila;
+  });
+
+  autoTable(doc, {
+    startY: 60,
+    head: [headers],
+    body,
+    headStyles: {
+      fillColor: [0, 51, 102], textColor: 255,
+      fontStyle: 'bold', fontSize: 7,
+      halign: 'center', valign: 'middle',
+    },
+    bodyStyles: { fontSize: 7.5, valign: 'middle' },
+    alternateRowStyles: { fillColor: [232, 240, 254] },
+    columnStyles: {
+      0: { cellWidth: 8,  halign: 'center' },
+      1: { cellWidth: 20, halign: 'center', font: 'courier' },
+      2: { cellWidth: 48 },
+      [headers.length - 3]: { halign: 'center', fontStyle: 'bold' },
+      [headers.length - 2]: { halign: 'center' },
+      [headers.length - 1]: { halign: 'center', fontStyle: 'bold' },
+    },
+    didParseCell: (data) => {
+      if (data.section !== 'body') return;
+      const last = headers.length - 1;
+      const prev = headers.length - 3;
+      if (data.column.index === last) {
+        const v = data.cell.text[0];
+        if (v === 'APROBADO')  data.cell.styles.textColor = [21, 128, 61];
+        if (v === 'REPROBADO') data.cell.styles.textColor = [185, 28, 28];
+        if (v === 'PENDIENTE') data.cell.styles.textColor = [180, 83, 9];
+        data.cell.styles.fontStyle = 'bold';
+      }
+      if (data.column.index === prev) {
+        const val = parseFloat(data.cell.text[0]);
+        if (!isNaN(val)) data.cell.styles.textColor = colorPDF(val);
+      }
+    },
+  });
+
+  // ── Pie de página ─────────────────────────────────────────────────────────
+  const finalY = doc.lastAutoTable.finalY + 8;
+  doc.setFontSize(7.5); doc.setTextColor(100, 100, 100);
+  doc.text(`Aprobación: prom. ≥ ${APROBACION} y asistencia ≥ ${ASIST_MIN}%  |  Generado por EduSync  |  ${hoy}`, 14, finalY);
+  doc.text('_________________________\nDirector(a) del Establecimiento', ancho - 60, finalY + 6);
+
+  doc.save(`Informe_MINEDUC_${curso.nombre.replace(/ /g, '_')}_${anio}.pdf`);
 }
 
 // ── PDF: curso completo ───────────────────────────────────────────────────────
@@ -207,6 +324,7 @@ export default function InformeCurso() {
   const [asistencias,  setAsistencias]  = useState([]);
   const [cargando,     setCargando]     = useState(true);
   const [cargandoData, setCargandoData] = useState(false);
+  const [fichaAlumno,  setFichaAlumno]  = useState(null);
 
   // Filtros Premium
   const [fechaDesde,        setFechaDesde]        = useState('');
@@ -338,13 +456,21 @@ export default function InformeCurso() {
           )}
 
           {esPremium ? (
-            <button
-              onClick={() => exportarPDFCurso(cursoSel, filas, asignaturas, opcionesPDF, fechaDesde, fechaHasta)}
-              disabled={!filas.length || cargandoData || (!incluirNotas && !incluirAsistencia)}
-              style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '10px 18px', borderRadius: '14px', border: 'none', background: 'var(--color-primary)', color: '#fff', fontWeight: 700, fontSize: '13px', cursor: (filas.length && !cargandoData) ? 'pointer' : 'not-allowed', opacity: (!filas.length || cargandoData || (!incluirNotas && !incluirAsistencia)) ? 0.5 : 1 }}
-            >
-              <FileDown size={15} /> Exportar PDF del Curso
-            </button>
+            <>
+              <button
+                onClick={() => exportarPDFCurso(cursoSel, filas, asignaturas, opcionesPDF, fechaDesde, fechaHasta)}
+                disabled={!filas.length || cargandoData || (!incluirNotas && !incluirAsistencia)}
+                style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '10px 18px', borderRadius: '14px', border: 'none', background: 'var(--color-primary)', color: '#fff', fontWeight: 700, fontSize: '13px', cursor: (filas.length && !cargandoData) ? 'pointer' : 'not-allowed', opacity: (!filas.length || cargandoData || (!incluirNotas && !incluirAsistencia)) ? 0.5 : 1 }}>
+                <FileDown size={15} /> PDF Curso
+              </button>
+              <button
+                onClick={() => exportarPDFMineduc(usuario.nombre_colegio || 'EduSync', cursoSel, filas, asignaturas)}
+                disabled={!filas.length || cargandoData}
+                title="Exportar informe oficial en formato requerido por MINEDUC"
+                style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '10px 18px', borderRadius: '14px', border: '2px solid #003366', background: '#003366', color: '#fff', fontWeight: 700, fontSize: '13px', cursor: (filas.length && !cargandoData) ? 'pointer' : 'not-allowed', opacity: (!filas.length || cargandoData) ? 0.5 : 1 }}>
+                <FileDown size={15} /> Informe MINEDUC
+              </button>
+            </>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '10px 18px', borderRadius: '14px', border: '2px solid var(--color-border)', background: 'var(--color-muted)', color: 'var(--color-foreground)', opacity: 0.45, fontSize: '13px', fontWeight: 700 }}>
               <Lock size={14} /> Exportar PDF — Plan Premium
@@ -433,7 +559,15 @@ export default function InformeCurso() {
                     {filas.map((fila, i) => (
                       <tr key={fila.id} style={{ borderTop: '1px solid var(--color-border)', background: i % 2 !== 0 ? 'var(--color-muted)' : 'transparent' }}>
                         <td style={{ padding: '12px 20px', fontWeight: 700, color: 'var(--color-foreground)', whiteSpace: 'nowrap' }}>
-                          {fila.nombre_completo}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {fila.nombre_completo}
+                            <button
+                              onClick={() => setFichaAlumno(fila)}
+                              title="Ver ficha completa del alumno"
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '8px', border: 'none', background: 'rgba(99,102,241,0.12)', color: '#6366f1', cursor: 'pointer', fontWeight: 700, fontSize: '11px', whiteSpace: 'nowrap' }}>
+                              <Eye size={12} /> Ficha
+                            </button>
+                          </div>
                         </td>
 
                         {incluirNotas && asignaturas.map(asig => {
@@ -488,6 +622,10 @@ export default function InformeCurso() {
             </motion.div>
           )}
         </>
+      )}
+
+      {fichaAlumno && (
+        <FichaAlumno alumno={fichaAlumno} onClose={() => setFichaAlumno(null)} />
       )}
     </motion.div>
   );

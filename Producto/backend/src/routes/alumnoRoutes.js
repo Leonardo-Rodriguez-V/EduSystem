@@ -6,6 +6,7 @@ const { verificarToken, verificarRol } = require('../middleware/auth');
 // Lectura: cualquier usuario autenticado puede consultar alumnos
 router.get('/',                            verificarToken, alumnoController.obtenerAlumnos);
 router.get('/apoderado/:id_apoderado',     verificarToken, alumnoController.obtenerAlumnosPorApoderado);
+router.get('/por-usuario/:id_usuario',     verificarToken, alumnoController.obtenerAlumnoPorUsuario);
 router.get('/:id',                         verificarToken, alumnoController.obtenerAlumnoPorId);
 
 // Escritura: solo director

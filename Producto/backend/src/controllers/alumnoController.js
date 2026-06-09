@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { validarRut } = require('../utils/validarRut');
 
 const obtenerAlumnos = async (req, res) => {
   const { id_curso } = req.query;
@@ -57,6 +58,9 @@ const obtenerAlumnoPorId = async (req, res) => {
 const crearAlumno = async (req, res) => {
   const { nombre_completo, rut, fecha_nacimiento, id_curso } = req.body;
   const colegio_id = req.usuario.rol === 'superadmin' ? (req.body.colegio_id || null) : req.usuario.colegio_id;
+  if (rut && !validarRut(rut)) {
+    return res.status(400).json({ error: 'El RUT ingresado no es válido (dígito verificador incorrecto)' });
+  }
   try {
     const respuesta = await pool.query(
       'INSERT INTO alumnos (nombre_completo, rut, fecha_nacimiento, id_curso, colegio_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
@@ -80,7 +84,10 @@ const actualizarAlumno = async (req, res) => {
     const valores = [];
     let idx = 1;
     if (nombre_completo !== undefined) { sets.push(`nombre_completo = $${idx++}`); valores.push(nombre_completo); }
-    if (rut !== undefined)             { sets.push(`rut = $${idx++}`);              valores.push(rut); }
+    if (rut !== undefined) {
+      if (rut && !validarRut(rut)) return res.status(400).json({ error: 'El RUT ingresado no es válido (dígito verificador incorrecto)' });
+      sets.push(`rut = $${idx++}`); valores.push(rut);
+    }
     if (fecha_nacimiento !== undefined){ sets.push(`fecha_nacimiento = $${idx++}`); valores.push(fecha_nacimiento); }
     if (id_curso !== undefined)        { sets.push(`id_curso = $${idx++}`);         valores.push(id_curso); }
     if (id_apoderado !== undefined)    { sets.push(`id_apoderado = $${idx++}`);     valores.push(id_apoderado || null); }
@@ -181,7 +188,35 @@ const desvincularAlumnoApoderado = async (req, res) => {
   }
 };
 
+// GET /api/alumnos/por-usuario/:id_usuario
+// Busca el alumno cuyo nombre_completo coincide con el usuario autenticado (mismo colegio).
+// Permite que un usuario con rol 'alumno' encuentre su propio registro en la tabla alumnos.
+const obtenerAlumnoPorUsuario = async (req, res) => {
+  const { id_usuario } = req.params;
+  try {
+    const r = await pool.query(
+      `SELECT a.*, c.nombre AS nombre_curso
+       FROM alumnos a
+       LEFT JOIN cursos c ON a.id_curso = c.id
+       WHERE LOWER(a.nombre_completo) = (
+         SELECT LOWER(u.nombre_completo) FROM usuarios u WHERE u.id = $1
+       )
+       AND a.colegio_id = (
+         SELECT u.colegio_id FROM usuarios u WHERE u.id = $1
+       )
+       LIMIT 1`,
+      [id_usuario]
+    );
+    if (r.rows.length === 0) return res.status(404).json({ error: 'Alumno no encontrado para este usuario' });
+    res.json(r.rows[0]);
+  } catch (e) {
+    console.error('Error al obtener alumno por usuario:', e);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+};
+
 module.exports = {
   obtenerAlumnos, obtenerAlumnoPorId, crearAlumno, crearAlumnoConApoderado,
-  desvincularAlumnoApoderado, actualizarAlumno, eliminarAlumno, obtenerAlumnosPorApoderado,
+  desvincularAlumnoApoderado, actualizarAlumno, eliminarAlumno,
+  obtenerAlumnosPorApoderado, obtenerAlumnoPorUsuario,
 };
