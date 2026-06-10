@@ -5,6 +5,7 @@ import {
   ChevronRight, UserPlus, Calendar, Mail, Phone, MapPin,
   FileSpreadsheet, Upload, AlertCircle, CheckCircle2,
 } from 'lucide-react';
+import { validarRut, formatearRutInput } from '../utils/validarRut';
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -145,6 +146,10 @@ export default function SuperAdminPanel() {
 
   const guardar = async () => {
     if (!form.nombre.trim()) return;
+    if (form.rut && !validarRut(form.rut).valido) {
+      setError('El RUT ingresado no es válido. Verifica el dígito verificador.');
+      return;
+    }
     setGuardando(true); setError('');
     try {
       const url = modal.modo === 'crear' ? `${API}/colegios` : `${API}/colegios/${modal.id}`;
@@ -394,7 +399,38 @@ export default function SuperAdminPanel() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <Campo label="Nombre *"    valor={form.nombre}    onChange={v => setForm(f => ({...f, nombre: v}))}    placeholder="Colegio San Andrés" />
-              <Campo label="RUT"         valor={form.rut}       onChange={v => setForm(f => ({...f, rut: v}))}       placeholder="12.345.678-9" />
+              <div>
+                <label style={labelStyle}>RUT</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    value={form.rut}
+                    onChange={e => {
+                      const fmt = formatearRutInput(e.target.value);
+                      setForm(f => ({ ...f, rut: fmt }));
+                    }}
+                    placeholder="70.123.456-5"
+                    style={{
+                      ...inputStyle,
+                      border: form.rut
+                        ? validarRut(form.rut).valido
+                          ? '1px solid #34d399'
+                          : '1px solid #f87171'
+                        : '1px solid rgba(165,180,252,0.2)',
+                      paddingRight: form.rut ? 120 : 14,
+                    }}
+                  />
+                  {form.rut && (
+                    <span style={{
+                      position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                      fontSize: 11, fontWeight: 700,
+                      color: validarRut(form.rut).valido ? '#34d399' : '#f87171',
+                    }}>
+                      {validarRut(form.rut).valido ? '✓ RUT válido' : '✗ RUT inválido'}
+                    </span>
+                  )}
+                </div>
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                 <Campo label="Teléfono"  valor={form.telefono}  onChange={v => setForm(f => ({...f, telefono: v}))}  placeholder="+56 2 2345 6789" />
                 <Campo label="Email"     valor={form.email}     onChange={v => setForm(f => ({...f, email: v}))}     placeholder="dir@colegio.cl" />
