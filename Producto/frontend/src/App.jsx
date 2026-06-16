@@ -20,6 +20,7 @@ import ResetPassword from './pages/ResetPassword';
 import SuperAdminPanel from './pages/SuperAdminPanel';
 import CheckoutPage from './pages/CheckoutPage';
 import CheckoutExito from './pages/CheckoutExito';
+import PortalAlumno from './pages/PortalAlumno';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import { NotificationProvider } from './context/NotificationContext';
@@ -62,19 +63,19 @@ function App() {
         } />
 
         <Route path="/horarios" element={
-          <ProtectedRoute allowedRoles={['director', 'profesor', 'apoderado']}>
+          <ProtectedRoute allowedRoles={['director', 'profesor', 'apoderado', 'alumno']}>
             <Layout><Horarios /></Layout>
           </ProtectedRoute>
         } />
 
         <Route path="/calendario" element={
-          <ProtectedRoute allowedRoles={['director', 'profesor', 'apoderado']}>
+          <ProtectedRoute allowedRoles={['director', 'profesor', 'apoderado', 'alumno']}>
             <Layout><Calendario /></Layout>
           </ProtectedRoute>
         } />
 
         <Route path="/muro-avisos" element={
-          <ProtectedRoute allowedRoles={['director', 'profesor', 'apoderado']}>
+          <ProtectedRoute allowedRoles={['director', 'profesor', 'apoderado', 'alumno']}>
             <Layout><MuroAvisos /></Layout>
           </ProtectedRoute>
         } />
@@ -118,6 +119,12 @@ function App() {
         <Route path="/informe-curso" element={
           <ProtectedRoute allowedRoles={['director', 'profesor']}>
             <Layout><InformeCurso /></Layout>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/portal-alumno" element={
+          <ProtectedRoute allowedRoles={['alumno']}>
+            <Layout><PortalAlumno /></Layout>
           </ProtectedRoute>
         } />
 

@@ -92,4 +92,84 @@ const eliminarUsuario = async (req, res) => {
   }
 };
 
-module.exports = { obtenerUsuarios, crearUsuario, actualizarUsuario, eliminarUsuario };
+// POST /api/usuarios/crear-cuentas-alumnos
+// Crea cuentas de login para todos los alumnos de la institución que aún no tengan una.
+const crearCuentasAlumnos = async (req, res) => {
+  const colegio_id = req.usuario.colegio_id;
+  if (!colegio_id) return res.status(400).json({ error: 'No se encontró la institución del director' });
+
+  const normalizar = (str) =>
+    str.toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9\s]/g, '')
+      .trim()
+      .split(/\s+/)
+      .join('.');
+
+  try {
+    const alumnosRes = await pool.query(
+      `SELECT a.id, a.nombre_completo, a.rut
+       FROM alumnos a
+       WHERE a.colegio_id = $1
+       ORDER BY a.nombre_completo`,
+      [colegio_id]
+    );
+    const alumnos = alumnosRes.rows;
+
+    // Obtener los nombres de usuarios alumno ya existentes en esta institución
+    const existentesRes = await pool.query(
+      `SELECT LOWER(nombre_completo) AS nombre FROM usuarios
+       WHERE colegio_id = $1 AND rol = 'alumno'`,
+      [colegio_id]
+    );
+    const nombresExistentes = new Set(existentesRes.rows.map(r => r.nombre));
+
+    const PASSWORD_DEFAULT = 'Alumno2026';
+    const hash = await bcrypt.hash(PASSWORD_DEFAULT, 10);
+
+    let creados = 0;
+    let omitidos = 0;
+    const correosUsados = new Set();
+
+    // Pre-cargar correos ya usados en la BD
+    const correosRes = await pool.query('SELECT correo FROM usuarios WHERE colegio_id = $1', [colegio_id]);
+    correosRes.rows.forEach(r => correosUsados.add(r.correo));
+
+    for (const al of alumnos) {
+      if (nombresExistentes.has(al.nombre_completo.toLowerCase())) {
+        omitidos++;
+        continue;
+      }
+
+      // Generar correo único
+      let base = normalizar(al.nombre_completo);
+      let correo = `${base}@edusync.cl`;
+      let sufijo = 2;
+      while (correosUsados.has(correo)) {
+        correo = `${base}${sufijo}@edusync.cl`;
+        sufijo++;
+      }
+      correosUsados.add(correo);
+
+      await pool.query(
+        `INSERT INTO usuarios (nombre_completo, correo, rol, contraseña, colegio_id)
+         VALUES ($1, $2, 'alumno', $3, $4)`,
+        [al.nombre_completo, correo, hash, colegio_id]
+      );
+      creados++;
+    }
+
+    res.json({
+      mensaje: `Proceso completado. ${creados} cuentas creadas, ${omitidos} ya existían.`,
+      creados,
+      omitidos,
+      total: alumnos.length,
+      password_default: PASSWORD_DEFAULT,
+    });
+  } catch (error) {
+    console.error('Error al crear cuentas de alumnos:', error);
+    res.status(500).json({ error: 'Error del servidor', detalle: error.message });
+  }
+};
+
+module.exports = { obtenerUsuarios, crearUsuario, actualizarUsuario, eliminarUsuario, crearCuentasAlumnos };

@@ -12,6 +12,30 @@ const XLSX = require('xlsx');
  *   Alumnos     → nombre_completo, rut, fecha_nacimiento, curso
  *   Asignaturas → nombre, curso, correo_profesor
  */
+// Parsea DD/MM/YYYY o cualquier formato reconocible → Date válido o null
+function parseFecha(val) {
+  if (!val) return null;
+  if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+  const s = String(val).trim();
+  const ddmm = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (ddmm) return new Date(`${ddmm[3]}-${ddmm[2].padStart(2, '0')}-${ddmm[1].padStart(2, '0')}`);
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+// Ejecuta una query con SAVEPOINT para que un error no aborte toda la transacción
+async function safeQuery(client, query, params) {
+  await client.query('SAVEPOINT sp');
+  try {
+    const result = await client.query(query, params);
+    await client.query('RELEASE SAVEPOINT sp');
+    return result;
+  } catch (e) {
+    await client.query('ROLLBACK TO SAVEPOINT sp');
+    throw e;
+  }
+}
+
 const importarDatos = async (req, res) => {
   const { id: colegio_id } = req.params;
   const { archivo } = req.body;
@@ -44,13 +68,13 @@ const importarDatos = async (req, res) => {
     await client.query('BEGIN');
 
     // ── 1. CURSOS ──────────────────────────────────────
-    const mapCursos = {}; // nombre -> id
+    const mapCursos = {};
     for (const row of filaCursos) {
       const nombre = String(row.nombre || '').trim();
       const anio   = parseInt(row.anio) || new Date().getFullYear();
       if (!nombre) continue;
       try {
-        const { rows: [cur] } = await client.query(
+        const { rows: [cur] } = await safeQuery(client,
           `INSERT INTO cursos (nombre, anio, colegio_id)
            VALUES ($1, $2, $3)
            ON CONFLICT DO NOTHING
@@ -68,7 +92,7 @@ const importarDatos = async (req, res) => {
     }
 
     // ── 2. PROFESORES ──────────────────────────────────
-    const mapProfesores = {}; // correo -> id
+    const mapProfesores = {};
     for (const row of filaProfesores) {
       const nombre   = String(row.nombre_completo || '').trim();
       const correo   = String(row.correo || '').trim().toLowerCase();
@@ -76,7 +100,7 @@ const importarDatos = async (req, res) => {
       if (!nombre || !correo || !pass) continue;
       try {
         const hash = await bcrypt.hash(pass, 10);
-        const { rows: [prof] } = await client.query(
+        const { rows: [prof] } = await safeQuery(client,
           `INSERT INTO usuarios (nombre_completo, correo, rol, contraseña, colegio_id)
            VALUES ($1, $2, 'profesor', $3, $4)
            ON CONFLICT (correo) DO UPDATE SET nombre_completo = EXCLUDED.nombre_completo
@@ -93,11 +117,11 @@ const importarDatos = async (req, res) => {
       const nombre = String(row.nombre_completo || '').trim();
       const rut    = String(row.rut || '').trim();
       const curso  = String(row.curso || '').trim();
-      const fnac   = row.fecha_nacimiento ? new Date(row.fecha_nacimiento) : null;
+      const fnac   = parseFecha(row.fecha_nacimiento);
       if (!nombre) continue;
       const id_curso = mapCursos[curso] || null;
       try {
-        await client.query(
+        await safeQuery(client,
           `INSERT INTO alumnos (nombre_completo, rut, fecha_nacimiento, id_curso, colegio_id)
            VALUES ($1, $2, $3, $4, $5)
            ON CONFLICT (rut) DO NOTHING`,
@@ -108,16 +132,15 @@ const importarDatos = async (req, res) => {
     }
 
     // ── 4. ASIGNATURAS + ASIGNACIONES ──────────────────
-    const mapAsignaturas = {}; // nombre -> id
+    const mapAsignaturas = {};
     for (const row of filaAsignaturas) {
-      const nombre        = String(row.nombre || '').trim();
-      const cursoNombre   = String(row.curso || '').trim();
-      const correoPrf     = String(row.correo_profesor || '').trim().toLowerCase();
+      const nombre      = String(row.nombre || '').trim();
+      const cursoNombre = String(row.curso || '').trim();
+      const correoPrf   = String(row.correo_profesor || '').trim().toLowerCase();
       if (!nombre) continue;
       try {
-        // Crear asignatura si no existe
         if (!mapAsignaturas[nombre]) {
-          const { rows: [asig] } = await client.query(
+          const { rows: [asig] } = await safeQuery(client,
             `INSERT INTO asignaturas (nombre)
              VALUES ($1)
              ON CONFLICT (nombre) DO UPDATE SET nombre = EXCLUDED.nombre
@@ -127,11 +150,11 @@ const importarDatos = async (req, res) => {
           mapAsignaturas[nombre] = asig.id;
           resumen.asignaturas++;
         }
-        // Crear asignación curso-asignatura-profesor si hay datos
         const id_curso    = mapCursos[cursoNombre] || null;
         const id_profesor = mapProfesores[correoPrf] || null;
-        if (id_curso && mapAsignaturas[nombre]) {
-          await client.query(
+        // Solo vincular si hay curso, asignatura Y profesor válidos
+        if (id_curso && mapAsignaturas[nombre] && id_profesor) {
+          await safeQuery(client,
             `INSERT INTO curso_asignatura_profesor (id_curso, id_asignatura, id_profesor)
              VALUES ($1, $2, $3)
              ON CONFLICT DO NOTHING`,

@@ -68,11 +68,11 @@ const NAV_ITEMS = {
     { label: 'Mi Perfil',      icon: Settings,        path: '/perfil' },
   ],
   alumno: [
-    { label: 'Dashboard',  icon: LayoutDashboard, path: '/dashboard' },
-    { label: 'Mis Notas',  icon: GraduationCap,   path: '/notas' },
-    { label: 'Horarios',   icon: Calendar,        path: '/horarios' },
-    { label: 'Calendario', icon: CalendarDays,    path: '/calendario' },
-    { label: 'Mi Perfil',  icon: Settings,        path: '/perfil' },
+    { label: 'Mi Portal',    icon: LayoutDashboard, path: '/portal-alumno' },
+    { label: 'Horarios',     icon: Calendar,        path: '/horarios' },
+    { label: 'Calendario',   icon: CalendarDays,    path: '/calendario' },
+    { label: 'Muro de Avisos', icon: Bell,          path: '/muro-avisos' },
+    { label: 'Mi Perfil',    icon: Settings,        path: '/perfil' },
   ],
   superadmin: [
     { label: 'Colegios',   icon: Building2,       path: '/superadmin' },
@@ -92,8 +92,9 @@ const TITULO_POR_RUTA = {
   '/alumnos':      'Gestión de Alumnos',
   '/perfil':       'Mi Perfil',
   '/anotaciones':   'Libro de Anotaciones',
-  '/informe-curso': 'Informe de Curso',
-  '/superadmin':    'Panel Superadmin',
+  '/informe-curso':  'Informe de Curso',
+  '/portal-alumno':  'Mi Portal Estudiantil',
+  '/superadmin':     'Panel Superadmin',
 };
 
 function iniciales(nombre = '') {
