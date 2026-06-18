@@ -172,7 +172,17 @@ const obtenerResumenPorTodosLosCursos = async (req, res) => {
       LEFT JOIN asistencia asi ON asi.id_alumno = al.id ${filtroFecha}
       ${filtroColegio}
       GROUP BY c.id, c.nombre
-      ORDER BY c.nombre
+      ORDER BY
+        CASE
+          WHEN c.nombre ILIKE '%Pre-K%' OR c.nombre ILIKE '%NT1%'   THEN 1
+          WHEN c.nombre ILIKE '%Kínder%' OR c.nombre ILIKE '%NT2%'  THEN 2
+          WHEN c.nombre ILIKE '%Básico%' THEN
+            10 + COALESCE(NULLIF(REGEXP_REPLACE(c.nombre, '[^0-9]', '', 'g'), '')::INT, 0)
+          WHEN c.nombre ILIKE '%Medio%' THEN
+            20 + COALESCE(NULLIF(REGEXP_REPLACE(c.nombre, '[^0-9]', '', 'g'), '')::INT, 0)
+          ELSE 99
+        END,
+        c.nombre
     `, valores);
     const rows = respuesta.rows.map(r => ({
       ...r,
