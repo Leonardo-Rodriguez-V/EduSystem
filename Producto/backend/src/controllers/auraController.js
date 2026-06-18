@@ -41,10 +41,23 @@ Recibirás datos reales en sección [CONTEXTO_DB] al inicio de cada mensaje. Ús
 
 async function ensureHistorialTable() {
   try {
+    // Si existe con id_usuario INTEGER (tipo incorrecto), la elimina para recrear con UUID
+    await db.query(`
+      DO $$ BEGIN
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'aura_historial'
+            AND column_name = 'id_usuario'
+            AND data_type = 'integer'
+        ) THEN
+          DROP TABLE aura_historial;
+        END IF;
+      END $$;
+    `);
     await db.query(`
       CREATE TABLE IF NOT EXISTS aura_historial (
         id         SERIAL PRIMARY KEY,
-        id_usuario INTEGER NOT NULL,
+        id_usuario UUID NOT NULL,
         colegio_id INTEGER,
         role       VARCHAR(10) NOT NULL CHECK (role IN ('user', 'assistant')),
         content    TEXT NOT NULL,

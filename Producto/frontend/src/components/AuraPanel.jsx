@@ -105,7 +105,7 @@ const AuraPanel = ({
   const [expanded, setExpanded]     = useState(false);
   const scrollRef                   = useRef(null);
   const quickPrompts                = QUICK_PROMPTS[rol] || QUICK_PROMPTS.alumno;
-  const conversacionActiva          = messages.some(m => m.sender === 'user');
+  const conversacionActiva          = messages.some(m => m.sender === 'user' && !m.fromHistorial);
 
   useEffect(() => {
     if (scrollRef.current) {

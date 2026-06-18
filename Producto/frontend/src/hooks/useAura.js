@@ -47,6 +47,7 @@ export const useAura = (rol = 'alumno') => {
           text: m.content,
           sender: m.role === 'user' ? 'user' : 'aura',
           time: new Date(m.created_at),
+          fromHistorial: true,
         }));
 
         const mensajesBase = [crearSaludo(rol), ...historialMsgs];
