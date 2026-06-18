@@ -369,7 +369,10 @@ exports.streamChat = async (req, res) => {
     });
 
     if (!response.ok) {
-      res.write(`data: ${JSON.stringify({ error: 'Error en el servicio de IA.' })}\n\n`);
+      const msg = response.status === 429
+        ? 'Límite de consultas alcanzado. Espera unos segundos e intenta nuevamente.'
+        : 'Error en el servicio de IA. Intenta nuevamente.';
+      res.write(`data: ${JSON.stringify({ error: msg })}\n\n`);
       res.end();
       return;
     }

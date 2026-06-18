@@ -155,6 +155,12 @@ export const useAura = (rol = 'alumno') => {
                   setMessages(prev => prev.map(m =>
                     m.id === streamMsgId ? { ...m, text: accumulated } : m
                   ));
+                } else if (parsed.error) {
+                  // Error de Groq (rate limit, etc.) — no hacer fallback a /chat
+                  setMessages(prev => prev.map(m =>
+                    m.id === streamMsgId ? { ...m, text: parsed.error } : m
+                  ));
+                  respondido = true;
                 }
               } catch { /* chunk inválido */ }
             }
