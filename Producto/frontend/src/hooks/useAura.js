@@ -1,4 +1,6 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 const SALUDO_INICIAL = {
   director:  'Hola Director. Soy AURA, tu asistente de EduSync. Puedo consultar datos reales de asistencia, notas y alumnos. ¿En qué te ayudo?',
@@ -8,14 +10,84 @@ const SALUDO_INICIAL = {
   default:   'Conectado al núcleo de EduSync. ¿En qué puedo asistirte?',
 };
 
-export const useAura = (rol = 'alumno') => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    { id: 1, text: SALUDO_INICIAL[rol] || SALUDO_INICIAL.default, sender: 'aura', time: new Date() },
-  ]);
-  const [typing, setTyping] = useState(false);
-  const historialRef = useRef([]);
+const STATUS_MESSAGES = [
+  'Consultando base de datos...',
+  'Analizando información...',
+  'Generando respuesta...',
+];
 
+const crearSaludo = (rol) => ({
+  id: 'saludo',
+  text: SALUDO_INICIAL[rol] || SALUDO_INICIAL.default,
+  sender: 'aura',
+  time: new Date(),
+});
+
+export const useAura = (rol = 'alumno') => {
+  const [isOpen, setIsOpen]           = useState(false);
+  const [messages, setMessages]       = useState([crearSaludo(rol)]);
+  const [typingStatus, setTypingStatus] = useState(null); // string | null
+  const [loading, setLoading]         = useState(true);
+  const statusTimerRef                = useRef(null);
+
+  // ── Cargar historial + resumen diario al montar ────────────────────────────
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) { setLoading(false); return; }
+
+    const init = async () => {
+      try {
+        // 1. Historial persistido en BD
+        const r = await fetch(`${API_URL}/aura/historial`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = r.ok ? await r.json() : null;
+        const historialMsgs = (data?.historial || []).map((m, i) => ({
+          id: `hist-${i}`,
+          text: m.content,
+          sender: m.role === 'user' ? 'user' : 'aura',
+          time: new Date(m.created_at),
+        }));
+
+        const mensajesBase = [crearSaludo(rol), ...historialMsgs];
+
+        // 2. Resumen diario (solo si no se mostró hoy y el rol lo amerita)
+        const usuario    = JSON.parse(localStorage.getItem('usuario') || '{}');
+        const hoy        = new Date().toLocaleDateString('es-CL');
+        const resumenKey = `aura_resumen_${usuario.id}_${hoy}`;
+        const rolesConResumen = ['director', 'profesor', 'apoderado'];
+
+        if (!localStorage.getItem(resumenKey) && rolesConResumen.includes(rol)) {
+          const rr = await fetch(`${API_URL}/aura/resumen-diario`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (rr.ok) {
+            const { resumen } = await rr.json();
+            if (resumen) {
+              mensajesBase.push({
+                id: 'resumen-diario',
+                text: resumen,
+                sender: 'aura',
+                time: new Date(),
+                isResumen: true,
+              });
+              localStorage.setItem(resumenKey, '1');
+            }
+          }
+        }
+
+        setMessages(mensajesBase);
+      } catch {
+        // Mantiene el saludo si algo falla
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    init();
+  }, [rol]);
+
+  // ── Controles del panel ────────────────────────────────────────────────────
   const toggleAura = useCallback(() => setIsOpen(prev => !prev), []);
 
   const addSystemMessage = useCallback((text) => {
@@ -23,49 +95,105 @@ export const useAura = (rol = 'alumno') => {
     setIsOpen(true);
   }, []);
 
+  // ── Enviar mensaje con streaming SSE ──────────────────────────────────────
   const sendMessage = useCallback(async (text) => {
     if (!text.trim()) return;
 
-    const msgUsuario = { id: Date.now(), text, sender: 'user', time: new Date() };
-    setMessages(prev => [...prev, msgUsuario]);
-    setTyping(true);
+    const userMsgId   = Date.now();
+    const streamMsgId = userMsgId + 1;
 
-    // Historial para el backend (últimos 12 mensajes antes del nuevo)
-    const historialParaApi = historialRef.current.slice(-12);
+    // Agrega mensaje del usuario y placeholder vacío para la respuesta
+    setMessages(prev => [
+      ...prev,
+      { id: userMsgId,   text, sender: 'user', time: new Date() },
+      { id: streamMsgId, text: '',   sender: 'aura', time: new Date() },
+    ]);
+
+    // Inicia rotación de estados
+    let si = 0;
+    setTypingStatus(STATUS_MESSAGES[0]);
+    statusTimerRef.current = setInterval(() => {
+      si = (si + 1) % STATUS_MESSAGES.length;
+      setTypingStatus(STATUS_MESSAGES[si]);
+    }, 1500);
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/aura/chat`, {
+      const res = await fetch(`${API_URL}/aura/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ mensaje: text, historial: historialParaApi }),
+        body: JSON.stringify({ mensaje: text }),
       });
 
-      const data = await res.json();
-      const respuesta = data.respuesta || data.error || 'No pude obtener una respuesta.';
+      if (!res.ok || !res.body) throw new Error('Stream no disponible');
 
-      const msgAura = { id: Date.now() + 1, text: respuesta, sender: 'aura', time: new Date() };
-      setMessages(prev => [...prev, msgAura]);
+      const reader  = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer      = '';
+      let accumulated = '';
 
-      // Actualizar historial interno
-      historialRef.current = [
-        ...historialRef.current,
-        { sender: 'user', text },
-        { sender: 'aura', text: respuesta },
-      ].slice(-20);
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const raw = line.slice(6).trim();
+          if (raw === '[DONE]') break;
+          try {
+            const parsed = JSON.parse(raw);
+            if (parsed.error) throw new Error(parsed.error);
+            if (parsed.token) {
+              accumulated += parsed.token;
+              // Actualiza el placeholder en tiempo real
+              setMessages(prev => prev.map(m =>
+                m.id === streamMsgId ? { ...m, text: accumulated } : m
+              ));
+            }
+          } catch { /* ignora chunks inválidos */ }
+        }
+      }
+
+      if (!accumulated) {
+        setMessages(prev => prev.map(m =>
+          m.id === streamMsgId ? { ...m, text: 'No pude obtener una respuesta.' } : m
+        ));
+      }
 
     } catch {
-      setMessages(prev => [
-        ...prev,
-        { id: Date.now() + 1, text: 'Error de conexión con AURA. Verifica que el servidor esté activo.', sender: 'aura', time: new Date() },
-      ]);
+      setMessages(prev => prev.map(m =>
+        m.id === streamMsgId
+          ? { ...m, text: 'Error de conexión con AURA. Verifica que el servidor esté activo.' }
+          : m
+      ));
     } finally {
-      setTyping(false);
+      clearInterval(statusTimerRef.current);
+      setTypingStatus(null);
     }
   }, []);
 
-  return { isOpen, toggleAura, messages, sendMessage, typing, addSystemMessage };
+  // ── Limpiar historial ──────────────────────────────────────────────────────
+  const clearHistorial = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    try {
+      await fetch(`${API_URL}/aura/historial`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      // También limpia la clave del resumen de hoy para que se regenere
+      const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+      const hoy     = new Date().toLocaleDateString('es-CL');
+      localStorage.removeItem(`aura_resumen_${usuario.id}_${hoy}`);
+      setMessages([crearSaludo(rol)]);
+    } catch { /* fallo silencioso */ }
+  }, [rol]);
+
+  return { isOpen, toggleAura, messages, sendMessage, typingStatus, addSystemMessage, clearHistorial, loading };
 };

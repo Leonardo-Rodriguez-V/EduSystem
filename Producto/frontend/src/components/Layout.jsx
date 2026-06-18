@@ -138,13 +138,14 @@ export default function Layout({ children }) {
   const tituloPagina = TITULO_POR_RUTA[location.pathname] || 'EduSync';
 
   const { notifications, toasts, hasNew, clearNew, dismissToast } = useNotifications();
-  const { 
-    isOpen: auraOpen, 
-    toggleAura, 
-    messages: auraMessages, 
-    sendMessage: sendAuraMessage, 
-    typing: isAuraTyping,
-    addSystemMessage 
+  const {
+    isOpen: auraOpen,
+    toggleAura,
+    messages: auraMessages,
+    sendMessage: sendAuraMessage,
+    typingStatus: auraTypingStatus,
+    addSystemMessage,
+    clearHistorial,
   } = useAura(usuario?.rol);
 
   // Sincronizar notificaciones reales con el chat de Aura
@@ -237,7 +238,9 @@ export default function Layout({ children }) {
           onClose={toggleAura}
           messages={auraMessages}
           sendMessage={sendAuraMessage}
-          typing={isAuraTyping}
+          typingStatus={auraTypingStatus}
+          rol={usuario?.rol}
+          clearHistorial={clearHistorial}
         />
       )}
 
