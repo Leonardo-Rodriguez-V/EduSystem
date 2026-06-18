@@ -1,3 +1,5 @@
+
+
 const jwt = require('jsonwebtoken');
 
 // Verifica que el request tenga un JWT válido

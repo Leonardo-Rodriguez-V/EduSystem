@@ -18,3 +18,7 @@ claude-code-workflows-main/
 # Archivos temporales y reportes
 load_report.txt
 *.js旋
+
+# MemPalace per-project files (issue #185)
+mempalace.yaml
+entities.json
