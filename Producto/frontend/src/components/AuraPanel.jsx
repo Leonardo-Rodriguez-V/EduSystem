@@ -138,7 +138,7 @@ const AuraPanel = ({
     messagesConSeps.push(msg);
   });
 
-  const panelWidth = expanded ? '620px' : '380px';
+  const panelWidth = expanded ? '760px' : '380px';
 
   return (
     <AnimatePresence>
@@ -148,15 +148,17 @@ const AuraPanel = ({
           animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20, x: 20 }}
           transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-          className="glass-premium"
           style={{
             position: 'fixed', bottom: '100px', right: '32px',
             width: panelWidth,
-            borderRadius: '32px', zIndex: 1001,
+            borderRadius: '28px', zIndex: 1001,
             display: 'flex', flexDirection: 'column',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.2)',
-            height: '520px', overflow: 'hidden',
-            transition: 'width 0.3s cubic-bezier(0.4,0,0.2,1)',
+            boxShadow: '0 24px 60px rgba(0,0,0,0.35)',
+            height: expanded ? '700px' : '520px',
+            overflow: 'hidden',
+            transition: 'width 0.35s cubic-bezier(0.4,0,0.2,1), height 0.35s cubic-bezier(0.4,0,0.2,1)',
+            background: 'var(--color-surface)',
+            border: '1px solid rgba(99,102,241,0.2)',
           }}
         >
           {/* ── Header ── */}

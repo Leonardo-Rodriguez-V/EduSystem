@@ -119,51 +119,61 @@ export const useAura = (rol = 'alumno') => {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_URL}/aura/stream`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ mensaje: text }),
-      });
+      let respondido = false;
 
-      if (!res.ok || !res.body) throw new Error('Stream no disponible');
+      // ── Intento 1: streaming SSE ───────────────────────────────────────────
+      try {
+        const res = await fetch(`${API_URL}/aura/stream`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ mensaje: text }),
+        });
 
-      const reader  = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer      = '';
-      let accumulated = '';
+        if (res.ok && res.body && res.headers.get('content-type')?.includes('text/event-stream')) {
+          const reader  = res.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer      = '';
+          let accumulated = '';
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() ?? '';
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() ?? '';
 
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const raw = line.slice(6).trim();
-          if (raw === '[DONE]') break;
-          try {
-            const parsed = JSON.parse(raw);
-            if (parsed.error) throw new Error(parsed.error);
-            if (parsed.token) {
-              accumulated += parsed.token;
-              // Actualiza el placeholder en tiempo real
-              setMessages(prev => prev.map(m =>
-                m.id === streamMsgId ? { ...m, text: accumulated } : m
-              ));
+            for (const line of lines) {
+              if (!line.startsWith('data: ')) continue;
+              const raw = line.slice(6).trim();
+              if (raw === '[DONE]') break;
+              try {
+                const parsed = JSON.parse(raw);
+                if (parsed.token) {
+                  accumulated += parsed.token;
+                  setMessages(prev => prev.map(m =>
+                    m.id === streamMsgId ? { ...m, text: accumulated } : m
+                  ));
+                }
+              } catch { /* chunk inválido */ }
             }
-          } catch { /* ignora chunks inválidos */ }
-        }
-      }
+          }
 
-      if (!accumulated) {
+          if (accumulated) { respondido = true; }
+        }
+      } catch { /* stream no disponible, cae al fallback */ }
+
+      // ── Intento 2: endpoint clásico (fallback) ────────────────────────────
+      if (!respondido) {
+        const res = await fetch(`${API_URL}/aura/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ mensaje: text }),
+        });
+        const data = await res.json();
+        const respuesta = data.respuesta || data.error || 'No pude obtener una respuesta.';
         setMessages(prev => prev.map(m =>
-          m.id === streamMsgId ? { ...m, text: 'No pude obtener una respuesta.' } : m
+          m.id === streamMsgId ? { ...m, text: respuesta } : m
         ));
       }
 
