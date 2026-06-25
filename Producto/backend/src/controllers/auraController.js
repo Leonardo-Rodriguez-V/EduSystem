@@ -369,9 +369,11 @@ exports.streamChat = async (req, res) => {
     });
 
     if (!response.ok) {
+      const groqBody = await response.json().catch(() => ({}));
+      console.error('[AURA] Groq stream error:', response.status, JSON.stringify(groqBody));
       const msg = response.status === 429
         ? 'Límite de consultas alcanzado. Espera unos segundos e intenta nuevamente.'
-        : 'Error en el servicio de IA. Intenta nuevamente.';
+        : `Error en el servicio de IA (${response.status}). Intenta nuevamente.`;
       res.write(`data: ${JSON.stringify({ error: msg })}\n\n`);
       res.end();
       return;
@@ -519,11 +521,12 @@ exports.chat = async (req, res) => {
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      console.error('[AURA] Groq error:', response.status, err);
+      const errMsg = err?.error?.message || JSON.stringify(err);
+      console.error('[AURA] Groq error:', response.status, errMsg);
       if (response.status === 401) {
         return res.status(500).json({ error: 'API key de Groq inválida. Verifica GROQ_API_KEY en el .env.' });
       }
-      return res.status(500).json({ error: 'Error en el servicio de IA. Intenta nuevamente.' });
+      return res.status(500).json({ error: `[DEBUG Groq ${response.status}]: ${errMsg}` });
     }
 
     const data = await response.json();
