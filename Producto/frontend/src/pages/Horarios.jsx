@@ -92,6 +92,16 @@ export default function Horarios() {
       }).catch(() => setCargando(false)).finally(() => setCargando(false));
       return;
     }
+    if (usuario.rol === 'alumno') {
+      apiFetch(`/alumnos/por-usuario/${usuario.id}`).then(r => r?.json()).then(data => {
+        if (data?.id_curso && data?.nombre_curso) {
+          const cursoAlumno = [{ id: data.id_curso, nombre: data.nombre_curso }];
+          setCursos(cursoAlumno);
+          setCursoSel(cursoAlumno[0]);
+        }
+      }).catch(() => {}).finally(() => setCargando(false));
+      return;
+    }
     const url = usuario.rol === 'profesor' ? `/cursos?id_profesor=${usuario.id}` : '/cursos';
     apiFetch(url).then(r => r?.json()).then(data => {
       if (Array.isArray(data)) { setCursos(data); setCursoSel(data[0] || null); }
