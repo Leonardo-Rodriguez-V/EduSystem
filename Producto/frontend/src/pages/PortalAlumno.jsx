@@ -98,12 +98,15 @@ export default function PortalAlumno() {
   const pctAsistencia = totalClases > 0 ? ((presentes / totalClases) * 100).toFixed(1) : '—';
   const asistColor    = Number(pctAsistencia) < 85 ? '#ef4444' : '#10b981';
 
-  const promN = notas.length > 0
-    ? (notas.reduce((s, n) => s + parseFloat(n.calificacion), 0) / notas.length).toFixed(1)
-    : '—';
-  const [notaBg, notaText] = colorNota(promN);
-
   const notasPorAsig     = agruparNotas(notas);
+
+  const promN = (() => {
+    const asigs = Object.values(notasPorAsig);
+    if (asigs.length === 0) return '—';
+    const promsAsig = asigs.map(ns => ns.reduce((s, n) => s + parseFloat(n.calificacion), 0) / ns.length);
+    return (promsAsig.reduce((s, p) => s + p, 0) / promsAsig.length).toFixed(1);
+  })();
+  const [notaBg, notaText] = colorNota(promN);
   const anotPositivas    = anotaciones.filter(a => a.tipo === 'positiva').length;
   const anotNegativas    = anotaciones.filter(a => a.tipo === 'negativa').length;
 
@@ -185,7 +188,7 @@ export default function PortalAlumno() {
           <div className="clay-card" style={{ ...s.card, gridColumn: 'span 4', textAlign: 'center' }}>
             <div style={s.kpiTitle}><GraduationCap size={15} color="var(--color-primary)" /> Promedio General</div>
             <div style={{ ...s.kpiValue, color: notaText }}>{promN}</div>
-            <p style={{ fontSize: '13px', color: 'var(--color-foreground)', opacity: 0.45, margin: 0 }}>{notas.length} evaluaciones</p>
+            <p style={{ fontSize: '13px', color: 'var(--color-foreground)', opacity: 0.45, margin: 0 }}>{Object.keys(notasPorAsig).length} asignaturas · {notas.length} evaluaciones</p>
           </div>
 
           {/* KPI Anotaciones */}
