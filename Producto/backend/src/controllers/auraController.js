@@ -237,15 +237,17 @@ async function contextApoderado(idApoderado) {
 async function contextAlumno(usuario) {
   const parts = [];
 
-  // Busca el registro de alumno por nombre + colegio (misma lógica que obtenerAlumnoPorUsuario)
   const { rows: alumnos } = await db.query(`
     SELECT a.id, a.nombre_completo, c.nombre AS curso
     FROM alumnos a
     JOIN cursos c ON a.id_curso = c.id
-    WHERE LOWER(a.nombre_completo) = LOWER($1)
-      AND a.colegio_id = $2
+    WHERE LOWER(a.nombre_completo) = (
+      SELECT LOWER(nombre_completo) FROM usuarios WHERE id = $1
+    )
+    AND a.colegio_id = $2
+    ORDER BY a.id DESC
     LIMIT 1
-  `, [usuario.nombre_completo, usuario.colegio_id]);
+  `, [usuario.id, usuario.colegio_id]);
 
   if (alumnos.length === 0) return parts;
   const alumno = alumnos[0];
