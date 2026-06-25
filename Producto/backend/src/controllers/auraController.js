@@ -92,32 +92,49 @@ async function contextProfesor(idProfesor) {
 
   const idCursos = cursos.map(c => c.id);
 
-  const { rows: notas } = await db.query(`
-    SELECT a.nombre_completo, c.nombre AS curso,
-      ROUND(AVG(n.calificacion), 1) AS promedio,
-      COUNT(n.id) AS total_evaluaciones
-    FROM alumnos a
-    JOIN cursos c ON a.id_curso = c.id
+  // Resumen estadístico por curso
+  const { rows: resumen } = await db.query(`
+    SELECT c.nombre AS curso,
+      COUNT(DISTINCT a.id) AS total_alumnos,
+      ROUND(AVG(n.calificacion), 1) AS promedio_curso,
+      COUNT(DISTINCT CASE WHEN sub.prom < 4.0 THEN a.id END) AS reprobados,
+      COUNT(DISTINCT CASE WHEN sub_asi.pct < 85 THEN a.id END) AS riesgo_asistencia
+    FROM cursos c
+    LEFT JOIN alumnos a ON a.id_curso = c.id
     LEFT JOIN notas n ON n.id_alumno = a.id
+    LEFT JOIN (SELECT id_alumno, AVG(calificacion) AS prom FROM notas GROUP BY id_alumno) sub ON sub.id_alumno = a.id
+    LEFT JOIN (SELECT id_alumno, ROUND(100.0*SUM(CASE WHEN estado='presente' THEN 1 ELSE 0 END)/NULLIF(COUNT(*),0),1) AS pct FROM asistencia GROUP BY id_alumno) sub_asi ON sub_asi.id_alumno = a.id
+    WHERE c.id = ANY($1)
+    GROUP BY c.id, c.nombre ORDER BY c.nombre
+  `, [idCursos]);
+  if (resumen.length > 0) parts.push({ tipo: 'resumen_por_curso', datos: resumen });
+
+  // Alumnos en riesgo académico (promedio < 4.0) — máx 25
+  const { rows: riesgoNotas } = await db.query(`
+    SELECT a.nombre_completo, c.nombre AS curso, ROUND(AVG(n.calificacion),1) AS promedio
+    FROM notas n
+    JOIN alumnos a ON n.id_alumno = a.id
+    JOIN cursos c ON a.id_curso = c.id
     WHERE a.id_curso = ANY($1)
     GROUP BY a.id, a.nombre_completo, c.nombre
-    ORDER BY c.nombre ASC, promedio ASC NULLS LAST
+    HAVING ROUND(AVG(n.calificacion),1) < 4.0
+    ORDER BY promedio ASC LIMIT 25
   `, [idCursos]);
-  if (notas.length > 0) parts.push({ tipo: 'notas_mis_alumnos', datos: notas });
+  if (riesgoNotas.length > 0) parts.push({ tipo: 'alumnos_riesgo_notas', datos: riesgoNotas });
 
-  const { rows: asistencia } = await db.query(`
+  // Alumnos con asistencia < 85% — máx 25
+  const { rows: riesgoAsistencia } = await db.query(`
     SELECT a.nombre_completo, c.nombre AS curso,
-      COUNT(asi.id) AS total_clases,
-      SUM(CASE WHEN asi.estado = 'presente' THEN 1 ELSE 0 END) AS presentes,
-      ROUND(100.0 * SUM(CASE WHEN asi.estado = 'presente' THEN 1 ELSE 0 END) / NULLIF(COUNT(asi.id), 0), 1) AS porcentaje_asistencia
+      ROUND(100.0*SUM(CASE WHEN asi.estado='presente' THEN 1 ELSE 0 END)/NULLIF(COUNT(asi.id),0),1) AS porcentaje_asistencia
     FROM alumnos a
     JOIN cursos c ON a.id_curso = c.id
     LEFT JOIN asistencia asi ON asi.id_alumno = a.id
     WHERE a.id_curso = ANY($1)
     GROUP BY a.id, a.nombre_completo, c.nombre
-    ORDER BY c.nombre ASC, porcentaje_asistencia ASC NULLS LAST
+    HAVING ROUND(100.0*SUM(CASE WHEN asi.estado='presente' THEN 1 ELSE 0 END)/NULLIF(COUNT(asi.id),0),1) < 85
+    ORDER BY porcentaje_asistencia ASC LIMIT 25
   `, [idCursos]);
-  if (asistencia.length > 0) parts.push({ tipo: 'asistencia_mis_alumnos', datos: asistencia });
+  if (riesgoAsistencia.length > 0) parts.push({ tipo: 'alumnos_riesgo_asistencia', datos: riesgoAsistencia });
 
   return parts;
 }
@@ -526,7 +543,7 @@ exports.chat = async (req, res) => {
       if (response.status === 401) {
         return res.status(500).json({ error: 'API key de Groq inválida. Verifica GROQ_API_KEY en el .env.' });
       }
-      return res.status(500).json({ error: `[DEBUG Groq ${response.status}]: ${errMsg}` });
+      return res.status(500).json({ error: 'Error en el servicio de IA. Intenta nuevamente.' });
     }
 
     const data = await response.json();
